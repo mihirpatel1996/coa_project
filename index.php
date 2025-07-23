@@ -76,6 +76,12 @@
         .header-logo {
             height: 40px;
         }
+        .template-section {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -100,18 +106,30 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label for="templateSelect" class="form-label">Template</label>
-                                <div class="input-group">
-                                    <select class="form-select" id="templateSelect" disabled>
-                                        <option value="">Select Template...</option>
+                        <!-- Template Selection -->
+                        <div class="template-section">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <label for="templateSelect" class="form-label">
+                                        <i class="fas fa-file-alt me-1"></i>
+                                        Template
+                                    </label>
+                                    <select class="form-select" id="templateSelect">
+                                        <option value="">Loading templates...</option>
                                     </select>
-                                    <button class="btn btn-outline-primary" type="button" id="manageTemplateBtn" disabled>
-                                        <i class="fas fa-cog"></i>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button class="btn btn-outline-secondary" type="button" id="manageTemplateBtn">
+                                        <i class="fas fa-cog me-1"></i>
+                                        Manage Templates
                                     </button>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Catalog and Lot Selection -->
+                        <div class="row">
+                            <div class="col-md-3">
                                 <label for="catalogSelect" class="form-label">Catalog Number</label>
                                 <div class="input-group">
                                     <select class="form-select" id="catalogSelect">
@@ -166,11 +184,14 @@
                     <div class="card-body text-center">
                         <h2 class="mb-3" id="catalogTitle">Select a catalog to begin</h2>
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <strong>Catalog Number:</strong> <span id="displayCatalogNumber">Not selected</span>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <strong>Lot Number:</strong> <span id="displayLotNumber">Not selected</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Template:</strong> <span id="displayTemplate">Not selected</span>
                             </div>
                         </div>
                         <h4 class="mt-3 text-primary">Certificate of Analysis</h4>
@@ -288,6 +309,13 @@
                         <input type="text" class="form-control" id="newCatalogNumber" placeholder="Enter catalog number (e.g., A08-58)">
                         <div class="form-text">This will be the unique identifier for your catalog.</div>
                     </div>
+                    <div class="mb-3">
+                        <label for="catalogTemplateSelect" class="form-label">Template (Optional)</label>
+                        <select class="form-select" id="catalogTemplateSelect">
+                            <option value="">Use default template</option>
+                        </select>
+                        <div class="form-text">Select a specific template or leave blank to use the default.</div>
+                    </div>
                     <div class="alert alert-info">
                         <small><i class="fas fa-info-circle me-1"></i>Both catalog name and number will be created if they don't exist in the database.</small>
                     </div>
@@ -322,32 +350,6 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="saveLotBtn">Add Lot</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Section Modal -->
-    <div class="modal fade" id="addSectionModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Section</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="sectionName" class="form-label">Section Name</label>
-                        <input type="text" class="form-control" id="sectionName" placeholder="Enter section name">
-                    </div>
-                    <div class="mb-3">
-                        <label for="sectionDescription" class="form-label">Description (Optional)</label>
-                        <textarea class="form-control" id="sectionDescription" rows="3" placeholder="Enter section description"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveSectionBtn">Add Section</button>
                 </div>
             </div>
         </div>
@@ -392,254 +394,893 @@
         </div>
     </div>
 
+    <!-- Template Management Modal -->
+    <div class="modal fade" id="templateManagementModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-alt me-2"></i>
+                        Template Management
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Add New Template Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-plus me-2"></i>
+                                Add New Template
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="newTemplateName" class="form-label">Template Name</label>
+                                        <input type="text" class="form-control" id="newTemplateName" 
+                                               placeholder="Enter template name (e.g., Protein Analysis Template)">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="newTemplateDescription" class="form-label">Description</label>
+                                        <input type="text" class="form-control" id="newTemplateDescription" 
+                                               placeholder="Brief description of template purpose">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="setAsDefault">
+                                        <label class="form-check-label" for="setAsDefault">
+                                            Set as default template
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <button type="button" class="btn btn-success" id="createTemplateBtn">
+                                        <i class="fas fa-plus me-1"></i>
+                                        Create Template
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Existing Templates Section -->
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-list me-2"></i>
+                                Existing Templates
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="templatesListContainer">
+                                <div class="text-center py-3">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>
+                                    Loading templates...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Configuration Modal -->
+    <div class="modal fade" id="templateConfigModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="templateConfigModalTitle">
+                        <i class="fas fa-cogs me-2"></i>
+                        Configure Template Keys
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Add keys to each section. Specify whether each key comes from catalog data or lot-specific data.
+                    </div>
+                    
+                    <!-- Template Info -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title" id="configTemplateInfo">Loading template...</h6>
+                        </div>
+                    </div>
+                    
+                    <!-- Sections Configuration -->
+                    <div id="templateConfigSections">
+                        <!-- Sections will be loaded here -->
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p class="mt-2">Loading template configuration...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="saveTemplateConfigBtn">
+                        <i class="fas fa-save me-1"></i>
+                        Save Configuration
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Template Key Modal -->
+    <div class="modal fade" id="addTemplateKeyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Template Key</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="templateKeyName" class="form-label">Key Name</label>
+                        <input type="text" class="form-control" id="templateKeyName" 
+                               placeholder="Enter key name (e.g., Purity, Source, Expiry Date)">
+                    </div>
+                    <div class="mb-3">
+                        <label for="templateKeySource" class="form-label">Key Type</label>
+                        <select class="form-select" id="templateKeySource">
+                            <option value="catalog">Catalog Data (same for all lots)</option>
+                            <option value="lot">Lot Data (specific to each lot)</option>
+                        </select>
+                        <div class="form-text">
+                            <strong>Catalog:</strong> Data that's the same for all lots (e.g., molecular weight, formulation)<br>
+                            <strong>Lot:</strong> Data that varies by lot (e.g., expiry date, batch purity)
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveTemplateKeyBtn">
+                        <i class="fas fa-plus me-1"></i>
+                        Add Key
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     
     <script>
-        // Global variables
+        // GLOBAL VARIABLES - DECLARED ONLY ONCE
         let currentSectionId = null;
         let sectionsData = {};
         let sectionCounter = 0;
-
-        // Clear all data and reset to initial state
-        function clearAllData() {
-            // Confirm action
-            if (confirm('Are you sure you want to clear all data and reset the form? This action cannot be undone.')) {
-                // Reset catalog selection
-                document.getElementById('catalogSelect').selectedIndex = 0;
-                
-                // Reset catalog name field
-                const catalogNameField = document.getElementById('catalogName');
-                catalogNameField.value = '';
-                catalogNameField.readOnly = true;
-                catalogNameField.placeholder = 'Enter catalog name';
-                catalogNameField.classList.remove('border-warning');
-                
-                // Reset lot selection
-                const lotSelect = document.getElementById('lotSelect');
-                lotSelect.innerHTML = '<option value="">Select Lot...</option>';
-                lotSelect.disabled = true;
-                
-                // Reset header to initial state
-                document.getElementById('catalogTitle').textContent = 'Select a catalog to begin';
-                document.getElementById('displayCatalogNumber').textContent = 'Not selected';
-                document.getElementById('displayLotNumber').textContent = 'Not selected';
-                
-                // Reset all sections to default state
-                resetSectionsToDefault();
-                
-                // Disable all action buttons
-                document.getElementById('loadDataBtn').disabled = true;
-                document.getElementById('createNewBtn').disabled = true;
-                document.getElementById('addLotBtn').disabled = true;
-                document.getElementById('previewBtn').disabled = true;
-                document.getElementById('generateBtn').disabled = true;
-                
-                // Clear sections data
-                sectionsData = {};
-                
-                console.log('Data cleared successfully');
-            }
-        }
-
-        // Reset sections to default empty state
-        function resetSectionsToDefault() {
-            const sections = [1, 2, 3];
-            sections.forEach(sectionId => {
-                const container = document.getElementById(`keyValues_${sectionId}`);
-                container.innerHTML = `
-                    <div class="text-muted text-center py-3">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Select catalog and lot, then click "Load Data" to view content
-                    </div>
-                `;
-                
-                // Disable add key-value buttons
-                const addButton = container.parentElement.querySelector('.btn-outline-primary');
-                if (addButton) {
-                    addButton.disabled = true;
-                }
-            });
-            
-            // Reset sections data
-            sectionsData = {};
-        }
+        let currentTemplateId = null;
+        let currentSectionIdForKey = null;
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing application...');
+            
             loadCatalogs();
+            loadTemplates();
             initializeEventListeners();
+            initializeTemplateHandlers();
+            initializeTemplateManagementHandlers();
+            initializeTemplateConfigHandlers();
             
             // Initialize sections data and disable buttons on page load
             sectionsData = {};
-            document.getElementById('previewBtn').disabled = true;
-            document.getElementById('generateBtn').disabled = true;
+            
+            const previewBtn = document.getElementById('previewBtn');
+            const generateBtn = document.getElementById('generateBtn');
+            
+            if (previewBtn) previewBtn.disabled = true;
+            if (generateBtn) generateBtn.disabled = true;
+            
+            console.log('Application initialized successfully');
         });
+
+        // Template Management Functions
+        function initializeTemplateManagementHandlers() {
+            const manageTemplateBtn = document.getElementById('manageTemplateBtn');
+            if (manageTemplateBtn) {
+                manageTemplateBtn.addEventListener('click', function() {
+                    openTemplateManagement();
+                });
+            }
+
+            const createTemplateBtn = document.getElementById('createTemplateBtn');
+            if (createTemplateBtn) {
+                createTemplateBtn.addEventListener('click', function() {
+                    createNewTemplate();
+                });
+            }
+        }
+
+        // Template Configuration Functions
+        function initializeTemplateConfigHandlers() {
+            const saveTemplateKeyBtn = document.getElementById('saveTemplateKeyBtn');
+            if (saveTemplateKeyBtn) {
+                saveTemplateKeyBtn.addEventListener('click', function() {
+                    saveTemplateKey();
+                });
+            }
+            
+            const saveTemplateConfigBtn = document.getElementById('saveTemplateConfigBtn');
+            if (saveTemplateConfigBtn) {
+                saveTemplateConfigBtn.addEventListener('click', function() {
+                    bootstrap.Modal.getInstance(document.getElementById('templateConfigModal')).hide();
+                    alert('Template configuration saved successfully!');
+                });
+            }
+        }
+
+        // Open template management modal
+        function openTemplateManagement() {
+            loadTemplatesList();
+            new bootstrap.Modal(document.getElementById('templateManagementModal')).show();
+        }
+
+        // Load templates list for management
+        function loadTemplatesList() {
+            const container = document.getElementById('templatesListContainer');
+            container.innerHTML = `
+                <div class="text-center py-3">
+                    <i class="fas fa-spinner fa-spin me-2"></i>
+                    Loading templates...
+                </div>
+            `;
+
+            fetch('api/get_templates.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.templates && data.templates.length > 0) {
+                        let templatesHtml = '';
+                        
+                        data.templates.forEach(template => {
+                            const isDefault = template.is_default;
+                            const defaultBadge = isDefault ? '<span class="badge bg-primary ms-2">Default</span>' : '';
+                            
+                            templatesHtml += `
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6">
+                                                <h6 class="mb-1">
+                                                    <i class="fas fa-file-alt me-2"></i>
+                                                    ${template.template_name}
+                                                    ${defaultBadge}
+                                                </h6>
+                                                <small class="text-muted">${template.description || 'No description'}</small>
+                                            </div>
+                                            <div class="col-md-6 text-end">
+                                                <div class="btn-group">
+                                                    ${!isDefault ? `
+                                                        <button class="btn btn-sm btn-outline-primary" onclick="setDefaultTemplate(${template.id})">
+                                                            <i class="fas fa-star"></i> Set Default
+                                                        </button>
+                                                    ` : ''}
+                                                    <button class="btn btn-sm btn-outline-secondary" onclick="configureTemplateKeys(${template.id}, '${template.template_name}')">
+                                                        <i class="fas fa-cogs"></i> Configure
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTemplate(${template.id}, '${template.template_name}')">
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        container.innerHTML = templatesHtml;
+                    } else {
+                        container.innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No templates found. Create your first template above.</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading templates:', error);
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error loading templates. Please try again.
+                        </div>
+                    `;
+                });
+        }
+
+        // Create new template
+        function createNewTemplate() {
+            const templateName = document.getElementById('newTemplateName').value.trim();
+            const description = document.getElementById('newTemplateDescription').value.trim();
+            const isDefault = document.getElementById('setAsDefault').checked;
+            
+            if (!templateName) {
+                alert('Please enter a template name');
+                return;
+            }
+
+            const payload = {
+                template_name: templateName,
+                description: description,
+                is_default: isDefault
+            };
+
+            fetch('api/create_template.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('newTemplateName').value = '';
+                    document.getElementById('newTemplateDescription').value = '';
+                    document.getElementById('setAsDefault').checked = false;
+                    
+                    loadTemplatesList();
+                    loadTemplates();
+                    
+                    alert('Template created successfully! Click "Configure" to add keys to each section.');
+                } else {
+                    alert('Error creating template: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error creating template:', error);
+                alert('Error creating template. Please try again.');
+            });
+        }
+
+        // Set template as default
+        function setDefaultTemplate(templateId) {
+            if (!confirm('Are you sure you want to set this template as default?')) {
+                return;
+            }
+
+            fetch('api/set_default_template.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ template_id: templateId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTemplatesList();
+                    loadTemplates();
+                    alert('Default template updated successfully!');
+                } else {
+                    alert('Error setting default template: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error setting default template:', error);
+                alert('Error setting default template. Please try again.');
+            });
+        }
+
+        // Delete template
+        function deleteTemplate(templateId, templateName) {
+            if (!confirm(`Are you sure you want to delete the template "${templateName}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            fetch('api/delete_template.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ template_id: templateId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTemplatesList();
+                    loadTemplates();
+                    alert('Template deleted successfully!');
+                } else {
+                    alert('Error deleting template: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting template:', error);
+                alert('Error deleting template. Please try again.');
+            });
+        }
+
+        // Configure template keys
+        function configureTemplateKeys(templateId, templateName) {
+            currentTemplateId = templateId;
+            
+            document.getElementById('templateConfigModalTitle').innerHTML = `
+                <i class="fas fa-cogs me-2"></i>
+                Configure: ${templateName}
+            `;
+            
+            loadTemplateConfiguration(templateId);
+            new bootstrap.Modal(document.getElementById('templateConfigModal')).show();
+        }
+
+        // Load template configuration
+        function loadTemplateConfiguration(templateId) {
+            const container = document.getElementById('templateConfigSections');
+            const infoContainer = document.getElementById('configTemplateInfo');
+            
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p class="mt-2">Loading template configuration...</p>
+                </div>
+            `;
+            
+            fetch(`api/get_template_keys.php?template_id=${templateId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        infoContainer.innerHTML = `
+                            <strong>${data.template_info.template_name}</strong>
+                            ${data.template_info.description ? ` - ${data.template_info.description}` : ''}
+                        `;
+                        
+                        let sectionsHtml = '';
+                        
+                        data.sections.forEach(section => {
+                            sectionsHtml += `
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-folder me-2"></i>
+                                                ${section.section_name}
+                                            </h6>
+                                            <button class="btn btn-sm btn-primary" onclick="addKeyToSection(${section.section_id}, '${section.section_name}')">
+                                                <i class="fas fa-plus me-1"></i>
+                                                Add Key
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="keys-container" id="section_${section.section_id}_keys">
+                                            ${section.keys.length === 0 ? `
+                                                <div class="text-muted text-center py-3">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    No keys defined for this section. Click "Add Key" to start.
+                                                </div>
+                                            ` : ''}
+                                            ${section.keys.map(key => createKeyRowHtml(key)).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        container.innerHTML = sectionsHtml;
+                    } else {
+                        container.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Error loading template configuration: ${data.message}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading template configuration:', error);
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error loading template configuration. Please try again.
+                        </div>
+                    `;
+                });
+        }
+
+        // Create HTML for a key row
+        function createKeyRowHtml(key) {
+            const sourceColor = key.key_source === 'catalog' ? 'bg-primary' : 'bg-success';
+            const sourceIcon = key.key_source === 'catalog' ? 'fa-database' : 'fa-tag';
+            
+            return `
+                <div class="key-row border rounded p-3 mb-2" data-key-id="${key.id}">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-grip-vertical text-muted me-2" style="cursor: move;"></i>
+                                <div>
+                                    <strong>${key.key_name}</strong><br>
+                                    <small class="text-muted">Order: ${key.key_order}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="badge ${sourceColor}">
+                                <i class="fas ${sourceIcon} me-1"></i>
+                                ${key.key_source.charAt(0).toUpperCase() + key.key_source.slice(1)} Data
+                            </span>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTemplateKey(${key.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Add key to section
+        function addKeyToSection(sectionId, sectionName) {
+            currentSectionIdForKey = sectionId;
+            
+            document.getElementById('templateKeyName').value = '';
+            document.getElementById('templateKeySource').value = 'catalog';
+            
+            document.querySelector('#addTemplateKeyModal .modal-title').textContent = `Add Key to ${sectionName}`;
+            
+            new bootstrap.Modal(document.getElementById('addTemplateKeyModal')).show();
+        }
+
+        // Save template key
+        function saveTemplateKey() {
+            const keyName = document.getElementById('templateKeyName').value.trim();
+            const keySource = document.getElementById('templateKeySource').value;
+            
+            if (!keyName) {
+                alert('Please enter a key name');
+                return;
+            }
+            
+            if (!currentTemplateId || !currentSectionIdForKey) {
+                alert('Error: Missing template or section information');
+                return;
+            }
+            
+            const payload = {
+                template_id: currentTemplateId,
+                section_id: currentSectionIdForKey,
+                key_name: keyName,
+                key_source: keySource
+            };
+            
+            fetch('api/add_template_key.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('addTemplateKeyModal')).hide();
+                    loadTemplateConfiguration(currentTemplateId);
+                    console.log('Template key added successfully');
+                } else {
+                    alert('Error adding template key: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error adding template key:', error);
+                alert('Error adding template key. Please try again.');
+            });
+        }
+
+        // Delete template key
+        function deleteTemplateKey(keyId) {
+            if (!confirm('Are you sure you want to delete this key from the template?')) {
+                return;
+            }
+            
+            fetch('api/delete_template_key.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ key_id: keyId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTemplateConfiguration(currentTemplateId);
+                    console.log('Template key deleted successfully');
+                } else {
+                    alert('Error deleting template key: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting template key:', error);
+                alert('Error deleting template key. Please try again.');
+            });
+        }
 
         // Event listeners
         function initializeEventListeners() {
             // Catalog selection
-            document.getElementById('catalogSelect').addEventListener('change', function() {
-                const catalogId = this.value;
-                if (catalogId) {
-                    // Update catalog name field and header
-                    const selectedOption = this.options[this.selectedIndex];
-                    const catalogName = selectedOption.getAttribute('data-catalog-name');
-                    const catalogNumber = selectedOption.getAttribute('data-catalog-number');
-                    
-                    // Update the catalog name input field
-                    const catalogNameField = document.getElementById('catalogName');
-                    catalogNameField.value = catalogName || '';
-                    catalogNameField.readOnly = !!catalogName;
-                    
-                    if (!catalogName) {
-                        catalogNameField.placeholder = 'Enter catalog name for ' + catalogNumber;
-                        catalogNameField.classList.add('border-warning');
+            const catalogSelect = document.getElementById('catalogSelect');
+            if (catalogSelect) {
+                catalogSelect.addEventListener('change', function() {
+                    const catalogId = this.value;
+                    if (catalogId) {
+                        const selectedOption = this.options[this.selectedIndex];
+                        const catalogName = selectedOption.getAttribute('data-catalog-name');
+                        const catalogNumber = selectedOption.getAttribute('data-catalog-number');
+                        
+                        const catalogNameField = document.getElementById('catalogName');
+                        catalogNameField.value = catalogName || '';
+                        catalogNameField.readOnly = !!catalogName;
+                        
+                        if (!catalogName) {
+                            catalogNameField.placeholder = 'Enter catalog name for ' + catalogNumber;
+                            catalogNameField.classList.add('border-warning');
+                        } else {
+                            catalogNameField.classList.remove('border-warning');
+                        }
+                        
+                        loadLots(catalogId);
+                        loadCatalogTemplate(catalogId);
+                        
+                        document.getElementById('loadDataBtn').disabled = false;
+                        document.getElementById('createNewBtn').disabled = false;
+                        document.getElementById('addLotBtn').disabled = false;
                     } else {
+                        const catalogNameField = document.getElementById('catalogName');
+                        catalogNameField.value = '';
+                        catalogNameField.readOnly = true;
+                        catalogNameField.placeholder = 'Enter catalog name';
                         catalogNameField.classList.remove('border-warning');
+                        
+                        document.getElementById('catalogTitle').textContent = 'Select a catalog to begin';
+                        document.getElementById('displayCatalogNumber').textContent = 'Not selected';
+                        document.getElementById('displayLotNumber').textContent = 'Not selected';
+                        document.getElementById('displayTemplate').textContent = 'Not selected';
+                        
+                        document.getElementById('lotSelect').disabled = true;
+                        document.getElementById('loadDataBtn').disabled = true;
+                        document.getElementById('createNewBtn').disabled = true;
+                        document.getElementById('addLotBtn').disabled = true;
+                        
+                        resetSectionsToDefault();
                     }
-                    
-                    loadLots(catalogId);
-                    loadTemplates(); // Load available templates
-                    loadCatalogTemplate(catalogId); // Load catalog's current template
-                    
-                    document.getElementById('templateSelect').disabled = false;
-                    document.getElementById('manageTemplateBtn').disabled = false;
-                    document.getElementById('loadDataBtn').disabled = false;
-                    document.getElementById('createNewBtn').disabled = false;
-                    document.getElementById('addLotBtn').disabled = false;
-                } else {
-                    // Clear and disable everything
-                    const catalogNameField = document.getElementById('catalogName');
-                    catalogNameField.value = '';
-                    catalogNameField.readOnly = true;
-                    catalogNameField.placeholder = 'Enter catalog name';
-                    catalogNameField.classList.remove('border-warning');
-                    
-                    // Reset header to default state
-                    document.getElementById('catalogTitle').textContent = 'Select a catalog to begin';
-                    document.getElementById('displayCatalogNumber').textContent = 'Not selected';
-                    document.getElementById('displayLotNumber').textContent = 'Not selected';
-                    
-                    document.getElementById('lotSelect').disabled = true;
-                    document.getElementById('templateSelect').disabled = true;
-                    document.getElementById('manageTemplateBtn').disabled = true;
-                    document.getElementById('loadDataBtn').disabled = true;
-                    document.getElementById('createNewBtn').disabled = true;
-                    document.getElementById('addLotBtn').disabled = true;
-                    
-                    // Reset sections to default state
-                    resetSectionsToDefault();
-                }
-            });
+                });
+            }
 
             // Catalog name field change
-            document.getElementById('catalogName').addEventListener('blur', function() {
-                const catalogId = document.getElementById('catalogSelect').value;
-                const newCatalogName = this.value.trim();
-                
-                if (catalogId && newCatalogName && !this.readOnly) {
-                    // Clear all data and reset to initial state
-        function clearAllData() {
-            // Confirm action
-            if (confirm('Are you sure you want to clear all data and reset the form? This action cannot be undone.')) {
-                // Reset catalog selection
-                document.getElementById('catalogSelect').selectedIndex = 0;
-                
-                // Reset catalog name field
-                const catalogNameField = document.getElementById('catalogName');
-                catalogNameField.value = '';
-                catalogNameField.readOnly = true;
-                catalogNameField.placeholder = 'Enter catalog name';
-                catalogNameField.classList.remove('border-warning');
-                
-                // Reset lot selection
-                const lotSelect = document.getElementById('lotSelect');
-                lotSelect.innerHTML = '<option value="">Select Lot...</option>';
-                lotSelect.disabled = true;
-                
-                // Reset header to initial state
-                document.getElementById('catalogTitle').textContent = 'Select a catalog to begin';
-                document.getElementById('displayCatalogNumber').textContent = 'Not selected';
-                document.getElementById('displayLotNumber').textContent = 'Not selected';
-                
-                // Reset all sections to default state
-                resetSectionsToDefault();
-                
-                // Disable all action buttons
-                document.getElementById('loadDataBtn').disabled = true;
-                document.getElementById('createNewBtn').disabled = true;
-                document.getElementById('addLotBtn').disabled = true;
-                document.getElementById('previewBtn').disabled = true;
-                document.getElementById('generateBtn').disabled = true;
-                
-                // Clear sections data
-                sectionsData = {};
-                
-                console.log('Data cleared successfully');
+            const catalogName = document.getElementById('catalogName');
+            if (catalogName) {
+                catalogName.addEventListener('blur', function() {
+                    const catalogId = document.getElementById('catalogSelect').value;
+                    const newCatalogName = this.value.trim();
+                    
+                    if (catalogId && newCatalogName && !this.readOnly) {
+                        updateCatalogName(catalogId, newCatalogName);
+                    }
+                });
+            }
+
+            // Add catalog button
+            const addCatalogBtn = document.getElementById('addCatalogBtn');
+            if (addCatalogBtn) {
+                addCatalogBtn.addEventListener('click', function() {
+                    loadTemplatesIntoModal();
+                    new bootstrap.Modal(document.getElementById('addCatalogModal')).show();
+                });
+            }
+
+            // Add lot button
+            const addLotBtn = document.getElementById('addLotBtn');
+            if (addLotBtn) {
+                addLotBtn.addEventListener('click', function() {
+                    const catalogSelect = document.getElementById('catalogSelect');
+                    const selectedOption = catalogSelect.options[catalogSelect.selectedIndex];
+                    const catalogName = document.getElementById('catalogName').value || 'Unnamed Product';
+                    const catalogNumber = selectedOption.getAttribute('data-catalog-number');
+                    document.getElementById('selectedCatalogInfo').value = `${catalogName} (${catalogNumber})`;
+                    new bootstrap.Modal(document.getElementById('addLotModal')).show();
+                });
+            }
+
+            // Save catalog button
+            const saveCatalogBtn = document.getElementById('saveCatalogBtn');
+            if (saveCatalogBtn) {
+                saveCatalogBtn.addEventListener('click', saveNewCatalog);
+            }
+
+            // Save lot button
+            const saveLotBtn = document.getElementById('saveLotBtn');
+            if (saveLotBtn) {
+                saveLotBtn.addEventListener('click', saveNewLot);
+            }
+
+            // Load data button
+            const loadDataBtn = document.getElementById('loadDataBtn');
+            if (loadDataBtn) {
+                loadDataBtn.addEventListener('click', loadData);
+            }
+
+            // Create new CoA button
+            const createNewBtn = document.getElementById('createNewBtn');
+            if (createNewBtn) {
+                createNewBtn.addEventListener('click', createNewCoA);
+            }
+
+            // Clear data button
+            const clearDataBtn = document.getElementById('clearDataBtn');
+            if (clearDataBtn) {
+                clearDataBtn.addEventListener('click', clearAllData);
+            }
+
+            // Save key-value button
+            const saveKeyValueBtn = document.getElementById('saveKeyValueBtn');
+            if (saveKeyValueBtn) {
+                saveKeyValueBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    saveKeyValue();
+                });
+            }
+
+            // Key source change
+            const keySource = document.getElementById('keySource');
+            if (keySource) {
+                keySource.addEventListener('change', function() {
+                    const source = this.value;
+                    loadExistingKeysForSection(source, currentSectionId);
+                });
+            }
+
+            // Generate PDF button
+            const generateBtn = document.getElementById('generateBtn');
+            if (generateBtn) {
+                generateBtn.addEventListener('click', generatePDF);
+            }
+
+            // Preview PDF button
+            const previewBtn = document.getElementById('previewBtn');
+            if (previewBtn) {
+                previewBtn.addEventListener('click', previewPDF);
             }
         }
 
-        // Update catalog name in database
-                    updateCatalogName(catalogId, newCatalogName);
+        // Template-related functions
+        function initializeTemplateHandlers() {
+            const templateSelect = document.getElementById('templateSelect');
+            if (templateSelect) {
+                templateSelect.addEventListener('change', function() {
+                    const templateId = this.value;
+                    const catalogId = document.getElementById('catalogSelect').value;
+                    
+                    if (templateId && catalogId) {
+                        updateCatalogTemplate(catalogId, templateId);
+                    }
+                    
+                    updateTemplateDisplay();
+                });
+            }
+        }
+
+        function loadTemplates() {
+            fetch('api/get_templates.php')
+                .then(response => response.json())
+                .then(data => {
+                    const templateSelect = document.getElementById('templateSelect');
+                    templateSelect.innerHTML = '<option value="">Select Template...</option>';
+                    
+                    if (data.success && data.templates && data.templates.length > 0) {
+                        data.templates.forEach(template => {
+                            const option = document.createElement('option');
+                            option.value = template.id;
+                            option.textContent = template.template_name;
+                            if (template.is_default) {
+                                option.textContent += ' (Default)';
+                                option.selected = true;
+                            }
+                            templateSelect.appendChild(option);
+                        });
+                        
+                        updateTemplateDisplay();
+                    } else {
+                        templateSelect.innerHTML += '<option value="" disabled>No templates found</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading templates:', error);
+                    const templateSelect = document.getElementById('templateSelect');
+                    templateSelect.innerHTML = '<option value="" disabled>Error loading templates</option>';
+                });
+        }
+
+        function loadTemplatesIntoModal() {
+            fetch('api/get_templates.php')
+                .then(response => response.json())
+                .then(data => {
+                    const modalTemplateSelect = document.getElementById('catalogTemplateSelect');
+                    modalTemplateSelect.innerHTML = '<option value="">Use default template</option>';
+                    
+                    if (data.success && data.templates && data.templates.length > 0) {
+                        data.templates.forEach(template => {
+                            const option = document.createElement('option');
+                            option.value = template.id;
+                            option.textContent = template.template_name;
+                            if (template.is_default) {
+                                option.textContent += ' (Default)';
+                            }
+                            modalTemplateSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading templates into modal:', error);
+                });
+        }
+
+        function loadCatalogTemplate(catalogId) {
+            fetch(`api/get_catalog_template.php?catalog_id=${catalogId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.template_id) {
+                        const templateSelect = document.getElementById('templateSelect');
+                        templateSelect.value = data.template_id;
+                        updateTemplateDisplay();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading catalog template:', error);
+                });
+        }
+
+        function updateCatalogTemplate(catalogId, templateId) {
+            fetch('api/update_catalog_template.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    catalog_id: catalogId,
+                    template_id: templateId 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Catalog template updated successfully');
+                } else {
+                    console.error('Error updating catalog template:', data.message);
                 }
+            })
+            .catch(error => {
+                console.error('Error updating catalog template:', error);
             });
+        }
 
-            // Lot selection
-            document.getElementById('lotSelect').addEventListener('change', function() {
-                // No need to update display here anymore since we show it only on Load Data
-            });
-
-            // Add catalog button
-            document.getElementById('addCatalogBtn').addEventListener('click', function() {
-                new bootstrap.Modal(document.getElementById('addCatalogModal')).show();
-            });
-
-            // Add lot button
-            document.getElementById('addLotBtn').addEventListener('click', function() {
-                const catalogSelect = document.getElementById('catalogSelect');
-                const selectedOption = catalogSelect.options[catalogSelect.selectedIndex];
-                const catalogName = document.getElementById('catalogName').value || 'Unnamed Product';
-                const catalogNumber = selectedOption.getAttribute('data-catalog-number');
-                document.getElementById('selectedCatalogInfo').value = `${catalogName} (${catalogNumber})`;
-                new bootstrap.Modal(document.getElementById('addLotModal')).show();
-            });
-
-            // Save catalog button
-            document.getElementById('saveCatalogBtn').addEventListener('click', saveNewCatalog);
-
-            // Save lot button
-            document.getElementById('saveLotBtn').addEventListener('click', saveNewLot);
-
-            // Load data button
-            document.getElementById('loadDataBtn').addEventListener('click', loadData);
-
-            // Create new CoA button
-            document.getElementById('createNewBtn').addEventListener('click', createNewCoA);
-
-            // Clear data button
-            document.getElementById('clearDataBtn').addEventListener('click', clearAllData);
-
-            // Save section button (not needed for fixed sections)
-            // document.getElementById('saveSectionBtn').addEventListener('click', saveNewSection);
-
-            // Save key-value button
-            document.getElementById('saveKeyValueBtn').addEventListener('click', function(e) {
-                e.preventDefault();
-                saveKeyValue();
-            });
-
-            // Key source change
-            document.getElementById('keySource').addEventListener('change', function() {
-                const source = this.value;
-                loadExistingKeysForSection(source, currentSectionId);
-            });
-
-            // Generate PDF button
-            document.getElementById('generateBtn').addEventListener('click', generatePDF);
-
-            // Preview PDF button
-            document.getElementById('previewBtn').addEventListener('click', previewPDF);
+        function updateTemplateDisplay() {
+            const templateSelect = document.getElementById('templateSelect');
+            const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+            const displayTemplate = document.getElementById('displayTemplate');
+            
+            if (selectedOption && selectedOption.value) {
+                displayTemplate.textContent = selectedOption.textContent;
+            } else {
+                displayTemplate.textContent = 'Not selected';
+            }
         }
 
         // Load catalogs from database
@@ -651,7 +1292,6 @@
                     catalogSelect.innerHTML = '<option value="">Select Catalog...</option>';
                     
                     if (data.length === 0) {
-                        // No catalogs exist, show helpful message
                         catalogSelect.innerHTML += '<option value="" disabled>No catalogs found - Click + to add one</option>';
                     } else {
                         data.forEach(catalog => {
@@ -681,7 +1321,6 @@
                     lotSelect.disabled = false;
                     
                     if (data.length === 0) {
-                        // No lots exist for this catalog
                         lotSelect.innerHTML += '<option value="" disabled>No lots found - Click + to add one</option>';
                     } else {
                         data.forEach(lot => {
@@ -699,51 +1338,11 @@
                 });
         }
 
-        // Update catalog name in database
-        function updateCatalogName(catalogId, catalogName) {
-            fetch('api/update_catalog_name.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    catalog_id: catalogId,
-                    catalog_name: catalogName 
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update the option data attribute
-                    const catalogSelect = document.getElementById('catalogSelect');
-                    const selectedOption = catalogSelect.options[catalogSelect.selectedIndex];
-                    selectedOption.setAttribute('data-catalog-name', catalogName);
-                    
-                    // Make field readonly and remove warning border
-                    const catalogNameField = document.getElementById('catalogName');
-                    catalogNameField.readOnly = true;
-                    catalogNameField.classList.remove('border-warning');
-                    
-                    console.log('Catalog name updated successfully');
-                } else {
-                    alert('Error updating catalog name: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Error updating catalog name:', error);
-                alert('Error updating catalog name. Please try again.');
-            });
-        }
-
-        // Load templates (removed since not needed)
-        function loadTemplates() {
-            // Template functionality removed - using fixed sections
-        }
-
         // Save new catalog
         function saveNewCatalog() {
             const catalogName = document.getElementById('newCatalogName').value.trim();
             const catalogNumber = document.getElementById('newCatalogNumber').value.trim();
+            const templateId = document.getElementById('catalogTemplateSelect').value;
             
             if (!catalogName) {
                 alert('Please enter a catalog name');
@@ -755,39 +1354,41 @@
                 return;
             }
 
-            // Send to API
+            const payload = { 
+                catalog_name: catalogName,
+                catalog_number: catalogNumber 
+            };
+            
+            if (templateId) {
+                payload.template_id = parseInt(templateId);
+            }
+
             fetch('api/save_catalog.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    catalog_name: catalogName,
-                    catalog_number: catalogNumber 
-                })
+                body: JSON.stringify(payload)
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Reload catalogs and select the new one
                     loadCatalogs();
                     
-                    // Select the catalog after a brief delay to ensure options are loaded
                     setTimeout(() => {
                         document.getElementById('catalogSelect').value = data.catalog_id;
                         document.getElementById('catalogSelect').dispatchEvent(new Event('change'));
                     }, 100);
                     
-                    // Clear form and close modal
                     document.getElementById('newCatalogName').value = '';
                     document.getElementById('newCatalogNumber').value = '';
+                    document.getElementById('catalogTemplateSelect').value = '';
                     bootstrap.Modal.getInstance(document.getElementById('addCatalogModal')).hide();
                     
-                    // Show appropriate message based on action
                     if (data.action === 'created') {
                         alert('New catalog created successfully!');
                     } else if (data.action === 'updated') {
-                        alert('Catalog name updated successfully!');
+                        alert('Catalog updated successfully!');
                     } else if (data.action === 'existing') {
                         alert('Catalog already exists and has been selected.');
                     }
@@ -816,7 +1417,6 @@
                 return;
             }
 
-            // Send to API
             fetch('api/save_lot.php', {
                 method: 'POST',
                 headers: {
@@ -830,19 +1430,15 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Reload lots and select the new one
                     loadLots(catalogId);
                     
-                    // Select the new lot after a brief delay
                     setTimeout(() => {
                         document.getElementById('lotSelect').value = lotNumber;
                     }, 100);
                     
-                    // Clear form and close modal
                     document.getElementById('newLotNumber').value = '';
                     bootstrap.Modal.getInstance(document.getElementById('addLotModal')).hide();
                     
-                    // Show appropriate message based on action
                     if (data.action === 'created') {
                         alert('New lot created successfully!');
                     } else if (data.action === 'existing') {
@@ -857,6 +1453,109 @@
             .catch(error => {
                 console.error('Error saving lot:', error);
                 alert('Error saving lot. Please try again.');
+            });
+        }
+
+        // Update catalog name in database
+        function updateCatalogName(catalogId, catalogName) {
+            fetch('api/update_catalog_name.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    catalog_id: catalogId,
+                    catalog_name: catalogName 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const catalogSelect = document.getElementById('catalogSelect');
+                    const selectedOption = catalogSelect.options[catalogSelect.selectedIndex];
+                    selectedOption.setAttribute('data-catalog-name', catalogName);
+                    
+                    const catalogNameField = document.getElementById('catalogName');
+                    catalogNameField.readOnly = true;
+                    catalogNameField.classList.remove('border-warning');
+                    
+                    console.log('Catalog name updated successfully');
+                } else {
+                    alert('Error updating catalog name: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error updating catalog name:', error);
+                alert('Error updating catalog name. Please try again.');
+            });
+        }
+
+        // Clear all data and reset to initial state
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data and reset the form? This action cannot be undone.')) {
+                document.getElementById('catalogSelect').selectedIndex = 0;
+                
+                const catalogNameField = document.getElementById('catalogName');
+                catalogNameField.value = '';
+                catalogNameField.readOnly = true;
+                catalogNameField.placeholder = 'Enter catalog name';
+                catalogNameField.classList.remove('border-warning');
+                
+                const lotSelect = document.getElementById('lotSelect');
+                lotSelect.innerHTML = '<option value="">Select Lot...</option>';
+                lotSelect.disabled = true;
+                
+                document.getElementById('catalogTitle').textContent = 'Select a catalog to begin';
+                document.getElementById('displayCatalogNumber').textContent = 'Not selected';
+                document.getElementById('displayLotNumber').textContent = 'Not selected';
+                document.getElementById('displayTemplate').textContent = 'Not selected';
+                
+                resetSectionsToDefault();
+                
+                document.getElementById('loadDataBtn').disabled = true;
+                document.getElementById('createNewBtn').disabled = true;
+                document.getElementById('addLotBtn').disabled = true;
+                document.getElementById('previewBtn').disabled = true;
+                document.getElementById('generateBtn').disabled = true;
+                
+                sectionsData = {};
+                
+                console.log('Data cleared successfully');
+            }
+        }
+
+        // Reset sections to default empty state
+        function resetSectionsToDefault() {
+            const sections = [1, 2, 3];
+            sections.forEach(sectionId => {
+                const container = document.getElementById(`keyValues_${sectionId}`);
+                container.innerHTML = `
+                    <div class="text-muted text-center py-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Select catalog and lot, then click "Load Data" to view content
+                    </div>
+                `;
+                
+                const addButton = container.parentElement.querySelector('.btn-outline-primary');
+                if (addButton) {
+                    addButton.disabled = true;
+                }
+            });
+            
+            sectionsData = {};
+        }
+
+        // Show loading state in sections
+        function showLoadingInSections() {
+            const sections = [1, 2, 3];
+            sections.forEach(sectionId => {
+                const container = document.getElementById(`keyValues_${sectionId}`);
+                container.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-spinner fa-spin me-2"></i>
+                        Loading data...
+                    </div>
+                `;
             });
         }
 
@@ -881,15 +1580,14 @@
                 return;
             }
 
-            // Update header display
             const selectedOption = document.getElementById('catalogSelect').options[document.getElementById('catalogSelect').selectedIndex];
             const catalogNumber = selectedOption.getAttribute('data-catalog-number');
             
             document.getElementById('catalogTitle').textContent = catalogName;
             document.getElementById('displayCatalogNumber').textContent = catalogNumber;
             document.getElementById('displayLotNumber').textContent = lotNumber;
+            updateTemplateDisplay();
 
-            // Clear all sections and show empty state
             const sections = [1, 2, 3];
             sections.forEach(sectionId => {
                 const container = document.getElementById(`keyValues_${sectionId}`);
@@ -900,21 +1598,18 @@
                     </div>
                 `;
                 
-                // Enable add key-value buttons
                 const addButton = container.parentElement.querySelector('.btn-outline-primary');
                 if (addButton) {
                     addButton.disabled = false;
                 }
             });
 
-            // Initialize sections data
             sectionsData = {
                 1: { name: 'Description', keyValues: [] },
                 2: { name: 'Specifications', keyValues: [] },
                 3: { name: 'Preparation and Storage', keyValues: [] }
             };
 
-            // Enable action buttons
             document.getElementById('previewBtn').disabled = false;
             document.getElementById('generateBtn').disabled = false;
             
@@ -937,120 +1632,42 @@
                 return;
             }
 
-            // Update header display with current values
             const selectedOption = document.getElementById('catalogSelect').options[document.getElementById('catalogSelect').selectedIndex];
             const catalogNumber = selectedOption.getAttribute('data-catalog-number');
             
             document.getElementById('catalogTitle').textContent = catalogName;
             document.getElementById('displayCatalogNumber').textContent = catalogNumber;
             document.getElementById('displayLotNumber').textContent = lotNumber || '-';
+            updateTemplateDisplay();
 
-            // Show loading message in sections
             showLoadingInSections();
-
-            // Reset sections to default empty state
-        function resetSectionsToDefault() {
-            const sections = [1, 2, 3];
-            sections.forEach(sectionId => {
-                const container = document.getElementById(`keyValues_${sectionId}`);
-                container.innerHTML = `
-                    <div class="text-muted text-center py-3">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Select catalog and lot, then click "Load Data" to view content
-                    </div>
-                `;
-                
-                // Disable add key-value buttons
-                const addButton = container.parentElement.querySelector('.btn-outline-primary');
-                if (addButton) {
-                    addButton.disabled = true;
-                }
-            });
-            
-            // Reset sections data
-            sectionsData = {};
-        }
-
-        // Show loading state in sections
-        function showLoadingInSections() {
-            const sections = [1, 2, 3];
-            sections.forEach(sectionId => {
-                const container = document.getElementById(`keyValues_${sectionId}`);
-                container.innerHTML = `
-                    <div class="text-center py-3">
-                        <i class="fas fa-spinner fa-spin me-2"></i>
-                        Loading data...
-                    </div>
-                `;
-            });
-        }
-
-        // Load default sections and data
             loadDefaultSections(catalogId, lotNumber);
         }
 
         // Load default sections
         function loadDefaultSections(catalogId, lotNumber) {
-            // Initialize sections data
             sectionsData = {
                 1: { name: 'Description', keyValues: [] },
                 2: { name: 'Specifications', keyValues: [] },
                 3: { name: 'Preparation and Storage', keyValues: [] }
             };
 
-            // Load data for each section
             const sections = [1, 2, 3];
             sections.forEach(sectionId => {
                 loadSectionData(sectionId, catalogId, lotNumber);
             });
 
-            // Enable action buttons
             document.getElementById('previewBtn').disabled = false;
             document.getElementById('generateBtn').disabled = false;
         }
 
-        // Create section element
-        function createSectionElement(sectionName, sectionId = null) {
-            sectionCounter++;
-            const elementId = sectionId || `section_${sectionCounter}`;
-            
-            const sectionHtml = `
-                <div class="section-card" data-section-id="${elementId}">
-                    <div class="section-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <h5 class="mb-0">${sectionName}</h5>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="section-content" id="section_${elementId}">
-                        <div class="key-values-container" id="keyValues_${elementId}">
-                            <!-- Key-value pairs will be loaded here -->
-                        </div>
-                        <div class="mt-3">
-                            <button class="btn btn-sm btn-outline-primary" onclick="addKeyValue('${elementId}')">
-                                <i class="fas fa-plus"></i> Add Key-Value
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('sectionsContainer').insertAdjacentHTML('beforeend', sectionHtml);
-            
-            // Initialize sections data
-            sectionsData[elementId] = { name: sectionName, keyValues: [] };
-        }
-
         // Load section data from database
         function loadSectionData(sectionId, catalogId, lotNumber) {
-            // Build API URL
             let apiUrl = `api/get_section_data.php?catalog_id=${catalogId}`;
             if (lotNumber) {
                 apiUrl += `&lot_number=${lotNumber}`;
             }
             
-            // Fetch data from API
             fetch(apiUrl)
                 .then(response => response.json())
                 .then(data => {
@@ -1059,34 +1676,28 @@
                         return;
                     }
                     
-                    // Handle both old format (direct array) and new format (with debug info)
                     const sectionsArray = Array.isArray(data) ? data : data.sections_data;
                     
                     if (data.debug_info) {
                         console.log('Debug info:', data.debug_info);
                     }
                     
-                    // Find the section data for this sectionId
                     const sectionData = sectionsArray.find(section => section.section_id == sectionId);
                     
                     if (sectionData && sectionData.key_values.length > 0) {
-                        // Clear existing content and add loaded data
                         const container = document.getElementById(`keyValues_${sectionId}`);
                         container.innerHTML = '';
                         
-                        // Add each key-value pair
                         sectionData.key_values.forEach((kv, index) => {
                             const kvId = `kv_${sectionId}_${Date.now()}_${index}`;
                             addKeyValueToSectionFromData(sectionId, kv.key, kv.value, kv.source, kvId, kv.order);
                         });
                         
-                        // Enable add key-value button for this section
                         const addButton = container.parentElement.querySelector('.btn-outline-primary');
                         if (addButton) {
                             addButton.disabled = false;
                         }
                     } else {
-                        // No data found, show empty state but enable add button
                         const container = document.getElementById(`keyValues_${sectionId}`);
                         container.innerHTML = `
                             <div class="text-muted text-center py-3">
@@ -1095,7 +1706,6 @@
                             </div>
                         `;
                         
-                        // Enable add key-value button
                         const addButton = container.parentElement.querySelector('.btn-outline-primary');
                         if (addButton) {
                             addButton.disabled = false;
@@ -1135,7 +1745,6 @@
 
             container.insertAdjacentHTML('beforeend', kvHtml);
             
-            // Update data structure
             if (!sectionsData[sectionId]) {
                 sectionsData[sectionId] = { name: '', keyValues: [] };
             }
@@ -1148,7 +1757,6 @@
                 order: order || sectionsData[sectionId].keyValues.length + 1 
             });
 
-            // Initialize sortable for this container if not already done
             if (!container.classList.contains('sortable-initialized')) {
                 initializeSortableForSection(sectionId);
             }
@@ -1157,42 +1765,17 @@
         // Add key-value pair
         function addKeyValue(sectionId) {
             currentSectionId = sectionId;
-            
-            // Load keys for the current section when modal opens
             loadExistingKeysForSection('catalog', sectionId);
-            
             new bootstrap.Modal(document.getElementById('addKeyValueModal')).show();
-        }
-
-        // Save new section
-        function saveNewSection() {
-            const sectionName = document.getElementById('sectionName').value.trim();
-            
-            if (!sectionName) {
-                alert('Please enter a section name');
-                return;
-            }
-
-            createSectionElement(sectionName);
-            
-            // Clear form and close modal
-            document.getElementById('sectionName').value = '';
-            document.getElementById('sectionDescription').value = '';
-            bootstrap.Modal.getInstance(document.getElementById('addSectionModal')).hide();
         }
 
         // Save key-value pair
         function saveKeyValue() {
-            console.log('saveKeyValue function called'); // Debug log
-            
             const source = document.getElementById('keySource').value;
             const existingKey = document.getElementById('existingKey').value;
             const customKey = document.getElementById('customKey').value.trim();
             const value = document.getElementById('keyValue').value.trim();
 
-            console.log('Form values:', { source, existingKey, customKey, value }); // Debug log
-
-            // Use existing key if selected, otherwise use custom key
             const key = existingKey || customKey;
 
             if (!key || !value) {
@@ -1205,43 +1788,29 @@
                 return;
             }
 
-            console.log('Adding key-value:', { key, value, source, sectionId: currentSectionId }); // Debug log
-
-            // Remove focus from the button before closing modal (fixes ARIA warning)
             document.getElementById('saveKeyValueBtn').blur();
-            
-            // Add to section
             addKeyValueToSection(currentSectionId, key, value, source);
 
-            // Clear form
             document.getElementById('customKey').value = '';
             document.getElementById('keyValue').value = '';
             document.getElementById('existingKey').selectedIndex = 0;
             
-            // Close modal with proper focus management
             const modalElement = document.getElementById('addKeyValueModal');
             const modal = bootstrap.Modal.getInstance(modalElement);
             if (modal) {
-                // Hide modal and then remove focus to prevent ARIA warning
                 modal.hide();
                 
-                // After modal is hidden, ensure no focus issues
                 modalElement.addEventListener('hidden.bs.modal', function(e) {
-                    // Focus back to the add button that opened the modal
                     const addButton = document.querySelector(`[data-section-id="${currentSectionId}"] .btn-outline-primary`);
                     if (addButton) {
                         addButton.focus();
                     }
                 }, { once: true });
             }
-            
-            console.log('Key-value pair added successfully'); // Debug log
         }
 
         // Add key-value to section
         function addKeyValueToSection(sectionId, key, value, source) {
-            console.log('addKeyValueToSection called with:', { sectionId, key, value, source }); // Debug log
-            
             const container = document.getElementById(`keyValues_${sectionId}`);
             if (!container) {
                 console.error('Container not found for section:', sectionId);
@@ -1275,12 +1844,10 @@
 
             container.insertAdjacentHTML('beforeend', kvHtml);
             
-            // Initialize or update data structure
             if (!sectionsData[sectionId]) {
                 sectionsData[sectionId] = { name: '', keyValues: [] };
             }
             
-            // Update data structure
             sectionsData[sectionId].keyValues.push({ 
                 id: kvId, 
                 key, 
@@ -1289,14 +1856,10 @@
                 order: sectionsData[sectionId].keyValues.length + 1 
             });
 
-            // Initialize sortable for this container if not already done
             if (!container.classList.contains('sortable-initialized')) {
                 initializeSortableForSection(sectionId);
             }
             
-            console.log('Key-value pair added to DOM and data structure'); // Debug log
-            
-            // Save to database
             saveKeyValueToDatabase(sectionId, key, value, source);
         }
 
@@ -1318,12 +1881,9 @@
                 source: source
             };
             
-            // Add lot_number if it's lot data
             if (source === 'lot' && lotNumber) {
                 payload.lot_number = lotNumber;
             }
-            
-            console.log('Saving to database:', payload); // Debug log
             
             fetch('api/save_key_value.php', {
                 method: 'POST',
@@ -1367,7 +1927,6 @@
             const container = document.getElementById(`keyValues_${sectionId}`);
             const keyValueElements = container.querySelectorAll('.key-value-row');
             
-            // Build array of new orders
             const keyValueOrders = [];
             const catalogId = document.getElementById('catalogSelect').value;
             const lotNumber = document.getElementById('lotSelect').value;
@@ -1376,15 +1935,12 @@
                 const newOrder = index + 1;
                 const kvId = element.id;
                 
-                // Update the visual order attribute
                 element.setAttribute('data-order', newOrder);
                 
-                // Find the key-value data
                 const keyValue = sectionsData[sectionId].keyValues.find(kv => kv.id === kvId);
                 if (keyValue) {
                     keyValue.order = newOrder;
                     
-                    // Add to update array
                     keyValueOrders.push({
                         key: keyValue.key,
                         source: keyValue.source,
@@ -1393,7 +1949,6 @@
                 }
             });
             
-            // Save to database immediately
             if (keyValueOrders.length > 0 && catalogId) {
                 saveKeyValueOrderToDatabase(catalogId, sectionId, lotNumber, keyValueOrders);
             }
@@ -1419,8 +1974,6 @@
             .then(data => {
                 if (data.success) {
                     console.log(`Order updated for section ${sectionId}: ${data.updated_count} items`);
-                    
-                    // Show subtle feedback
                     showOrderUpdateFeedback(sectionId);
                 } else {
                     console.error('Error updating order:', data.message);
@@ -1437,11 +1990,9 @@
         function showOrderUpdateFeedback(sectionId) {
             const sectionHeader = document.querySelector(`[data-section-id="${sectionId}"] .section-header h5`);
             if (sectionHeader) {
-                // Temporarily add a success indicator
                 const originalText = sectionHeader.textContent;
                 sectionHeader.innerHTML = `${originalText} <i class="fas fa-check text-success ms-2"></i>`;
                 
-                // Remove after 2 seconds
                 setTimeout(() => {
                     sectionHeader.textContent = originalText;
                 }, 2000);
@@ -1450,7 +2001,6 @@
 
         // Update key value when textarea changes
         function updateKeyValue(kvId, newValue) {
-            // Find and update the key-value in data structure
             Object.keys(sectionsData).forEach(sectionId => {
                 const keyValue = sectionsData[sectionId].keyValues.find(kv => kv.id === kvId);
                 if (keyValue) {
@@ -1459,25 +2009,15 @@
             });
         }
 
-        // Remove section
-        function removeSection(sectionId) {
-            // Sections are now fixed, so this function is not needed
-            // Keeping for backward compatibility but it won't be called
-        }
-
         // Remove key-value pair
         function removeKeyValue(kvId) {
-            console.log('removeKeyValue called for:', kvId); // Debug log
-            
             if (!confirm('Are you sure you want to remove this key-value pair?')) {
                 return;
             }
             
-            // Find the key-value data before removing from DOM
             let keyValueData = null;
             let sectionId = null;
             
-            // Search through all sections to find the key-value pair
             Object.keys(sectionsData).forEach(secId => {
                 const keyValue = sectionsData[secId].keyValues.find(kv => kv.id === kvId);
                 if (keyValue) {
@@ -1492,23 +2032,16 @@
                 return;
             }
             
-            console.log('Found key-value to delete:', keyValueData); // Debug log
-            
-            // Remove from DOM
             const element = document.getElementById(kvId);
             if (element) {
                 element.remove();
             }
             
-            // Update data structure
             if (sectionsData[sectionId]) {
                 sectionsData[sectionId].keyValues = sectionsData[sectionId].keyValues.filter(kv => kv.id !== kvId);
             }
             
-            // Delete from database
             deleteKeyValueFromDatabase(sectionId, keyValueData.key, keyValueData.source);
-            
-            console.log('Key-value pair removed from DOM and data structure'); // Debug log
         }
 
         // Delete key-value from database
@@ -1528,12 +2061,9 @@
                 source: source
             };
             
-            // Add lot_number if it's lot data
             if (source === 'lot' && lotNumber) {
                 payload.lot_number = lotNumber;
             }
-            
-            console.log('Deleting from database:', payload); // Debug log
             
             fetch('api/delete_key_value.php', {
                 method: 'POST',
@@ -1566,7 +2096,6 @@
                 return;
             }
 
-            // Build API URL
             let apiUrl = `api/get_existing_keys.php?catalog_id=${catalogId}&section_id=${sectionId}&source=${source}`;
             if (lotNumber && source === 'lot') {
                 apiUrl += `&lot_number=${lotNumber}`;
@@ -1600,7 +2129,6 @@
             const lotNumber = document.getElementById('lotSelect').value;
             const catalogName = document.getElementById('catalogName').value.trim();
             
-            // Validation
             if (!catalogId) {
                 alert('Please select a catalog first');
                 return;
@@ -1616,12 +2144,7 @@
                 return;
             }
 
-            console.log('Generating PDF for:', { catalogId, lotNumber, catalogName });
-
-            // Create URL for PDF generation
             const generateUrl = `api/generate_pdf.php?catalog_id=${catalogId}&lot_number=${encodeURIComponent(lotNumber)}`;
-            
-            // Open in new tab for download
             window.open(generateUrl, '_blank');
         }
 
@@ -1631,7 +2154,6 @@
             const lotNumber = document.getElementById('lotSelect').value;
             const catalogName = document.getElementById('catalogName').value.trim();
             
-            // Validation
             if (!catalogId) {
                 alert('Please select a catalog first');
                 return;
@@ -1647,60 +2169,8 @@
                 return;
             }
 
-            console.log('Previewing PDF for:', { catalogId, lotNumber, catalogName });
-
-            // Create URL for PDF preview
             const previewUrl = `api/preview_pdf.php?catalog_id=${catalogId}&lot_number=${encodeURIComponent(lotNumber)}`;
-            
-            // Open in new tab for preview
             window.open(previewUrl, '_blank');
-        }
-
-        // Load templates
-        function loadTemplates() {
-            fetch('api/get_templates.php')
-                .then(response => response.json())
-                .then(data => {
-                    const templateSelect = document.getElementById('templateSelect');
-                    templateSelect.innerHTML = '<option value="">Select Template...</option>';
-                    
-                    if (data.success && data.templates) {
-                        data.templates.forEach(template => {
-                            const option = document.createElement('option');
-                            option.value = template.id;
-                            option.textContent = template.template_name;
-                            if (template.is_default) {
-                                option.textContent += ' (Default)';
-                            }
-                            templateSelect.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading templates:', error);
-                });
-        }
-
-        // Load catalog's current template
-        function loadCatalogTemplate(catalogId) {
-            // This function will check if the catalog has a template assigned
-            // and select it in the dropdown
-            fetch(`api/get_catalog_template.php?catalog_id=${catalogId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.template_id) {
-                        document.getElementById('templateSelect').value = data.template_id;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading catalog template:', error);
-                });
-        }
-
-        // Preview PDF
-        function previewPDF() {
-            // Similar to generatePDF but opens in new tab
-            alert('Preview functionality will be implemented next');
         }
     </script>
 </body>
