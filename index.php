@@ -22,7 +22,7 @@
             padding: 15px;
         }
         .card-body{
-            padding: 0.5rem;
+            padding: 0.9rem;
         }
         .key-value-row {
             background-color: #ffffff;
@@ -110,7 +110,7 @@
                     </div> -->
                     <div class="card-body">
                         <!-- Template Selection -->
-                        <div class="template-section">
+                        <!-- <div class="template-section">
                             <div class="row">
                                 <div class="col-md-8">
                                     <label for="templateSelect" class="form-label">
@@ -128,10 +128,25 @@
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
 
                         <!-- Catalog and Lot Selection -->
                         <div class="row">
+                            <div class="col-md-3">
+                                <label for="templateSelect" class="form-label">
+                                    <i class="fas fa-file-alt me-1"></i>
+                                    Template
+                                </label>
+                                <div class="input-group">
+                                    <select class="form-select" id="templateSelect">
+                                        <option value="">Loading templates...</option>
+                                    </select>                                    
+                                    <button class="btn btn-outline-primary" type="button" id="manageTemplateBtn">
+                                        <!-- <i class="fas fa-cog me-1"></i> -->
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
                             <div class="col-md-3">
                                 <label for="catalogSelect" class="form-label">Catalog Number</label>
                                 <div class="input-group">
@@ -143,11 +158,11 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="catalogName" class="form-label">Catalog Name</label>
                                 <input type="text" class="form-control" id="catalogName" placeholder="Enter catalog name" readonly>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="lotSelect" class="form-label">Lot Number</label>
                                 <div class="input-group">
                                     <select class="form-select" id="lotSelect" disabled>
@@ -165,7 +180,7 @@
                                     <i class="fas fa-download me-1"></i>
                                     Load Data
                                 </button>
-                                <button class="btn btn-outline-primary me-2" id="createNewBtn" disabled>
+                                <button class="btn btn-outline-primary me-2" id="createNewBtn" disabled hidden>
                                     <i class="fas fa-magic me-1"></i>
                                     Create New CoA
                                 </button>
