@@ -1,5 +1,5 @@
 <?php
-// api/get_section_data.php (FIXED FOR YOUR CURRENT STRUCTURE)
+// api/get_section_data.php (UPDATED FOR TEMPLATE-BASED WORKFLOW)
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
@@ -20,11 +20,24 @@ try {
     // Get database connection
     $conn = getDBConnection();
     
-    // First, check what tables and columns exist
-    $lots_structure = $conn->query("SHOW COLUMNS FROM lots");
-    $lots_columns = [];
-    while ($row = $lots_structure->fetch_assoc()) {
-        $lots_columns[] = $row['Field'];
+    // Get catalog information including template_id
+    $catalog_sql = "SELECT catalog_number, template_id FROM catalogs WHERE id = ?";
+    $catalog_stmt = $conn->prepare($catalog_sql);
+    $catalog_stmt->bind_param("i", $catalog_id);
+    $catalog_stmt->execute();
+    $catalog_result = $catalog_stmt->get_result();
+    
+    if ($catalog_result->num_rows === 0) {
+        throw new Exception('Catalog not found');
+    }
+    
+    $catalog_info = $catalog_result->fetch_assoc();
+    $catalog_number = $catalog_info['catalog_number'];
+    $template_id = $catalog_info['template_id'];
+    $catalog_stmt->close();
+    
+    if (!$template_id) {
+        throw new Exception('No template assigned to this catalog');
     }
     
     $sections_data = [];
@@ -40,99 +53,72 @@ try {
             
             $key_values = [];
             
-            // Get catalog data for this section (this should work)
-            $catalog_sql = "SELECT `key`, `value`, `order`, 'catalog' as source 
-                           FROM catalog_details 
-                           WHERE catalog_id = ? AND section_id = ? 
-                           ORDER BY `order`";
-            $catalog_stmt = $conn->prepare($catalog_sql);
-            $catalog_stmt->bind_param("ii", $catalog_id, $section_id);
-            $catalog_stmt->execute();
-            $catalog_result = $catalog_stmt->get_result();
+            // Get ALL template keys for this section (ordered by key_order)
+            $template_keys_sql = "SELECT key_name, key_source, key_order 
+                                 FROM template_keys 
+                                 WHERE template_id = ? AND section_id = ? 
+                                 ORDER BY key_order";
+            $template_keys_stmt = $conn->prepare($template_keys_sql);
+            $template_keys_stmt->bind_param("ii", $template_id, $section_id);
+            $template_keys_stmt->execute();
+            $template_keys_result = $template_keys_stmt->get_result();
             
-            while ($row = $catalog_result->fetch_assoc()) {
+            // Get existing catalog data for this section
+            $catalog_data = [];
+            $catalog_data_sql = "SELECT `key`, `value` 
+                                FROM catalog_details 
+                                WHERE catalog_number = ? AND section_id = ?";
+            $catalog_data_stmt = $conn->prepare($catalog_data_sql);
+            $catalog_data_stmt->bind_param("si", $catalog_number, $section_id);
+            $catalog_data_stmt->execute();
+            $catalog_data_result = $catalog_data_stmt->get_result();
+            
+            while ($row = $catalog_data_result->fetch_assoc()) {
+                $catalog_data[$row['key']] = $row['value'];
+            }
+            $catalog_data_stmt->close();
+            
+            // Get existing lot data for this section (if lot_number provided)
+            $lot_data = [];
+            if (!empty($lot_number)) {
+                $lot_data_sql = "SELECT `key`, `value` 
+                                FROM lot_details 
+                                WHERE lot_number = ? AND section_id = ?";
+                $lot_data_stmt = $conn->prepare($lot_data_sql);
+                $lot_data_stmt->bind_param("si", $lot_number, $section_id);
+                $lot_data_stmt->execute();
+                $lot_data_result = $lot_data_stmt->get_result();
+                
+                while ($row = $lot_data_result->fetch_assoc()) {
+                    $lot_data[$row['key']] = $row['value'];
+                }
+                $lot_data_stmt->close();
+            }
+            
+            // Process each template key and combine with existing data
+            while ($template_key = $template_keys_result->fetch_assoc()) {
+                $key_name = $template_key['key_name'];
+                $key_source = $template_key['key_source'];
+                $key_order = $template_key['key_order'];
+                
+                // Get the value based on the key source
+                $value = '';
+                if ($key_source === 'catalog' && isset($catalog_data[$key_name])) {
+                    $value = $catalog_data[$key_name];
+                } elseif ($key_source === 'lot' && isset($lot_data[$key_name])) {
+                    $value = $lot_data[$key_name];
+                }
+                
                 $key_values[] = [
-                    'key' => $row['key'],
-                    'value' => $row['value'],
-                    'order' => $row['order'],
-                    'source' => $row['source']
+                    'key' => $key_name,
+                    'value' => $value,
+                    'source' => $key_source,
+                    'order' => $key_order
                 ];
             }
-            $catalog_stmt->close();
+            $template_keys_stmt->close();
             
-            // Handle lot data based on current table structure
-            if (!empty($lot_number)) {
-                if (in_array('key', $lots_columns) && in_array('value', $lots_columns) && in_array('section_id', $lots_columns)) {
-                    // Old mixed structure - lots table has key-value pairs
-                    $lot_sql = "SELECT `key`, `value`, `order`, 'lot' as source 
-                               FROM lots 
-                               WHERE catalog_id = ? AND section_id = ? AND lot_number = ? 
-                               ORDER BY `order`";
-                    $lot_stmt = $conn->prepare($lot_sql);
-                    $lot_stmt->bind_param("iis", $catalog_id, $section_id, $lot_number);
-                    $lot_stmt->execute();
-                    $lot_result = $lot_stmt->get_result();
-                    
-                    while ($row = $lot_result->fetch_assoc()) {
-                        $key_values[] = [
-                            'key' => $row['key'],
-                            'value' => $row['value'],
-                            'order' => $row['order'],
-                            'source' => $row['source']
-                        ];
-                    }
-                    $lot_stmt->close();
-                    
-                } else {
-                    // Current structure - lots table only has metadata
-                    // Check if lot_details table exists
-                    $lot_details_check = $conn->query("SHOW TABLES LIKE 'lot_details'");
-                    
-                    if ($lot_details_check->num_rows > 0) {
-                        // New structure - get lot_id and query lot_details
-                        $lot_id_sql = "SELECT id FROM lots WHERE catalog_id = ? AND lot_number = ?";
-                        $lot_id_stmt = $conn->prepare($lot_id_sql);
-                        $lot_id_stmt->bind_param("is", $catalog_id, $lot_number);
-                        $lot_id_stmt->execute();
-                        $lot_id_result = $lot_id_stmt->get_result();
-                        
-                        if ($lot_id_result->num_rows > 0) {
-                            $lot_row = $lot_id_result->fetch_assoc();
-                            $lot_id = $lot_row['id'];
-                            
-                            $lot_details_sql = "SELECT `key`, `value`, `order`, 'lot' as source 
-                                               FROM lot_details 
-                                               WHERE lot_id = ? AND section_id = ? 
-                                               ORDER BY `order`";
-                            $lot_details_stmt = $conn->prepare($lot_details_sql);
-                            $lot_details_stmt->bind_param("ii", $lot_id, $section_id);
-                            $lot_details_stmt->execute();
-                            $lot_details_result = $lot_details_stmt->get_result();
-                            
-                            while ($row = $lot_details_result->fetch_assoc()) {
-                                $key_values[] = [
-                                    'key' => $row['key'],
-                                    'value' => $row['value'],
-                                    'order' => $row['order'],
-                                    'source' => $row['source']
-                                ];
-                            }
-                            $lot_details_stmt->close();
-                        }
-                        $lot_id_stmt->close();
-                    } else {
-                        // No lot_details table and lots table has no key-value pairs
-                        // This means lot-specific data doesn't exist yet
-                        // Just return catalog data (which we already have)
-                    }
-                }
-            }
-            
-            // Sort by order
-            usort($key_values, function($a, $b) {
-                return $a['order'] - $b['order'];
-            });
-            
+            // Add section to response (even if no keys - will show "no keys defined" message)
             $sections_data[] = [
                 'section_id' => $section_id,
                 'section_name' => $section_name,
@@ -146,9 +132,11 @@ try {
         'sections_data' => $sections_data,
         'debug_info' => [
             'catalog_id' => $catalog_id,
+            'catalog_number' => $catalog_number,
+            'template_id' => $template_id,
             'lot_number' => $lot_number,
-            'lots_table_columns' => $lots_columns,
-            'lot_details_table_exists' => ($conn->query("SHOW TABLES LIKE 'lot_details'")->num_rows > 0)
+            'total_sections' => count($sections_data),
+            'total_keys' => array_sum(array_map(function($s) { return count($s['key_values']); }, $sections_data))
         ]
     ]);
     
@@ -160,7 +148,8 @@ try {
         'message' => 'Error fetching section data: ' . $e->getMessage(),
         'debug_info' => [
             'catalog_id' => isset($catalog_id) ? $catalog_id : 'not set',
-            'lot_number' => isset($lot_number) ? $lot_number : 'not set'
+            'lot_number' => isset($lot_number) ? $lot_number : 'not set',
+            'template_id' => isset($template_id) ? $template_id : 'not retrieved'
         ]
     ]);
 } finally {

@@ -19,17 +19,20 @@
             cursor: pointer;
         }
         .section-content {
-            padding: 15px;
+            padding: 8px;
+            padding-top:0px;
+            padding-bottom: 0px;
+            overflow: auto;
         }
         .card-body{
             padding: 0.9rem;
         }
         .key-value-row {
             background-color: #ffffff;
-            border: 1px solid #e9ecef;
+            /* border: 1px solid #e9ecef; */
             border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 10px;
+            padding: 5px;
+            margin-bottom: 0px;
             cursor: move;
             transition: all 0.2s ease;
         }
@@ -84,6 +87,54 @@
             border-radius: 5px;
             padding: 10px;
             margin-bottom: 15px;
+        }
+        
+        /* New template-based workflow styles */
+        .value-display {
+            min-height: 40px;
+            padding: 8px 0;
+        }
+        .value-text {
+            display: block;
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            min-height: 38px;
+            word-wrap: break-word;
+        }
+        .value-edit textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .edit-btn, .save-btn, .cancel-btn {
+            margin-left: 5px;
+            min-width: 70px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .key-value-row .col-md-4,
+            .key-value-row .col-md-6,
+            .key-value-row .col-md-2 {
+                margin-bottom: 10px;
+            }
+            .edit-btn, .save-btn, .cancel-btn {
+                width: 100%;
+                margin-left: 0;
+                margin-bottom: 5px;
+            }
+        }
+        
+        /* Success feedback */
+        .btn-outline-success {
+            color: #28a745;
+            border-color: #28a745;
+        }
+        .btn-outline-success:hover {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
         }
     </style>
 </head>
@@ -180,7 +231,7 @@
                                     <i class="fas fa-download me-1"></i>
                                     Load Data
                                 </button>
-                                <button class="btn btn-outline-primary me-2" id="createNewBtn" disabled hidden>
+                                <button class="btn btn-outline-primary me-2" id="createNewBtn" disabled>
                                     <i class="fas fa-magic me-1"></i>
                                     Create New CoA
                                 </button>
@@ -231,15 +282,10 @@
                 </div>
                 <div class="section-content" id="section_1">
                     <div class="key-values-container" id="keyValues_1">
-                        <!-- <div class="text-muted text-center py-3">
+                        <div class="text-muted text-center py-3">
                             <i class="fas fa-info-circle me-2"></i>
-                            Select catalog and lot, then click "Load Data" to view content
-                        </div> -->
-                    </div>
-                    <div class="mt-3">
-                        <button class="btn btn-sm btn-outline-primary" onclick="addKeyValue('1')" disabled>
-                            <i class="fas fa-plus"></i> Add Key-Value
-                        </button>
+                            Select catalog and lot, then click "Load Data" to view template
+                        </div>
                     </div>
                 </div>
             </div>
@@ -255,15 +301,10 @@
                 </div>
                 <div class="section-content" id="section_2">
                     <div class="key-values-container" id="keyValues_2">
-                        <!-- <div class="text-muted text-center py-3">
+                        <div class="text-muted text-center py-3">
                             <i class="fas fa-info-circle me-2"></i>
-                            Select catalog and lot, then click "Load Data" to view content
-                        </div> -->
-                    </div>
-                    <div class="mt-3">
-                        <button class="btn btn-sm btn-outline-primary" onclick="addKeyValue('2')" disabled>
-                            <i class="fas fa-plus"></i> Add Key-Value
-                        </button>
+                            Select catalog and lot, then click "Load Data" to view template
+                        </div>
                     </div>
                 </div>
             </div>
@@ -279,15 +320,10 @@
                 </div>
                 <div class="section-content" id="section_3">
                     <div class="key-values-container" id="keyValues_3">
-                        <!-- <div class="text-muted text-center py-3">
+                        <div class="text-muted text-center py-3">
                             <i class="fas fa-info-circle me-2"></i>
-                            Select catalog and lot, then click "Load Data" to view content
-                        </div> -->
-                    </div>
-                    <div class="mt-3">
-                        <button class="btn btn-sm btn-outline-primary" onclick="addKeyValue('3')" disabled>
-                            <i class="fas fa-plus"></i> Add Key-Value
-                        </button>
+                            Select catalog and lot, then click "Load Data" to view template
+                        </div>
                     </div>
                 </div>
             </div>
@@ -368,45 +404,6 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="saveLotBtn">Add Lot</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Key-Value Modal -->
-    <div class="modal fade" id="addKeyValueModal" tabindex="-1" aria-labelledby="addKeyValueModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addKeyValueModalLabel">Add Key-Value Pair</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="keySource" class="form-label">Data Source</label>
-                        <select class="form-select" id="keySource">
-                            <option value="catalog">Catalog Data</option>
-                            <option value="lot">Lot Data</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="existingKeyGroup">
-                        <label for="existingKey" class="form-label">Select Existing Key</label>
-                        <select class="form-select" id="existingKey">
-                            <option value="">Select existing key...</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="customKeyGroup">
-                        <label for="customKey" class="form-label">Or Enter New Key</label>
-                        <input type="text" class="form-control" id="customKey" placeholder="Enter new key name">
-                    </div>
-                    <div class="mb-3">
-                        <label for="keyValue" class="form-label">Value</label>
-                        <textarea class="form-control" id="keyValue" rows="3" placeholder="Enter value"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveKeyValueBtn">Add Key-Value</button>
                 </div>
             </div>
         </div>
@@ -502,12 +499,6 @@
                                 </div>
                                 <div id="preparationKeysContainer"></div>
                             </div>
-
-                            <div class="row">
-
-                            </div>
-
-
 
                             <div class="row">
                                 <div class="col-md-6">
@@ -644,10 +635,15 @@
         let sectionCounter = 0;
         let currentTemplateId = null;
         let currentSectionIdForKey = null;
+        let currentCatalogId = null;
+        let currentLotNumber = null;
+        let templateKeys = {}; // Store template structure
+        let catalogData = {}; // Store catalog values
+        let lotData = {}; // Store lot values
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Initializing application...');
+            console.log('Initializing template-based workflow...');
             
             loadCatalogs();
             loadTemplates();
@@ -667,6 +663,495 @@
             
             console.log('Application initialized successfully');
         });
+
+        // Load data based on selections
+        function loadData() {
+            const catalogId = document.getElementById('catalogSelect').value;
+            const lotNumber = document.getElementById('lotSelect').value;
+            const catalogName = document.getElementById('catalogName').value.trim();
+            
+            if (!catalogId) {
+                alert('Please select a catalog first');
+                return;
+            }
+            
+            if (!catalogName) {
+                alert('Please enter a catalog name');
+                return;
+            }
+            
+            if (!lotNumber) {
+                alert('Please select a lot number');
+                return;
+            }
+
+            currentCatalogId = catalogId;
+            currentLotNumber = lotNumber;
+            
+            const selectedOption = document.getElementById('catalogSelect').options[document.getElementById('catalogSelect').selectedIndex];
+            const catalogNumber = selectedOption.getAttribute('data-catalog-number');
+            
+            // Update header display
+            document.getElementById('catalogTitle').textContent = catalogName;
+            document.getElementById('displayCatalogNumber').textContent = catalogNumber;
+            document.getElementById('displayLotNumber').textContent = lotNumber;
+            updateTemplateDisplay();
+
+            showLoadingInSections();
+            loadTemplateBasedData(catalogId, lotNumber);
+        }
+
+        // Load template-based data
+        function loadTemplateBasedData(catalogId, lotNumber) {
+            // First get the catalog's template
+            fetch(`api/get_catalog_template.php?catalog_id=${catalogId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.template_id) {
+                        currentTemplateId = data.template_id;
+                        return loadTemplateStructure(data.template_id);
+                    } else {
+                        throw new Error('No template found for this catalog');
+                    }
+                })
+                .then(() => {
+                    return loadExistingData(catalogId, lotNumber);
+                })
+                .then(() => {
+                    displayTemplateBasedSections();
+                    document.getElementById('previewBtn').disabled = false;
+                    document.getElementById('generateBtn').disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error loading template-based data:', error);
+                    showErrorInSections(error.message);
+                });
+        }
+
+        // Load template structure
+        function loadTemplateStructure(templateId) {
+            return fetch(`api/get_template_keys.php?template_id=${templateId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        templateKeys = {};
+                        data.sections.forEach(section => {
+                            templateKeys[section.section_id] = {
+                                section_name: section.section_name,
+                                keys: section.keys.sort((a, b) => a.key_order - b.key_order)
+                            };
+                        });
+                        console.log('Template structure loaded:', templateKeys);
+                    } else {
+                        throw new Error('Failed to load template structure: ' + data.message);
+                    }
+                });
+        }
+
+        // Load existing data for catalog and lot
+        function loadExistingData(catalogId, lotNumber) {
+            return fetch(`api/get_section_data.php?catalog_id=${catalogId}&lot_number=${lotNumber}`)
+                .then(response => response.json())
+                .then(data => {
+                    catalogData = {};
+                    lotData = {};
+                    
+                    if (data.sections_data) {
+                        data.sections_data.forEach(section => {
+                            const sectionId = section.section_id;
+                            catalogData[sectionId] = {};
+                            lotData[sectionId] = {};
+                            
+                            section.key_values.forEach(kv => {
+                                if (kv.source === 'catalog') {
+                                    catalogData[sectionId][kv.key] = kv.value;
+                                } else if (kv.source === 'lot') {
+                                    lotData[sectionId][kv.key] = kv.value;
+                                }
+                            });
+                        });
+                    }
+                    
+                    console.log('Existing data loaded - Catalog:', catalogData, 'Lot:', lotData);
+                });
+        }
+
+        // Display template-based sections
+        function displayTemplateBasedSections() {
+            const sections = [1, 2, 3];
+            
+            sections.forEach(sectionId => {
+                const container = document.getElementById(`keyValues_${sectionId}`);
+                container.innerHTML = '';
+                
+                if (templateKeys[sectionId] && templateKeys[sectionId].keys.length > 0) {
+                    templateKeys[sectionId].keys.forEach(key => {
+                        const keyName = key.key_name;
+                        const keySource = key.key_source;
+                        
+                        // Get existing value
+                        let existingValue = '';
+                        if (keySource === 'catalog' && catalogData[sectionId] && catalogData[sectionId][keyName]) {
+                            existingValue = catalogData[sectionId][keyName];
+                        } else if (keySource === 'lot' && lotData[sectionId] && lotData[sectionId][keyName]) {
+                            existingValue = lotData[sectionId][keyName];
+                        }
+                        
+                        addTemplateKeyToSection(sectionId, keyName, keySource, existingValue);
+                    });
+                } else {
+                    container.innerHTML = `
+                        <div class="text-muted text-center py-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No keys defined in template for this section
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // Add template key to section
+        function addTemplateKeyToSection(sectionId, keyName, keySource, value) {
+            const container = document.getElementById(`keyValues_${sectionId}`);
+            const kvId = `kv_${sectionId}_${keyName.replace(/\s+/g, '_')}`;
+            
+            const sourceColor = keySource === 'catalog' ? 'bg-primary' : 'bg-success';
+            const sourceIcon = keySource === 'catalog' ? 'fa-database' : 'fa-tag';
+            
+            const kvHtml = `
+                <div class="key-value-row" id="${kvId}" data-key="${keyName}" data-source="${keySource}">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label">${keyName}</label>
+                            <!--<span class="badge ${sourceColor} source-badge ms-2">
+                                <i class="fas ${sourceIcon} me-1"></i>
+                                ${keySource.charAt(0).toUpperCase() + keySource.slice(1)}
+                            </span>-->
+                            <strong class="ms-2">${keySource.charAt(0).toUpperCase() + keySource.slice(1)}</strong>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="value-display" id="value_${kvId}">
+                                ${value ? `<span class="value-text">${value}</span>` : '<span class="text-muted">No value set</span>'}
+                            </div>
+                            <div class="value-edit" id="edit_${kvId}" style="display: none;">
+                                <textarea class="form-control" rows="2" id="textarea_${kvId}">${value}</textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-sm btn-outline-secondary edit-btn" onclick="editKeyValue('${kvId}')" id="editBtn_${kvId}">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-sm btn-success save-btn" onclick="saveKeyValue('${kvId}')" id="saveBtn_${kvId}" style="display: none;">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                            <button class="btn btn-sm btn-secondary cancel-btn" onclick="cancelEdit('${kvId}')" id="cancelBtn_${kvId}" style="display: none;">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', kvHtml);
+        }
+
+        // Edit key value
+        function editKeyValue(kvId) {
+            const displayDiv = document.getElementById(`value_${kvId}`);
+            const editDiv = document.getElementById(`edit_${kvId}`);
+            const editBtn = document.getElementById(`editBtn_${kvId}`);
+            const saveBtn = document.getElementById(`saveBtn_${kvId}`);
+            const cancelBtn = document.getElementById(`cancelBtn_${kvId}`);
+            
+            displayDiv.style.display = 'none';
+            editDiv.style.display = 'block';
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'inline-block';
+            cancelBtn.style.display = 'inline-block';
+            
+            // Focus on textarea
+            const textarea = document.getElementById(`textarea_${kvId}`);
+            textarea.focus();
+        }
+
+        // Cancel edit
+        function cancelEdit(kvId) {
+            const displayDiv = document.getElementById(`value_${kvId}`);
+            const editDiv = document.getElementById(`edit_${kvId}`);
+            const editBtn = document.getElementById(`editBtn_${kvId}`);
+            const saveBtn = document.getElementById(`saveBtn_${kvId}`);
+            const cancelBtn = document.getElementById(`cancelBtn_${kvId}`);
+            const textarea = document.getElementById(`textarea_${kvId}`);
+            
+            // Reset textarea to original value
+            const keyValueRow = document.getElementById(kvId);
+            const keyName = keyValueRow.getAttribute('data-key');
+            const keySource = keyValueRow.getAttribute('data-source');
+            const sectionId = kvId.split('_')[1];
+            
+            let originalValue = '';
+            if (keySource === 'catalog' && catalogData[sectionId] && catalogData[sectionId][keyName]) {
+                originalValue = catalogData[sectionId][keyName];
+            } else if (keySource === 'lot' && lotData[sectionId] && lotData[sectionId][keyName]) {
+                originalValue = lotData[sectionId][keyName];
+            }
+            
+            textarea.value = originalValue;
+            
+            displayDiv.style.display = 'block';
+            editDiv.style.display = 'none';
+            editBtn.style.display = 'inline-block';
+            saveBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+        }
+
+        // Save key value
+        function saveKeyValue(kvId) {
+            const keyValueRow = document.getElementById(kvId);
+            const keyName = keyValueRow.getAttribute('data-key');
+            const keySource = keyValueRow.getAttribute('data-source');
+            const sectionId = kvId.split('_')[1];
+            const textarea = document.getElementById(`textarea_${kvId}`);
+            const newValue = textarea.value.trim();
+            
+            // Save to database
+            const payload = {
+                catalog_id: currentCatalogId,
+                section_id: sectionId,
+                key: keyName,
+                value: newValue,
+                source: keySource
+            };
+            
+            if (keySource === 'lot') {
+                payload.lot_number = currentLotNumber;
+            }
+            
+            // Show saving state
+            const saveBtn = document.getElementById(`saveBtn_${kvId}`);
+            const originalSaveText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+            
+            fetch('api/save_key_value_pair.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update local data
+                    if (keySource === 'catalog') {
+                        if (!catalogData[sectionId]) catalogData[sectionId] = {};
+                        catalogData[sectionId][keyName] = newValue;
+                    } else if (keySource === 'lot') {
+                        if (!lotData[sectionId]) lotData[sectionId] = {};
+                        lotData[sectionId][keyName] = newValue;
+                    }
+                    
+                    // Update display
+                    const displayDiv = document.getElementById(`value_${kvId}`);
+                    displayDiv.innerHTML = newValue ? `<span class="value-text">${newValue}</span>` : '<span class="text-muted">No value set</span>';
+                    
+                    // Exit edit mode
+                    const editDiv = document.getElementById(`edit_${kvId}`);
+                    const editBtn = document.getElementById(`editBtn_${kvId}`);
+                    const cancelBtn = document.getElementById(`cancelBtn_${kvId}`);
+                    
+                    displayDiv.style.display = 'block';
+                    editDiv.style.display = 'none';
+                    editBtn.style.display = 'inline-block';
+                    saveBtn.style.display = 'none';
+                    cancelBtn.style.display = 'none';
+                    
+                    console.log('Value saved successfully:', data);
+                    
+                    // Show success feedback
+                    showSaveSuccessFeedback(kvId);
+                    
+                } else {
+                    alert('Error saving value: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error saving value:', error);
+                alert('Error saving value. Please try again.');
+            })
+            .finally(() => {
+                // Reset button
+                saveBtn.innerHTML = originalSaveText;
+                saveBtn.disabled = false;
+            });
+        }
+
+        // Show save success feedback
+        function showSaveSuccessFeedback(kvId) {
+            const editBtn = document.getElementById(`editBtn_${kvId}`);
+            const originalContent = editBtn.innerHTML;
+            
+            editBtn.innerHTML = '<i class="fas fa-check text-success"></i> Saved';
+            editBtn.classList.add('btn-outline-success');
+            editBtn.classList.remove('btn-outline-secondary');
+            
+            setTimeout(() => {
+                editBtn.innerHTML = originalContent;
+                editBtn.classList.remove('btn-outline-success');
+                editBtn.classList.add('btn-outline-secondary');
+            }, 2000);
+        }
+
+        // Show loading state in sections
+        function showLoadingInSections() {
+            const sections = [1, 2, 3];
+            sections.forEach(sectionId => {
+                const container = document.getElementById(`keyValues_${sectionId}`);
+                container.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-spinner fa-spin me-2"></i>
+                        Loading template data...
+                    </div>
+                `;
+            });
+        }
+
+        // Show error in sections
+        function showErrorInSections(errorMessage) {
+            const sections = [1, 2, 3];
+            sections.forEach(sectionId => {
+                const container = document.getElementById(`keyValues_${sectionId}`);
+                container.innerHTML = `
+                    <div class="text-center py-3 text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error: ${errorMessage}
+                    </div>
+                `;
+            });
+        }
+
+        // Create new CoA (with template structure)
+        function createNewCoA() {
+            const catalogId = document.getElementById('catalogSelect').value;
+            const lotNumber = document.getElementById('lotSelect').value;
+            const catalogName = document.getElementById('catalogName').value.trim();
+            
+            if (!catalogId) {
+                alert('Please select a catalog first');
+                return;
+            }
+            
+            if (!catalogName) {
+                alert('Please enter a catalog name');
+                return;
+            }
+            
+            if (!lotNumber) {
+                alert('Please select or create a lot first');
+                return;
+            }
+
+            currentCatalogId = catalogId;
+            currentLotNumber = lotNumber;
+            
+            const selectedOption = document.getElementById('catalogSelect').options[document.getElementById('catalogSelect').selectedIndex];
+            const catalogNumber = selectedOption.getAttribute('data-catalog-number');
+            
+            // Update header display
+            document.getElementById('catalogTitle').textContent = catalogName;
+            document.getElementById('displayCatalogNumber').textContent = catalogNumber;
+            document.getElementById('displayLotNumber').textContent = lotNumber;
+            updateTemplateDisplay();
+
+            showLoadingInSections();
+            
+            // Load template structure and create empty CoA
+            fetch(`api/get_catalog_template.php?catalog_id=${catalogId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.template_id) {
+                        currentTemplateId = data.template_id;
+                        return loadTemplateStructure(data.template_id);
+                    } else {
+                        throw new Error('No template found for this catalog');
+                    }
+                })
+                .then(() => {
+                    // Initialize empty data
+                    catalogData = {};
+                    lotData = {};
+                    
+                    displayTemplateBasedSections();
+                    document.getElementById('previewBtn').disabled = false;
+                    document.getElementById('generateBtn').disabled = false;
+                    
+                    alert('New CoA template loaded! You can now edit the values for each key.');
+                })
+                .catch(error => {
+                    console.error('Error creating new CoA:', error);
+                    showErrorInSections(error.message);
+                });
+        }
+
+        // Clear all data and reset to initial state
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data and reset the form?')) {
+                // Reset form selections
+                document.getElementById('catalogSelect').selectedIndex = 0;
+                
+                const catalogNameField = document.getElementById('catalogName');
+                catalogNameField.value = '';
+                catalogNameField.readOnly = true;
+                catalogNameField.placeholder = 'Enter catalog name';
+                catalogNameField.classList.remove('border-warning');
+                
+                const lotSelect = document.getElementById('lotSelect');
+                lotSelect.innerHTML = '<option value="">Select Lot...</option>';
+                lotSelect.disabled = true;
+                
+                // Reset header display
+                document.getElementById('catalogTitle').textContent = 'Select a catalog to begin';
+                document.getElementById('displayCatalogNumber').textContent = 'Not selected';
+                document.getElementById('displayLotNumber').textContent = 'Not selected';
+                document.getElementById('displayTemplate').textContent = 'Not selected';
+                
+                // Reset sections
+                resetSectionsToDefault();
+                
+                // Reset global variables
+                currentCatalogId = null;
+                currentLotNumber = null;
+                currentTemplateId = null;
+                templateKeys = {};
+                catalogData = {};
+                lotData = {};
+                sectionsData = {};
+                
+                // Disable buttons
+                document.getElementById('loadDataBtn').disabled = true;
+                document.getElementById('createNewBtn').disabled = true;
+                document.getElementById('addLotBtn').disabled = true;
+                document.getElementById('previewBtn').disabled = true;
+                document.getElementById('generateBtn').disabled = true;
+                
+                console.log('Data cleared successfully');
+            }
+        }
+
+        // Reset sections to default empty state
+        function resetSectionsToDefault() {
+            const sections = [1, 2, 3];
+            sections.forEach(sectionId => {
+                const container = document.getElementById(`keyValues_${sectionId}`);
+                container.innerHTML = `
+                    <div class="text-muted text-center py-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Select catalog and lot, then click "Load Data" to view template
+                    </div>
+                `;
+            });
+        }
 
         // Template Management Functions
         function initializeTemplateManagementHandlers() {
@@ -1272,24 +1757,6 @@
                 clearDataBtn.addEventListener('click', clearAllData);
             }
 
-            // Save key-value button
-            const saveKeyValueBtn = document.getElementById('saveKeyValueBtn');
-            if (saveKeyValueBtn) {
-                saveKeyValueBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    saveKeyValue();
-                });
-            }
-
-            // Key source change
-            const keySource = document.getElementById('keySource');
-            if (keySource) {
-                keySource.addEventListener('change', function() {
-                    const source = this.value;
-                    loadExistingKeysForSection(source, currentSectionId);
-                });
-            }
-
             // Generate PDF button
             const generateBtn = document.getElementById('generateBtn');
             if (generateBtn) {
@@ -1633,639 +2100,6 @@
             });
         }
 
-        // Clear all data and reset to initial state
-        function clearAllData() {
-            if (confirm('Are you sure you want to clear all data and reset the form? This action cannot be undone.')) {
-                document.getElementById('catalogSelect').selectedIndex = 0;
-                
-                const catalogNameField = document.getElementById('catalogName');
-                catalogNameField.value = '';
-                catalogNameField.readOnly = true;
-                catalogNameField.placeholder = 'Enter catalog name';
-                catalogNameField.classList.remove('border-warning');
-                
-                const lotSelect = document.getElementById('lotSelect');
-                lotSelect.innerHTML = '<option value="">Select Lot...</option>';
-                lotSelect.disabled = true;
-                
-                document.getElementById('catalogTitle').textContent = 'Select a catalog to begin';
-                document.getElementById('displayCatalogNumber').textContent = 'Not selected';
-                document.getElementById('displayLotNumber').textContent = 'Not selected';
-                document.getElementById('displayTemplate').textContent = 'Not selected';
-                
-                resetSectionsToDefault();
-                
-                document.getElementById('loadDataBtn').disabled = true;
-                document.getElementById('createNewBtn').disabled = true;
-                document.getElementById('addLotBtn').disabled = true;
-                document.getElementById('previewBtn').disabled = true;
-                document.getElementById('generateBtn').disabled = true;
-                
-                sectionsData = {};
-                
-                console.log('Data cleared successfully');
-            }
-        }
-
-        // Reset sections to default empty state
-        function resetSectionsToDefault() {
-            const sections = [1, 2, 3];
-            sections.forEach(sectionId => {
-                const container = document.getElementById(`keyValues_${sectionId}`);
-                container.innerHTML = `
-                    <div class="text-muted text-center py-3">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Select catalog and lot, then click "Load Data" to view content
-                    </div>
-                `;
-                
-                const addButton = container.parentElement.querySelector('.btn-outline-primary');
-                if (addButton) {
-                    addButton.disabled = true;
-                }
-            });
-            
-            sectionsData = {};
-        }
-
-        // Show loading state in sections
-        function showLoadingInSections() {
-            const sections = [1, 2, 3];
-            sections.forEach(sectionId => {
-                const container = document.getElementById(`keyValues_${sectionId}`);
-                container.innerHTML = `
-                    <div class="text-center py-3">
-                        <i class="fas fa-spinner fa-spin me-2"></i>
-                        Loading data...
-                    </div>
-                `;
-            });
-        }
-
-        // Create new CoA (with blank template)
-        function createNewCoA() {
-            const catalogId = document.getElementById('catalogSelect').value;
-            const lotNumber = document.getElementById('lotSelect').value;
-            const catalogName = document.getElementById('catalogName').value.trim();
-            
-            if (!catalogId) {
-                alert('Please select a catalog first');
-                return;
-            }
-            
-            if (!catalogName) {
-                alert('Please enter a catalog name');
-                return;
-            }
-            
-            if (!lotNumber) {
-                alert('Please select or create a lot first');
-                return;
-            }
-
-            const selectedOption = document.getElementById('catalogSelect').options[document.getElementById('catalogSelect').selectedIndex];
-            const catalogNumber = selectedOption.getAttribute('data-catalog-number');
-            
-            document.getElementById('catalogTitle').textContent = catalogName;
-            document.getElementById('displayCatalogNumber').textContent = catalogNumber;
-            document.getElementById('displayLotNumber').textContent = lotNumber;
-            updateTemplateDisplay();
-
-            const sections = [1, 2, 3];
-            sections.forEach(sectionId => {
-                const container = document.getElementById(`keyValues_${sectionId}`);
-                container.innerHTML = `
-                    <div class="text-muted text-center py-3">
-                        <i class="fas fa-plus-circle me-2"></i>
-                        Ready for new data - Click "Add Key-Value" to start
-                    </div>
-                `;
-                
-                const addButton = container.parentElement.querySelector('.btn-outline-primary');
-                if (addButton) {
-                    addButton.disabled = false;
-                }
-            });
-
-            sectionsData = {
-                1: { name: 'Description', keyValues: [] },
-                2: { name: 'Specifications', keyValues: [] },
-                3: { name: 'Preparation and Storage', keyValues: [] }
-            };
-
-            document.getElementById('previewBtn').disabled = false;
-            document.getElementById('generateBtn').disabled = false;
-            
-            alert('New CoA template ready! You can now add key-value pairs to each section.');
-        }
-
-        // Load data based on selections
-        function loadData() {
-            const catalogId = document.getElementById('catalogSelect').value;
-            const lotNumber = document.getElementById('lotSelect').value;
-            const catalogName = document.getElementById('catalogName').value.trim();
-            
-            if (!catalogId) {
-                alert('Please select a catalog first');
-                return;
-            }
-            
-            if (!catalogName) {
-                alert('Please enter a catalog name');
-                return;
-            }
-
-            const selectedOption = document.getElementById('catalogSelect').options[document.getElementById('catalogSelect').selectedIndex];
-            const catalogNumber = selectedOption.getAttribute('data-catalog-number');
-            
-            document.getElementById('catalogTitle').textContent = catalogName;
-            document.getElementById('displayCatalogNumber').textContent = catalogNumber;
-            document.getElementById('displayLotNumber').textContent = lotNumber || '-';
-            updateTemplateDisplay();
-
-            showLoadingInSections();
-            loadDefaultSections(catalogId, lotNumber);
-        }
-
-        // Load default sections
-        function loadDefaultSections(catalogId, lotNumber) {
-            sectionsData = {
-                1: { name: 'Description', keyValues: [] },
-                2: { name: 'Specifications', keyValues: [] },
-                3: { name: 'Preparation and Storage', keyValues: [] }
-            };
-
-            const sections = [1, 2, 3];
-            sections.forEach(sectionId => {
-                loadSectionData(sectionId, catalogId, lotNumber);
-            });
-
-            document.getElementById('previewBtn').disabled = false;
-            document.getElementById('generateBtn').disabled = false;
-        }
-
-        // Load section data from database
-        function loadSectionData(sectionId, catalogId, lotNumber) {
-            let apiUrl = `api/get_section_data.php?catalog_id=${catalogId}`;
-            if (lotNumber) {
-                apiUrl += `&lot_number=${lotNumber}`;
-            }
-            
-            fetch(apiUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        console.error('Error loading section data:', data.message);
-                        return;
-                    }
-                    
-                    const sectionsArray = Array.isArray(data) ? data : data.sections_data;
-                    
-                    if (data.debug_info) {
-                        console.log('Debug info:', data.debug_info);
-                    }
-                    
-                    const sectionData = sectionsArray.find(section => section.section_id == sectionId);
-                    
-                    if (sectionData && sectionData.key_values.length > 0) {
-                        const container = document.getElementById(`keyValues_${sectionId}`);
-                        container.innerHTML = '';
-                        
-                        sectionData.key_values.forEach((kv, index) => {
-                            const kvId = `kv_${sectionId}_${Date.now()}_${index}`;
-                            addKeyValueToSectionFromData(sectionId, kv.key, kv.value, kv.source, kvId, kv.order);
-                        });
-                        
-                        const addButton = container.parentElement.querySelector('.btn-outline-primary');
-                        if (addButton) {
-                            addButton.disabled = false;
-                        }
-                    } else {
-                        const container = document.getElementById(`keyValues_${sectionId}`);
-                        container.innerHTML = `
-                            <div class="text-muted text-center py-3">
-                                <i class="fas fa-database me-2"></i>
-                                No data found for this section
-                            </div>
-                        `;
-                        
-                        const addButton = container.parentElement.querySelector('.btn-outline-primary');
-                        if (addButton) {
-                            addButton.disabled = false;
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading section data:', error);
-                });
-        }
-
-        // Add key-value to section from loaded data
-        function addKeyValueToSectionFromData(sectionId, key, value, source, kvId, order) {
-            const container = document.getElementById(`keyValues_${sectionId}`);
-            
-            const kvHtml = `
-                <div class="key-value-row" id="${kvId}" data-order="${order}">
-                    <div class="row align-items-center">
-                        <div class="col-md-1">
-                            <i class="fas fa-grip-vertical drag-handle"></i>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">${key}</label>
-                            <span class="badge bg-secondary source-badge ms-2">${source}</span>
-                        </div>
-                        <div class="col-md-7">
-                            <textarea class="form-control" rows="2" onchange="updateKeyValue('${kvId}', this.value)">${value}</textarea>
-                        </div>
-                        <div class="col-md-1">
-                            <button class="btn btn-sm btn-outline-danger" onclick="removeKeyValue('${kvId}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            container.insertAdjacentHTML('beforeend', kvHtml);
-            
-            if (!sectionsData[sectionId]) {
-                sectionsData[sectionId] = { name: '', keyValues: [] };
-            }
-            
-            sectionsData[sectionId].keyValues.push({ 
-                id: kvId, 
-                key, 
-                value, 
-                source, 
-                order: order || sectionsData[sectionId].keyValues.length + 1 
-            });
-
-            if (!container.classList.contains('sortable-initialized')) {
-                initializeSortableForSection(sectionId);
-            }
-        }
-
-        // Add key-value pair
-        function addKeyValue(sectionId) {
-            currentSectionId = sectionId;
-            loadExistingKeysForSection('catalog', sectionId);
-            new bootstrap.Modal(document.getElementById('addKeyValueModal')).show();
-        }
-
-        // Save key-value pair
-        function saveKeyValue() {
-            const source = document.getElementById('keySource').value;
-            const existingKey = document.getElementById('existingKey').value;
-            const customKey = document.getElementById('customKey').value.trim();
-            const value = document.getElementById('keyValue').value.trim();
-
-            const key = existingKey || customKey;
-
-            if (!key || !value) {
-                alert('Please provide both key and value');
-                return;
-            }
-
-            if (!currentSectionId) {
-                alert('No section selected');
-                return;
-            }
-
-            document.getElementById('saveKeyValueBtn').blur();
-            addKeyValueToSection(currentSectionId, key, value, source);
-
-            document.getElementById('customKey').value = '';
-            document.getElementById('keyValue').value = '';
-            document.getElementById('existingKey').selectedIndex = 0;
-            
-            const modalElement = document.getElementById('addKeyValueModal');
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            if (modal) {
-                modal.hide();
-                
-                modalElement.addEventListener('hidden.bs.modal', function(e) {
-                    const addButton = document.querySelector(`[data-section-id="${currentSectionId}"] .btn-outline-primary`);
-                    if (addButton) {
-                        addButton.focus();
-                    }
-                }, { once: true });
-            }
-        }
-
-        // Add key-value to section
-        function addKeyValueToSection(sectionId, key, value, source) {
-            const container = document.getElementById(`keyValues_${sectionId}`);
-            if (!container) {
-                console.error('Container not found for section:', sectionId);
-                alert('Error: Section container not found');
-                return;
-            }
-            
-            const kvId = `kv_${Date.now()}`;
-            
-            const kvHtml = `
-                <div class="key-value-row" id="${kvId}" data-order="${sectionsData[sectionId] ? sectionsData[sectionId].keyValues.length + 1 : 1}">
-                    <div class="row align-items-center">
-                        <div class="col-md-1">
-                            <i class="fas fa-grip-vertical drag-handle"></i>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">${key}</label>
-                            <span class="badge bg-secondary source-badge ms-2">${source}</span>
-                        </div>
-                        <div class="col-md-7">
-                            <textarea class="form-control" rows="2" onchange="updateKeyValue('${kvId}', this.value)">${value}</textarea>
-                        </div>
-                        <div class="col-md-1">
-                            <button class="btn btn-sm btn-outline-danger" onclick="removeKeyValue('${kvId}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            container.insertAdjacentHTML('beforeend', kvHtml);
-            
-            if (!sectionsData[sectionId]) {
-                sectionsData[sectionId] = { name: '', keyValues: [] };
-            }
-            
-            sectionsData[sectionId].keyValues.push({ 
-                id: kvId, 
-                key, 
-                value, 
-                source, 
-                order: sectionsData[sectionId].keyValues.length + 1 
-            });
-
-            if (!container.classList.contains('sortable-initialized')) {
-                initializeSortableForSection(sectionId);
-            }
-            
-            saveKeyValueToDatabase(sectionId, key, value, source);
-        }
-
-        // Save key-value to database
-        function saveKeyValueToDatabase(sectionId, key, value, source) {
-            const catalogId = document.getElementById('catalogSelect').value;
-            const lotNumber = document.getElementById('lotSelect').value;
-            
-            if (!catalogId) {
-                console.error('No catalog selected');
-                return;
-            }
-            
-            const payload = {
-                catalog_id: catalogId,
-                section_id: sectionId,
-                key: key,
-                value: value,
-                source: source
-            };
-            
-            if (source === 'lot' && lotNumber) {
-                payload.lot_number = lotNumber;
-            }
-            
-            fetch('api/save_key_value.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Key-value saved to database successfully:', data);
-                } else {
-                    console.error('Error saving to database:', data.message);
-                    alert('Error saving to database: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Network error saving key-value:', error);
-                alert('Network error saving to database. Please try again.');
-            });
-        }
-
-        // Initialize sortable functionality for a section
-        function initializeSortableForSection(sectionId) {
-            const container = document.getElementById(`keyValues_${sectionId}`);
-            
-            new Sortable(container, {
-                animation: 150,
-                handle: '.drag-handle',
-                ghostClass: 'sortable-ghost',
-                onEnd: function(evt) {
-                    updateKeyValueOrderInDatabase(sectionId);
-                }
-            });
-            container.classList.add('sortable-initialized');
-        }
-
-        // Update key-value order after drag and drop
-        function updateKeyValueOrderInDatabase(sectionId) {
-            const container = document.getElementById(`keyValues_${sectionId}`);
-            const keyValueElements = container.querySelectorAll('.key-value-row');
-            
-            const keyValueOrders = [];
-            const catalogId = document.getElementById('catalogSelect').value;
-            const lotNumber = document.getElementById('lotSelect').value;
-            
-            keyValueElements.forEach((element, index) => {
-                const newOrder = index + 1;
-                const kvId = element.id;
-                
-                element.setAttribute('data-order', newOrder);
-                
-                const keyValue = sectionsData[sectionId].keyValues.find(kv => kv.id === kvId);
-                if (keyValue) {
-                    keyValue.order = newOrder;
-                    
-                    keyValueOrders.push({
-                        key: keyValue.key,
-                        source: keyValue.source,
-                        order: newOrder
-                    });
-                }
-            });
-            
-            if (keyValueOrders.length > 0 && catalogId) {
-                saveKeyValueOrderToDatabase(catalogId, sectionId, lotNumber, keyValueOrders);
-            }
-        }
-
-        // Save key-value order to database
-        function saveKeyValueOrderToDatabase(catalogId, sectionId, lotNumber, keyValueOrders) {
-            const payload = {
-                catalog_id: catalogId,
-                section_id: sectionId,
-                lot_number: lotNumber || '',
-                key_value_orders: keyValueOrders
-            };
-            
-            fetch('api/save_key_value_order.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log(`Order updated for section ${sectionId}: ${data.updated_count} items`);
-                    showOrderUpdateFeedback(sectionId);
-                } else {
-                    console.error('Error updating order:', data.message);
-                    alert('Error saving new order: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error saving order:', error);
-                alert('Error saving new order. Please try again.');
-            });
-        }
-
-        // Show visual feedback that order was saved
-        function showOrderUpdateFeedback(sectionId) {
-            const sectionHeader = document.querySelector(`[data-section-id="${sectionId}"] .section-header h5`);
-            if (sectionHeader) {
-                const originalText = sectionHeader.textContent;
-                sectionHeader.innerHTML = `${originalText} <i class="fas fa-check text-success ms-2"></i>`;
-                
-                setTimeout(() => {
-                    sectionHeader.textContent = originalText;
-                }, 2000);
-            }
-        }
-
-        // Update key value when textarea changes
-        function updateKeyValue(kvId, newValue) {
-            Object.keys(sectionsData).forEach(sectionId => {
-                const keyValue = sectionsData[sectionId].keyValues.find(kv => kv.id === kvId);
-                if (keyValue) {
-                    keyValue.value = newValue;
-                }
-            });
-        }
-
-        // Remove key-value pair
-        function removeKeyValue(kvId) {
-            if (!confirm('Are you sure you want to remove this key-value pair?')) {
-                return;
-            }
-            
-            let keyValueData = null;
-            let sectionId = null;
-            
-            Object.keys(sectionsData).forEach(secId => {
-                const keyValue = sectionsData[secId].keyValues.find(kv => kv.id === kvId);
-                if (keyValue) {
-                    keyValueData = keyValue;
-                    sectionId = secId;
-                }
-            });
-            
-            if (!keyValueData) {
-                console.error('Key-value data not found for ID:', kvId);
-                alert('Error: Could not find key-value data to delete');
-                return;
-            }
-            
-            const element = document.getElementById(kvId);
-            if (element) {
-                element.remove();
-            }
-            
-            if (sectionsData[sectionId]) {
-                sectionsData[sectionId].keyValues = sectionsData[sectionId].keyValues.filter(kv => kv.id !== kvId);
-            }
-            
-            deleteKeyValueFromDatabase(sectionId, keyValueData.key, keyValueData.source);
-        }
-
-        // Delete key-value from database
-        function deleteKeyValueFromDatabase(sectionId, key, source) {
-            const catalogId = document.getElementById('catalogSelect').value;
-            const lotNumber = document.getElementById('lotSelect').value;
-            
-            if (!catalogId) {
-                console.error('No catalog selected');
-                return;
-            }
-            
-            const payload = {
-                catalog_id: catalogId,
-                section_id: sectionId,
-                key: key,
-                source: source
-            };
-            
-            if (source === 'lot' && lotNumber) {
-                payload.lot_number = lotNumber;
-            }
-            
-            fetch('api/delete_key_value.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Key-value deleted from database successfully:', data);
-                } else {
-                    console.error('Error deleting from database:', data.message);
-                    alert('Error deleting from database: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Network error deleting key-value:', error);
-                alert('Network error deleting from database. Please try again.');
-            });
-        }
-
-        // Load existing keys for specific section
-        function loadExistingKeysForSection(source, sectionId) {
-            const catalogId = document.getElementById('catalogSelect').value;
-            const lotNumber = document.getElementById('lotSelect').value;
-            
-            if (!catalogId || !sectionId) {
-                return;
-            }
-
-            let apiUrl = `api/get_existing_keys.php?catalog_id=${catalogId}&section_id=${sectionId}&source=${source}`;
-            if (lotNumber && source === 'lot') {
-                apiUrl += `&lot_number=${lotNumber}`;
-            }
-
-            fetch(apiUrl)
-                .then(response => response.json())
-                .then(data => {
-                    const existingKey = document.getElementById('existingKey');
-                    existingKey.innerHTML = '<option value="">Select existing key...</option>';
-                    
-                    if (data.success && data.keys && data.keys.length > 0) {
-                        data.keys.forEach(keyName => {
-                            const option = document.createElement('option');
-                            option.value = keyName;
-                            option.textContent = keyName;
-                            existingKey.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading existing keys:', error);
-                    const existingKey = document.getElementById('existingKey');
-                    existingKey.innerHTML = '<option value="">Error loading keys</option>';
-                });
-        }
-
         function addKeyField(button) {
             const section = button.dataset.section;
             const containerId = `${section}KeysContainer`;
@@ -2294,31 +2128,6 @@
             const keyRow = button.closest('.key-row');
             if (keyRow) {
                 keyRow.remove();
-            }
-        }
-
-        // Function to retrieve keys for a given section
-        function getKeysForSection(section) {
-            const containerId = `${section}KeysContainer`;
-            const container = document.getElementById(containerId);
-            const keys = [];
-
-            if (container) {
-                const keyRows = container.querySelectorAll('.key-row');
-
-                keyRows.forEach(row => {
-                    const nameInput = row.querySelector('.key-name');
-                    const typeSelect = row.querySelector('.key-type');
-
-                    if (nameInput && typeSelect) {
-                        const keyName = nameInput.value.trim();
-                        const keyType = typeSelect.value;
-
-                        if (keyName) {
-                            keys.push({ name: keyName, type: keyType });
-                        }
-                    }
-                });
             }
         }
 
