@@ -8,18 +8,18 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .section-card {
-            border: 1px solid #dee2e6;
+            /* border: 1px solid #dee2e6; */
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         .section-header {
             background-color: #f8f9fa;
-            padding: 15px;
+            padding: 10px;
             border-bottom: 1px solid #dee2e6;
             cursor: pointer;
         }
         .section-content {
-            padding: 20px;
+            padding: 15px;
         }
         .key-value-row {
             background-color: #ffffff;
@@ -99,12 +99,12 @@
         <div class="row mb-2">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header bg-primary text-white">
+                    <!-- <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">
                             <i class="fas fa-cog me-2"></i>
                             Configuration
                         </h5>
-                    </div>
+                    </div> -->
                     <div class="card-body">
                         <!-- Template Selection -->
                         <div class="template-section">
@@ -213,10 +213,10 @@
                 </div>
                 <div class="section-content" id="section_1">
                     <div class="key-values-container" id="keyValues_1">
-                        <div class="text-muted text-center py-3">
+                        <!-- <div class="text-muted text-center py-3">
                             <i class="fas fa-info-circle me-2"></i>
                             Select catalog and lot, then click "Load Data" to view content
-                        </div>
+                        </div> -->
                     </div>
                     <div class="mt-3">
                         <button class="btn btn-sm btn-outline-primary" onclick="addKeyValue('1')" disabled>
@@ -237,10 +237,10 @@
                 </div>
                 <div class="section-content" id="section_2">
                     <div class="key-values-container" id="keyValues_2">
-                        <div class="text-muted text-center py-3">
+                        <!-- <div class="text-muted text-center py-3">
                             <i class="fas fa-info-circle me-2"></i>
                             Select catalog and lot, then click "Load Data" to view content
-                        </div>
+                        </div> -->
                     </div>
                     <div class="mt-3">
                         <button class="btn btn-sm btn-outline-primary" onclick="addKeyValue('2')" disabled>
@@ -261,10 +261,10 @@
                 </div>
                 <div class="section-content" id="section_3">
                     <div class="key-values-container" id="keyValues_3">
-                        <div class="text-muted text-center py-3">
+                        <!-- <div class="text-muted text-center py-3">
                             <i class="fas fa-info-circle me-2"></i>
                             Select catalog and lot, then click "Load Data" to view content
-                        </div>
+                        </div> -->
                     </div>
                     <div class="mt-3">
                         <button class="btn btn-sm btn-outline-primary" onclick="addKeyValue('3')" disabled>
@@ -276,13 +276,13 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="row mt-4 mb-5">
+        <div class="row mt-2 mb-3">
             <div class="col-12 text-center">
-                <button class="btn btn-primary btn-lg me-3" id="previewBtn" disabled>
+                <button class="btn btn-primary me-3" id="previewBtn" disabled>
                     <i class="fas fa-eye me-2"></i>
                     Preview PDF
                 </button>
-                <button class="btn btn-success btn-lg" id="generateBtn" disabled>
+                <button class="btn btn-success" id="generateBtn" disabled>
                     <i class="fas fa-file-pdf me-2"></i>
                     Generate PDF
                 </button>
