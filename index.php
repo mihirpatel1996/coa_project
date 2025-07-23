@@ -21,6 +21,9 @@
         .section-content {
             padding: 15px;
         }
+        .card-body{
+            padding: 0.5rem;
+        }
         .key-value-row {
             background-color: #ffffff;
             border: 1px solid #e9ecef;
