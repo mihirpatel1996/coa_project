@@ -13,7 +13,7 @@
             margin-bottom: 10px;
         }
         .section-header {
-            background-color: #f8f9fa;
+            /* background-color: #f8f9fa; */
             padding: 10px;
             border-bottom: 1px solid #dee2e6;
             cursor: pointer;
@@ -821,7 +821,7 @@
             const kvHtml = `
                 <div class="key-value-row" id="${kvId}" data-key="${keyName}" data-source="${keySource}">
                     <div class="row align-items-center">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">${keyName}</label>
                             <!--<span class="badge ${sourceColor} source-badge ms-2">
                                 <i class="fas ${sourceIcon} me-1"></i>

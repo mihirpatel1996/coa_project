@@ -1,5 +1,5 @@
 <?php
-// api/save_lot.php (FIXED FOR CURRENT STRUCTURE)
+// api/save_lot.php (UPDATED FOR TEMPLATE SUPPORT)
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
@@ -36,8 +36,8 @@ try {
     // Get database connection
     $conn = getDBConnection();
     
-    // Check if catalog exists
-    $catalog_check_sql = "SELECT id FROM catalogs WHERE id = ?";
+    // Get catalog information including template_id
+    $catalog_check_sql = "SELECT id, template_id FROM catalogs WHERE id = ?";
     $catalog_stmt = $conn->prepare($catalog_check_sql);
     $catalog_stmt->bind_param("i", $catalog_id);
     $catalog_stmt->execute();
@@ -47,92 +47,51 @@ try {
         throw new Exception('Catalog does not exist');
     }
     
-    // Check current lots table structure to determine correct approach
-    $structure_check = $conn->query("SHOW COLUMNS FROM lots");
-    $columns = [];
-    while ($row = $structure_check->fetch_assoc()) {
-        $columns[] = $row['Field'];
+    $catalog_info = $catalog_result->fetch_assoc();
+    $template_id = $catalog_info['template_id'];
+    $catalog_stmt->close();
+    
+    if (!$template_id) {
+        throw new Exception('Catalog does not have a template assigned');
     }
     
     // Check if lot already exists
-    if (in_array('lot_number', $columns)) {
-        // Lots table has lot_number column (metadata structure)
-        $lot_check_sql = "SELECT id FROM lots WHERE catalog_id = ? AND lot_number = ?";
-        $lot_stmt = $conn->prepare($lot_check_sql);
-        $lot_stmt->bind_param("is", $catalog_id, $lot_number);
-        $lot_stmt->execute();
-        $lot_result = $lot_stmt->get_result();
-        
-        if ($lot_result->num_rows > 0) {
-            // Lot already exists
-            $existing_lot = $lot_result->fetch_assoc();
-            echo json_encode([
-                'success' => true,
-                'lot_id' => $existing_lot['id'],
-                'message' => 'Lot already exists and is ready for use',
-                'action' => 'existing'
-            ]);
-        } else {
-            // Create new lot (metadata only)
-            $insert_sql = "INSERT INTO lots (catalog_id, lot_number) VALUES (?, ?)";
-            $insert_stmt = $conn->prepare($insert_sql);
-            $insert_stmt->bind_param("is", $catalog_id, $lot_number);
-            
-            if ($insert_stmt->execute()) {
-                $lot_id = $conn->insert_id;
-                echo json_encode([
-                    'success' => true,
-                    'lot_id' => $lot_id,
-                    'message' => 'Lot created successfully',
-                    'action' => 'created'
-                ]);
-            } else {
-                throw new Exception('Failed to create lot record');
-            }
-            
-            $insert_stmt->close();
-        }
-        $lot_stmt->close();
-        
-    } else if (in_array('section_id', $columns) && in_array('key', $columns)) {
-        // Old mixed structure - create key-value record
-        $lot_check_sql = "SELECT id FROM lots WHERE catalog_id = ? AND lot_number = ? LIMIT 1";
-        $lot_stmt = $conn->prepare($lot_check_sql);
-        $lot_stmt->bind_param("is", $catalog_id, $lot_number);
-        $lot_stmt->execute();
-        $lot_result = $lot_stmt->get_result();
-        
-        if ($lot_result->num_rows > 0) {
-            echo json_encode([
-                'success' => true,
-                'message' => 'Lot already exists and is ready for use',
-                'action' => 'existing'
-            ]);
-        } else {
-            // Create placeholder record in Description section
-            $insert_sql = "INSERT INTO lots (catalog_id, section_id, lot_number, `key`, `value`, `order`) VALUES (?, 1, ?, 'Lot Number', ?, 1)";
-            $insert_stmt = $conn->prepare($insert_sql);
-            $insert_stmt->bind_param("iss", $catalog_id, $lot_number, $lot_number);
-            
-            if ($insert_stmt->execute()) {
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Lot created successfully',
-                    'action' => 'created'
-                ]);
-            } else {
-                throw new Exception('Failed to create lot record');
-            }
-            
-            $insert_stmt->close();
-        }
-        $lot_stmt->close();
-        
-    } else {
-        throw new Exception('Unexpected lots table structure. Please check database schema.');
-    }
+    $lot_check_sql = "SELECT id FROM lots WHERE catalog_id = ? AND lot_number = ?";
+    $lot_stmt = $conn->prepare($lot_check_sql);
+    $lot_stmt->bind_param("is", $catalog_id, $lot_number);
+    $lot_stmt->execute();
+    $lot_result = $lot_stmt->get_result();
     
-    $catalog_stmt->close();
+    if ($lot_result->num_rows > 0) {
+        // Lot already exists
+        $existing_lot = $lot_result->fetch_assoc();
+        echo json_encode([
+            'success' => true,
+            'lot_id' => $existing_lot['id'],
+            'message' => 'Lot already exists and is ready for use',
+            'action' => 'existing'
+        ]);
+    } else {
+        // Create new lot with template_id from catalog
+        $insert_sql = "INSERT INTO lots (catalog_id, lot_number, template_id) VALUES (?, ?, ?)";
+        $insert_stmt = $conn->prepare($insert_sql);
+        $insert_stmt->bind_param("isi", $catalog_id, $lot_number, $template_id);
+        
+        if ($insert_stmt->execute()) {
+            $lot_id = $conn->insert_id;
+            echo json_encode([
+                'success' => true,
+                'lot_id' => $lot_id,
+                'message' => 'Lot created successfully',
+                'action' => 'created'
+            ]);
+        } else {
+            throw new Exception('Failed to create lot record: ' . $insert_stmt->error);
+        }
+        
+        $insert_stmt->close();
+    }
+    $lot_stmt->close();
     
 } catch (Exception $e) {
     // Return error response
@@ -141,7 +100,9 @@ try {
         'success' => false,
         'message' => $e->getMessage(),
         'debug_info' => [
-            'available_columns' => isset($columns) ? $columns : 'unknown'
+            'catalog_id' => isset($catalog_id) ? $catalog_id : 'not set',
+            'lot_number' => isset($lot_number) ? $lot_number : 'not set',
+            'template_id' => isset($template_id) ? $template_id : 'not retrieved'
         ]
     ]);
 } finally {
