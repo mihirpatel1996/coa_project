@@ -25,6 +25,7 @@ try {
     $template_name = isset($input['template_name']) ? trim($input['template_name']) : '';
     $description = isset($input['description']) ? trim($input['description']) : '';
     $is_default = isset($input['is_default']) ? (bool)$input['is_default'] : false;
+    $initial_keys = isset($input['initial_keys']) ? $input['initial_keys'] : [];
     
     if (empty($template_name)) {
         throw new Exception('Template name is required');
@@ -57,6 +58,7 @@ try {
     // Create new template (NO DEFAULT KEYS - starts empty)
     $insert_sql = "INSERT INTO templates (template_name, description, is_default) VALUES (?, ?, ?)";
     $insert_stmt = $conn->prepare($insert_sql);
+
     $insert_stmt->bind_param("ssi", $template_name, $description, $is_default);
     
     if ($insert_stmt->execute()) {
@@ -64,6 +66,20 @@ try {
         
         // Commit transaction
         $conn->commit();
+
+        // Insert initial keys
+        foreach ($initial_keys as $section => $keys) {
+            foreach ($keys as $key) {
+                $key_name = $key['name'];
+                $key_type = $key['type'];
+                $section_id = $key['section_id'];
+
+                $insert_key_sql = "INSERT INTO template_keys (template_id, section_id, key_name, key_source) VALUES (?, ?, ?, ?)";
+                $insert_key_stmt = $conn->prepare($insert_key_sql);
+                $insert_key_stmt->bind_param("iiss", $template_id, $section_id, $key_name, $key_type);
+                $insert_key_stmt->execute();
+            }
+        }
         $conn->autocommit(true);
         
         echo json_encode([

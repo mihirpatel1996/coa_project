@@ -1,5 +1,5 @@
 <?php
-// api/save_key_value.php
+// api/save_key_value_pair.php (UPDATED FOR CURRENT STRUCTURE)
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
@@ -45,89 +45,139 @@ try {
         throw new Exception('Value is required');
     }
     
-    if (!in_array($source, ['catalog', 'lot', 'custom'])) {
-        throw new Exception('Valid source is required (catalog, lot, or custom)');
+    if (!in_array($source, ['catalog', 'lot'])) {
+        throw new Exception('Valid source is required (catalog or lot)');
     }
     
     // Get database connection
     $conn = getDBConnection();
     
-    if ($source === 'catalog' || $source === 'custom') {
-        // Get next order for catalog details
-        $order_sql = "SELECT COALESCE(MAX(`order`), 0) + 1 as next_order FROM catalog_details WHERE catalog_id = ? AND section_id = ?";
-        $order_stmt = $conn->prepare($order_sql);
-        $order_stmt->bind_param("ii", $catalog_id, $section_id);
-        $order_stmt->execute();
-        $order_result = $order_stmt->get_result();
-        $next_order = $order_result->fetch_assoc()['next_order'];
-        $order_stmt->close();
+    // Get catalog information
+    $catalog_sql = "SELECT catalog_number, template_id FROM catalogs WHERE id = ?";
+    $catalog_stmt = $conn->prepare($catalog_sql);
+    $catalog_stmt->bind_param("i", $catalog_id);
+    $catalog_stmt->execute();
+    $catalog_result = $catalog_stmt->get_result();
+    
+    if ($catalog_result->num_rows === 0) {
+        throw new Exception('Catalog not found');
+    }
+    
+    $catalog_info = $catalog_result->fetch_assoc();
+    $catalog_number = $catalog_info['catalog_number'];
+    $template_id = $catalog_info['template_id'];
+    $catalog_stmt->close();
+    
+    if ($source === 'catalog') {
+        // Check if key already exists for this catalog/section
+        $check_sql = "SELECT id FROM catalog_details WHERE catalog_number = ? AND section_id = ? AND `key` = ?";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("sis", $catalog_number, $section_id, $key);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
         
-        // Insert into catalog_details
-        $insert_sql = "INSERT INTO catalog_details (catalog_id, section_id, `key`, `value`, `order`) VALUES (?, ?, ?, ?, ?)";
-        $insert_stmt = $conn->prepare($insert_sql);
-        $insert_stmt->bind_param("iissi", $catalog_id, $section_id, $key, $value, $next_order);
-        
-        if ($insert_stmt->execute()) {
-            $insert_id = $conn->insert_id;
-            echo json_encode([
-                'success' => true,
-                'id' => $insert_id,
-                'message' => 'Catalog key-value pair saved successfully',
-                'order' => $next_order
-            ]);
+        if ($check_result->num_rows > 0) {
+            // Update existing
+            $update_sql = "UPDATE catalog_details SET `value` = ?, updated_at = CURRENT_TIMESTAMP WHERE catalog_number = ? AND section_id = ? AND `key` = ?";
+            $update_stmt = $conn->prepare($update_sql);
+            $update_stmt->bind_param("ssis", $value, $catalog_number, $section_id, $key);
+            
+            if ($update_stmt->execute()) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Catalog key-value pair updated successfully',
+                    'action' => 'updated'
+                ]);
+            } else {
+                throw new Exception('Failed to update catalog key-value pair');
+            }
+            $update_stmt->close();
         } else {
-            throw new Exception('Failed to save catalog key-value pair');
+            // Insert new
+            $insert_sql = "INSERT INTO catalog_details (catalog_number, template_id, section_id, `key`, `value`) VALUES (?, ?, ?, ?, ?)";
+            $insert_stmt = $conn->prepare($insert_sql);
+            $insert_stmt->bind_param("siiss", $catalog_number, $template_id, $section_id, $key, $value);
+            
+            if ($insert_stmt->execute()) {
+                $insert_id = $conn->insert_id;
+                echo json_encode([
+                    'success' => true,
+                    'id' => $insert_id,
+                    'message' => 'Catalog key-value pair saved successfully',
+                    'action' => 'created'
+                ]);
+            } else {
+                throw new Exception('Failed to save catalog key-value pair');
+            }
+            $insert_stmt->close();
         }
-        
-        $insert_stmt->close();
+        $check_stmt->close();
         
     } elseif ($source === 'lot') {
         if (empty($lot_number)) {
             throw new Exception('Lot number is required for lot data');
         }
         
-        // Get lot_id
-        $lot_sql = "SELECT id FROM lots WHERE catalog_id = ? AND lot_number = ?";
-        $lot_stmt = $conn->prepare($lot_sql);
-        $lot_stmt->bind_param("is", $catalog_id, $lot_number);
-        $lot_stmt->execute();
-        $lot_result = $lot_stmt->get_result();
+        // Check if lot exists
+        $lot_check_sql = "SELECT id FROM lots WHERE catalog_id = ? AND lot_number = ?";
+        $lot_check_stmt = $conn->prepare($lot_check_sql);
+        $lot_check_stmt->bind_param("is", $catalog_id, $lot_number);
+        $lot_check_stmt->execute();
+        $lot_check_result = $lot_check_stmt->get_result();
         
-        if ($lot_result->num_rows === 0) {
-            throw new Exception('Lot not found');
+        if ($lot_check_result->num_rows === 0) {
+            // Create lot if it doesn't exist
+            $create_lot_sql = "INSERT INTO lots (catalog_id, lot_number) VALUES (?, ?)";
+            $create_lot_stmt = $conn->prepare($create_lot_sql);
+            $create_lot_stmt->bind_param("is", $catalog_id, $lot_number);
+            $create_lot_stmt->execute();
+            $create_lot_stmt->close();
         }
+        $lot_check_stmt->close();
         
-        $lot_row = $lot_result->fetch_assoc();
-        $lot_id = $lot_row['id'];
-        $lot_stmt->close();
+        // Check if key already exists for this lot/section
+        $check_sql = "SELECT id FROM lot_details WHERE lot_number = ? AND section_id = ? AND `key` = ?";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("sis", $lot_number, $section_id, $key);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
         
-        // Get next order for lot details
-        $order_sql = "SELECT COALESCE(MAX(`order`), 0) + 1 as next_order FROM lot_details WHERE lot_id = ? AND section_id = ?";
-        $order_stmt = $conn->prepare($order_sql);
-        $order_stmt->bind_param("ii", $lot_id, $section_id);
-        $order_stmt->execute();
-        $order_result = $order_stmt->get_result();
-        $next_order = $order_result->fetch_assoc()['next_order'];
-        $order_stmt->close();
-        
-        // Insert into lot_details
-        $insert_sql = "INSERT INTO lot_details (lot_id, section_id, `key`, `value`, `order`) VALUES (?, ?, ?, ?, ?)";
-        $insert_stmt = $conn->prepare($insert_sql);
-        $insert_stmt->bind_param("iissi", $lot_id, $section_id, $key, $value, $next_order);
-        
-        if ($insert_stmt->execute()) {
-            $insert_id = $conn->insert_id;
-            echo json_encode([
-                'success' => true,
-                'id' => $insert_id,
-                'message' => 'Lot key-value pair saved successfully',
-                'order' => $next_order
-            ]);
+        if ($check_result->num_rows > 0) {
+            // Update existing
+            $update_sql = "UPDATE lot_details SET `value` = ?, updated_at = CURRENT_TIMESTAMP WHERE lot_number = ? AND section_id = ? AND `key` = ?";
+            $update_stmt = $conn->prepare($update_sql);
+            $update_stmt->bind_param("ssis", $value, $lot_number, $section_id, $key);
+            
+            if ($update_stmt->execute()) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Lot key-value pair updated successfully',
+                    'action' => 'updated'
+                ]);
+            } else {
+                throw new Exception('Failed to update lot key-value pair');
+            }
+            $update_stmt->close();
         } else {
-            throw new Exception('Failed to save lot key-value pair');
+            // Insert new
+            $insert_sql = "INSERT INTO lot_details (lot_number, template_id, section_id, `key`, `value`) VALUES (?, ?, ?, ?, ?)";
+            $insert_stmt = $conn->prepare($insert_sql);
+            $insert_stmt->bind_param("siiss", $lot_number, $template_id, $section_id, $key, $value);
+            
+            if ($insert_stmt->execute()) {
+                $insert_id = $conn->insert_id;
+                echo json_encode([
+                    'success' => true,
+                    'id' => $insert_id,
+                    'message' => 'Lot key-value pair saved successfully',
+                    'action' => 'created'
+                ]);
+            } else {
+                throw new Exception('Failed to save lot key-value pair');
+            }
+            $insert_stmt->close();
         }
-        
-        $insert_stmt->close();
+        $check_stmt->close();
     }
     
 } catch (Exception $e) {

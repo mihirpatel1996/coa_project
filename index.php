@@ -94,9 +94,9 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
+    <div class="container mt-2">
         <!-- Selection Form -->
-        <div class="row mb-4">
+        <div class="row mb-2">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
@@ -178,7 +178,7 @@
         </div>
 
         <!-- Certificate Header -->
-        <div class="row mb-4" id="certificateHeader">
+        <div class="row mb-4" id="certificateHeader" hidden>
             <div class="col-12">
                 <div class="card">
                     <div class="card-body text-center">
@@ -415,7 +415,8 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <div class="row">
+                            <div class="row">  
+                                <!-- Template Name and Description -->
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="newTemplateName" class="form-label">Template Name</label>
@@ -431,6 +432,65 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Key Input Section -->
+                            <h6>Initial Keys</h6>
+                            <p class="text-muted">Add initial keys for each section. You can configure more keys later.</p>
+
+                            <!-- Description Section Keys -->
+                            <div class="mb-3">
+                                <label class="form-label">Description Section Keys</label>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control description-key-name" placeholder="Key Name (e.g., Product Code)">
+                                    <select class="form-select description-key-type">
+                                        <option value="catalog">Catalog</option>
+                                        <option value="lot">Lot</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary add-key-btn" type="button" data-section="description">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div id="descriptionKeysContainer"></div>
+                            </div>
+
+                            <!-- Specifications Section Keys -->
+                            <div class="mb-3">
+                                <label class="form-label">Specifications Section Keys</label>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control specifications-key-name" placeholder="Key Name (e.g., Purity)">
+                                    <select class="form-select specifications-key-type">
+                                        <option value="catalog">Catalog</option>
+                                        <option value="lot">Lot</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary add-key-btn" type="button" data-section="specifications">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                  <div id="specificationsKeysContainer"></div>
+                            </div>
+
+                            <!-- Preparation and Storage Section Keys -->
+                            <div class="mb-3">
+                                <label class="form-label">Preparation and Storage Section Keys</label>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control preparation-key-name" placeholder="Key Name (e.g., Storage Temp)">
+                                    <select class="form-select preparation-key-type">
+                                        <option value="catalog">Catalog</option>
+                                        <option value="lot">Lot</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary add-key-btn" type="button" data-section="preparation">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div id="preparationKeysContainer"></div>
+                            </div>
+
+                            <div class="row">
+
+                            </div>
+
+
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-check">
@@ -605,6 +665,20 @@
                     createNewTemplate();
                 });
             }
+
+           // Event delegation for adding keys
+            const templateManagementModal = document.getElementById('templateManagementModal');
+            if (templateManagementModal) {
+                templateManagementModal.addEventListener('click', function(event) {
+                if (event.target.classList.contains('add-key-btn')) {
+                    addKeyField(event);
+                }
+            });
+            }
+
+            // Event delegation for removing keys
+            document.querySelector('#templateManagementModal').addEventListener('click', function(event) {if (event.target.classList.contains('remove-key-btn')) {
+                removeKeyField(event);}});
         }
 
         // Template Configuration Functions
@@ -710,16 +784,67 @@
             const templateName = document.getElementById('newTemplateName').value.trim();
             const description = document.getElementById('newTemplateDescription').value.trim();
             const isDefault = document.getElementById('setAsDefault').checked;
-            
+
+
             if (!templateName) {
                 alert('Please enter a template name');
                 return;
             }
 
+            // Collect initial keys for each section
+            const initialKeys = {
+                description: getKeysForSection('description'),
+                specifications: getKeysForSection('specifications'),
+                preparation: getKeysForSection('preparation')
+            };
+
             const payload = {
                 template_name: templateName,
                 description: description,
-                is_default: isDefault
+                is_default: isDefault,
+                initial_keys: initialKeys
+            };
+
+            // Function to retrieve keys for a given section
+            function getKeysForSection(section) {
+                const containerId = `${section}KeysContainer`;
+                const container = document.getElementById(containerId);
+                const keys = [];
+
+                if (container) {
+                    const keyRows = container.querySelectorAll('.key-row');
+
+                    keyRows.forEach(row => {
+                        const nameInput = row.querySelector('.key-name');
+                        const typeSelect = row.querySelector('.key-type');
+
+                        if (nameInput && typeSelect) {
+                            const keyName = nameInput.value.trim();
+                            const keyType = typeSelect.value;
+
+                            if (keyName) {
+                                let section_id;
+                                switch (section) {
+                                    case 'description':
+                                        section_id = 1;
+                                        break;
+                                    case 'specifications':
+                                        section_id = 2;
+                                        break;
+                                    case 'preparation':
+                                        section_id = 3;
+                                        break;
+                                    default:
+                                        section_id = 1;
+                                }
+                                keys.push({ name: keyName, type: keyType, section_id: section_id });
+                            }
+                        }
+                    });
+                }
+
+                return keys;
+
             };
 
             fetch('api/create_template.php', {
@@ -735,10 +860,10 @@
                     document.getElementById('newTemplateName').value = '';
                     document.getElementById('newTemplateDescription').value = '';
                     document.getElementById('setAsDefault').checked = false;
-                    
+
                     loadTemplatesList();
                     loadTemplates();
-                    
+
                     alert('Template created successfully! Click "Configure" to add keys to each section.');
                 } else {
                     alert('Error creating template: ' + (data.message || 'Unknown error'));
@@ -2123,6 +2248,62 @@
                 });
         }
 
+        function addKeyField(button) {
+            const section = button.dataset.section;
+            const containerId = `${section}KeysContainer`;
+            const container = document.getElementById(containerId);
+
+            if (container) {
+                const keyRow = document.createElement('div');
+                keyRow.classList.add('input-group', 'mb-2', 'key-row');
+
+                keyRow.innerHTML = `
+                    <input type="text" class="form-control key-name" placeholder="Key Name">
+                    <select class="form-select key-type">
+                        <option value="catalog">Catalog</option>
+                        <option value="lot">Lot</option>
+                    </select>
+                    <button class="btn btn-outline-danger remove-key-btn" type="button">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+
+                container.appendChild(keyRow);
+            }
+        }
+
+        function removeKeyField(button) {
+            const keyRow = button.closest('.key-row');
+            if (keyRow) {
+                keyRow.remove();
+            }
+        }
+
+        // Function to retrieve keys for a given section
+        function getKeysForSection(section) {
+            const containerId = `${section}KeysContainer`;
+            const container = document.getElementById(containerId);
+            const keys = [];
+
+            if (container) {
+                const keyRows = container.querySelectorAll('.key-row');
+
+                keyRows.forEach(row => {
+                    const nameInput = row.querySelector('.key-name');
+                    const typeSelect = row.querySelector('.key-type');
+
+                    if (nameInput && typeSelect) {
+                        const keyName = nameInput.value.trim();
+                        const keyType = typeSelect.value;
+
+                        if (keyName) {
+                            keys.push({ name: keyName, type: keyType });
+                        }
+                    }
+                });
+            }
+        }
+
         // Generate PDF
         function generatePDF() {
             const catalogId = document.getElementById('catalogSelect').value;
@@ -2173,5 +2354,6 @@
             window.open(previewUrl, '_blank');
         }
     </script>
+
 </body>
 </html>
