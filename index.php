@@ -284,7 +284,7 @@
                     <div class="key-values-container" id="keyValues_1">
                         <div class="text-muted text-center py-3">
                             <i class="fas fa-info-circle me-2"></i>
-                            Select catalog and lot, then click "Load Data" to view template
+                            Select template, catalog and lot, then click "Load Data" to view template
                         </div>
                     </div>
                 </div>
@@ -303,7 +303,7 @@
                     <div class="key-values-container" id="keyValues_2">
                         <div class="text-muted text-center py-3">
                             <i class="fas fa-info-circle me-2"></i>
-                            Select catalog and lot, then click "Load Data" to view template
+                            Select template, catalog and lot, then click "Load Data" to view template
                         </div>
                     </div>
                 </div>
@@ -322,7 +322,7 @@
                     <div class="key-values-container" id="keyValues_3">
                         <div class="text-muted text-center py-3">
                             <i class="fas fa-info-circle me-2"></i>
-                            Select catalog and lot, then click "Load Data" to view template
+                            Select template, catalog and lot, then click "Load Data" to view template
                         </div>
                     </div>
                 </div>
@@ -669,9 +669,15 @@
             const catalogId = document.getElementById('catalogSelect').value;
             const lotNumber = document.getElementById('lotSelect').value;
             const catalogName = document.getElementById('catalogName').value.trim();
+            const templateId = document.getElementById('templateSelect').value;
+            
+            if (!templateId) {
+                alert('Please select a template first');
+                return;
+            }
             
             if (!catalogId) {
-                alert('Please select a catalog first');
+                alert('Please select a catalog');
                 return;
             }
             
@@ -687,6 +693,7 @@
 
             currentCatalogId = catalogId;
             currentLotNumber = lotNumber;
+            currentTemplateId = templateId;
             
             const selectedOption = document.getElementById('catalogSelect').options[document.getElementById('catalogSelect').selectedIndex];
             const catalogNumber = selectedOption.getAttribute('data-catalog-number');
@@ -703,19 +710,22 @@
 
         // Load template-based data
         function loadTemplateBasedData(catalogId, lotNumber) {
-            // First get the catalog's template
-            fetch(`api/get_catalog_template.php?catalog_id=${catalogId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.template_id) {
-                        currentTemplateId = data.template_id;
-                        return loadTemplateStructure(data.template_id);
-                    } else {
-                        throw new Error('No template found for this catalog');
-                    }
-                })
+            // Get the currently selected template_id from the dropdown
+            const templateSelect = document.getElementById('templateSelect');
+            const selectedTemplateId = templateSelect.value;
+            
+            if (!selectedTemplateId) {
+                throw new Error('Please select a template first');
+            }
+            
+            // Store template_id globally
+            currentTemplateId = selectedTemplateId;
+            
+            // Load template structure first
+            loadTemplateStructure(selectedTemplateId)
                 .then(() => {
-                    return loadExistingData(catalogId, lotNumber);
+                    // Load existing data with template_id parameter
+                    return loadExistingData(catalogId, lotNumber, selectedTemplateId);
                 })
                 .then(() => {
                     displayTemplateBasedSections();
@@ -748,11 +758,20 @@
                 });
         }
 
-        // Load existing data for catalog and lot
-        function loadExistingData(catalogId, lotNumber) {
-            return fetch(`api/get_section_data.php?catalog_id=${catalogId}&lot_number=${lotNumber}`)
+        // Load existing data for catalog and lot with template_id
+        function loadExistingData(catalogId, lotNumber, templateId) {
+            let apiUrl = `api/get_section_data.php?catalog_id=${catalogId}&template_id=${templateId}`;
+            if (lotNumber) {
+                apiUrl += `&lot_number=${lotNumber}`;
+            }
+            
+            return fetch(apiUrl)
                 .then(response => response.json())
                 .then(data => {
+                    if (data.error) {
+                        throw new Error(data.message);
+                    }
+                    
                     catalogData = {};
                     lotData = {};
                     
@@ -772,7 +791,8 @@
                         });
                     }
                     
-                    console.log('Existing data loaded - Catalog:', catalogData, 'Lot:', lotData);
+                    console.log('Existing data loaded for template', templateId, '- Catalog:', catalogData, 'Lot:', lotData);
+                    console.log('API Debug Info:', data.debug_info);
                 });
         }
 
@@ -1036,9 +1056,15 @@
             const catalogId = document.getElementById('catalogSelect').value;
             const lotNumber = document.getElementById('lotSelect').value;
             const catalogName = document.getElementById('catalogName').value.trim();
+            const templateId = document.getElementById('templateSelect').value;
+            
+            if (!templateId) {
+                alert('Please select a template first');
+                return;
+            }
             
             if (!catalogId) {
-                alert('Please select a catalog first');
+                alert('Please select a catalog');
                 return;
             }
             
@@ -1048,12 +1074,13 @@
             }
             
             if (!lotNumber) {
-                alert('Please select or create a lot first');
+                alert('Please select or create a lot');
                 return;
             }
 
             currentCatalogId = catalogId;
             currentLotNumber = lotNumber;
+            currentTemplateId = templateId;
             
             const selectedOption = document.getElementById('catalogSelect').options[document.getElementById('catalogSelect').selectedIndex];
             const catalogNumber = selectedOption.getAttribute('data-catalog-number');
@@ -1067,16 +1094,7 @@
             showLoadingInSections();
             
             // Load template structure and create empty CoA
-            fetch(`api/get_catalog_template.php?catalog_id=${catalogId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.template_id) {
-                        currentTemplateId = data.template_id;
-                        return loadTemplateStructure(data.template_id);
-                    } else {
-                        throw new Error('No template found for this catalog');
-                    }
-                })
+            loadTemplateStructure(templateId)
                 .then(() => {
                     // Initialize empty data
                     catalogData = {};
@@ -1147,7 +1165,7 @@
                 container.innerHTML = `
                     <div class="text-muted text-center py-3">
                         <i class="fas fa-info-circle me-2"></i>
-                        Select catalog and lot, then click "Load Data" to view template
+                        Select template, catalog and lot, then click "Load Data" to view template
                     </div>
                 `;
             });

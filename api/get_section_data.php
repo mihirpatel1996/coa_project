@@ -1,5 +1,5 @@
 <?php
-// api/get_section_data.php (UPDATED FOR TEMPLATE-BASED WORKFLOW)
+// api/get_section_data.php (WITH TEMPLATE_ID PARAMETER)
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
@@ -11,17 +11,22 @@ require_once '../config/database.php';
 try {
     // Get parameters
     $catalog_id = isset($_GET['catalog_id']) ? intval($_GET['catalog_id']) : 0;
+    $template_id = isset($_GET['template_id']) ? intval($_GET['template_id']) : 0;
     $lot_number = isset($_GET['lot_number']) ? trim($_GET['lot_number']) : '';
     
     if ($catalog_id <= 0) {
         throw new Exception('Valid catalog ID is required');
     }
     
+    if ($template_id <= 0) {
+        throw new Exception('Valid template ID is required');
+    }
+    
     // Get database connection
     $conn = getDBConnection();
     
-    // Get catalog information including template_id
-    $catalog_sql = "SELECT catalog_number, template_id FROM catalogs WHERE id = ?";
+    // Get catalog information
+    $catalog_sql = "SELECT catalog_number FROM catalogs WHERE id = ?";
     $catalog_stmt = $conn->prepare($catalog_sql);
     $catalog_stmt->bind_param("i", $catalog_id);
     $catalog_stmt->execute();
@@ -33,12 +38,22 @@ try {
     
     $catalog_info = $catalog_result->fetch_assoc();
     $catalog_number = $catalog_info['catalog_number'];
-    $template_id = $catalog_info['template_id'];
     $catalog_stmt->close();
     
-    if (!$template_id) {
-        throw new Exception('No template assigned to this catalog');
+    // Validate template exists
+    $template_check_sql = "SELECT template_name FROM templates WHERE id = ?";
+    $template_stmt = $conn->prepare($template_check_sql);
+    $template_stmt->bind_param("i", $template_id);
+    $template_stmt->execute();
+    $template_result = $template_stmt->get_result();
+    
+    if ($template_result->num_rows === 0) {
+        throw new Exception('Template not found');
     }
+    
+    $template_info = $template_result->fetch_assoc();
+    $template_name = $template_info['template_name'];
+    $template_stmt->close();
     
     $sections_data = [];
     
@@ -63,13 +78,13 @@ try {
             $template_keys_stmt->execute();
             $template_keys_result = $template_keys_stmt->get_result();
             
-            // Get existing catalog data for this section
+            // Get existing catalog data for this section AND template
             $catalog_data = [];
             $catalog_data_sql = "SELECT `key`, `value` 
                                 FROM catalog_details 
-                                WHERE catalog_number = ? AND section_id = ?";
+                                WHERE catalog_number = ? AND section_id = ? AND template_id = ?";
             $catalog_data_stmt = $conn->prepare($catalog_data_sql);
-            $catalog_data_stmt->bind_param("si", $catalog_number, $section_id);
+            $catalog_data_stmt->bind_param("sii", $catalog_number, $section_id, $template_id);
             $catalog_data_stmt->execute();
             $catalog_data_result = $catalog_data_stmt->get_result();
             
@@ -78,14 +93,14 @@ try {
             }
             $catalog_data_stmt->close();
             
-            // Get existing lot data for this section (if lot_number provided)
+            // Get existing lot data for this section AND template (if lot_number provided)
             $lot_data = [];
             if (!empty($lot_number)) {
                 $lot_data_sql = "SELECT `key`, `value` 
                                 FROM lot_details 
-                                WHERE lot_number = ? AND section_id = ?";
+                                WHERE lot_number = ? AND section_id = ? AND template_id = ?";
                 $lot_data_stmt = $conn->prepare($lot_data_sql);
-                $lot_data_stmt->bind_param("si", $lot_number, $section_id);
+                $lot_data_stmt->bind_param("sii", $lot_number, $section_id, $template_id);
                 $lot_data_stmt->execute();
                 $lot_data_result = $lot_data_stmt->get_result();
                 
@@ -134,9 +149,17 @@ try {
             'catalog_id' => $catalog_id,
             'catalog_number' => $catalog_number,
             'template_id' => $template_id,
+            'template_name' => $template_name,
             'lot_number' => $lot_number,
             'total_sections' => count($sections_data),
-            'total_keys' => array_sum(array_map(function($s) { return count($s['key_values']); }, $sections_data))
+            'total_keys' => array_sum(array_map(function($s) { return count($s['key_values']); }, $sections_data)),
+            'keys_by_section' => array_map(function($s) { 
+                return [
+                    'section' => $s['section_name'], 
+                    'count' => count($s['key_values']),
+                    'keys' => array_map(function($kv) { return $kv['key'] . ' (' . $kv['source'] . ')'; }, $s['key_values'])
+                ]; 
+            }, $sections_data)
         ]
     ]);
     
@@ -148,8 +171,8 @@ try {
         'message' => 'Error fetching section data: ' . $e->getMessage(),
         'debug_info' => [
             'catalog_id' => isset($catalog_id) ? $catalog_id : 'not set',
-            'lot_number' => isset($lot_number) ? $lot_number : 'not set',
-            'template_id' => isset($template_id) ? $template_id : 'not retrieved'
+            'template_id' => isset($template_id) ? $template_id : 'not set',
+            'lot_number' => isset($lot_number) ? $lot_number : 'not set'
         ]
     ]);
 } finally {
