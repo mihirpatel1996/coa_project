@@ -10,7 +10,7 @@
         .section-card {
             /* border: 1px solid #dee2e6; */
             border-radius: 8px;
-            /* margin-bottom: 10px; */
+            margin-bottom: 10px;
         }
         .section-header {
             /* background-color: #f8f9fa; */
@@ -20,7 +20,7 @@
         }
         .section-content {
             padding: 8px;
-            padding-top:5px;
+            padding-top:0px;
             padding-bottom: 0px;
             overflow: auto;
         }
@@ -32,8 +32,6 @@
             /* border: 1px solid #e9ecef; */
             border-radius: 5px;
             padding: 5px;
-            padding-top:0px;
-            padding-bottom: 0px;                                                                                                    
             margin-bottom: 0px;
             cursor: move;
             transition: all 0.2s ease;
@@ -96,6 +94,11 @@
             resize: vertical;
             min-height: 60px;
             width: 100%;
+            transition: border-color 0.3s ease;
+        }
+        .bulk-edit-textarea.border-warning {
+            border-color: #ffc107 !important;
+            border-width: 2px;
         }
         .bulk-edit-buttons {
             margin-left: 5px;
@@ -129,14 +132,32 @@
             color: white;
         }
         
-        /* Validation styles */
-        .is-invalid {
-            border-color: #dc3545;
+        /* Template radio button styles */
+        .template-radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        .invalid-feedback {
-            display: block;
-            color: #dc3545;
-            font-size: 0.875rem;
+        .template-radio {
+            display: flex;
+            align-items: center;
+        }
+        .template-radio input[type="radio"] {
+            margin-right: 5px;
+        }
+        .template-radio label {
+            margin-bottom: 0;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        .template-radio:hover label {
+            background-color: #f0f0f0;
+        }
+        .template-radio input[type="radio"]:checked + label {
+            background-color: #e7f3ff;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -183,25 +204,26 @@
                             </div>
                         </div> -->
 
-                        <!-- Catalog and Lot Selection -->
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label for="templateSelect" class="form-label">
+                        <!-- Template Selection with Radio Buttons -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label">
                                     <i class="fas fa-file-alt me-1"></i>
                                     Template
                                 </label>
-                                <div class="input-group">
-                                    <select class="form-select" id="templateSelect">
-                                        <option value="">Loading templates...</option>
-                                    </select>                                    
-                                    <button class="btn btn-outline-primary" type="button" id="manageTemplateBtn">
-                                        <!-- <i class="fas fa-cog me-1"></i> -->
-                                        <i class="fas fa-plus"></i>
-                                    </button>
+                                <div id="templateRadioButtons" class="d-flex flex-wrap gap-3">
+                                    <div class="text-muted">
+                                        <i class="fas fa-spinner fa-spin me-1"></i>
+                                        Loading templates...
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <label for="catalogSelect" class="form-label" style="color: red;">Catalog Number</label>
+                        </div>
+
+                        <!-- Catalog and Lot Selection -->
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="catalogSelect" class="form-label">Catalog Number</label>
                                 <div class="input-group">
                                     <select class="form-select" id="catalogSelect">
                                         <option value="">Select Catalog...</option>
@@ -211,12 +233,12 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <label for="catalogName" class="form-label" style="color: red;">Catalog Name</label>
+                            <div class="col-md-4">
+                                <label for="catalogName" class="form-label">Catalog Name</label>
                                 <input type="text" class="form-control" id="catalogName" placeholder="Enter catalog name" readonly>
                             </div>
-                            <div class="col-md-3">
-                                <label for="lotSelect" class="form-label" style="color: green;">Lot Number</label>
+                            <div class="col-md-4">
+                                <label for="lotSelect" class="form-label">Lot Number</label>
                                 <div class="input-group">
                                     <select class="form-select" id="lotSelect" disabled>
                                         <option value="">Select Lot...</option>
@@ -233,7 +255,7 @@
                                     <i class="fas fa-download me-1"></i>
                                     Load Data
                                 </button>
-                                <button class="btn btn-outline-primary me-2" id="createNewBtn" disabled hidden>
+                                <button class="btn btn-outline-primary me-2" id="createNewBtn" disabled>
                                     <i class="fas fa-magic me-1"></i>
                                     Create New CoA
                                 </button>
@@ -659,7 +681,6 @@
             loadCatalogs();
             loadTemplates();
             initializeEventListeners();
-            initializeTemplateHandlers();
             initializeTemplateManagementHandlers();
             initializeTemplateConfigHandlers();
             
@@ -680,7 +701,8 @@
             const catalogId = document.getElementById('catalogSelect').value;
             const lotNumber = document.getElementById('lotSelect').value;
             const catalogName = document.getElementById('catalogName').value.trim();
-            const templateId = document.getElementById('templateSelect').value;
+            const selectedRadio = document.querySelector('input[name="templateRadio"]:checked');
+            const templateId = selectedRadio ? selectedRadio.value : null;
             
             if (!templateId) {
                 alert('Please select a template first');
@@ -721,9 +743,9 @@
 
         // Load template-based data
         function loadTemplateBasedData(catalogId, lotNumber) {
-            // Get the currently selected template_id from the dropdown
-            const templateSelect = document.getElementById('templateSelect');
-            const selectedTemplateId = templateSelect.value;
+            // Get the currently selected template_id from radio buttons
+            const selectedRadio = document.querySelector('input[name="templateRadio"]:checked');
+            const selectedTemplateId = selectedRadio ? selectedRadio.value : null;
             
             if (!selectedTemplateId) {
                 throw new Error('Please select a template first');
@@ -740,6 +762,7 @@
                 })
                 .then(() => {
                     displayTemplateBasedSections();
+                    addChangeListeners();
                     showBulkEditButtons();
                     document.getElementById('previewBtn').disabled = false;
                     document.getElementById('generateBtn').disabled = false;
@@ -851,19 +874,18 @@
             const container = document.getElementById(`keyValues_${sectionId}`);
             const kvId = `kv_${sectionId}_${keyName.replace(/\s+/g, '_')}`;
             
-            // const sourceColor = keySource === 'catalog' ? 'bg-primary' : 'bg-success';
-            const sourceColor = keySource === 'catalog' ? 'red' : 'green';
+            const sourceColor = keySource === 'catalog' ? 'bg-primary' : 'bg-success';
             const sourceIcon = keySource === 'catalog' ? 'fa-database' : 'fa-tag';
             
             const kvHtml = `
                 <div class="key-value-row" id="${kvId}" data-key="${keyName}" data-source="${keySource}">
                     <div class="row align-items-center">
                         <div class="col-md-4">
-                            <label class="form-label" style="color: ${sourceColor};">${keyName}</label>
-                            <!--<strong class="ms-2">${keySource.charAt(0).toUpperCase() + keySource.slice(1)}</strong>-->
+                            <label class="form-label">${keyName}</label>
+                            <strong class="ms-2">${keySource.charAt(0).toUpperCase() + keySource.slice(1)}</strong>
                         </div>
                         <div class="col-md-8">
-                            <textarea class="form-control bulk-edit-textarea" id="textarea_${kvId}" rows="2" style="height: 38px;" placeholder="Enter ${keyName.toLowerCase()}...">${value}</textarea>
+                            <textarea class="form-control bulk-edit-textarea" id="textarea_${kvId}" rows="2" placeholder="Enter ${keyName.toLowerCase()}...">${value}</textarea>
                             <div class="invalid-feedback" id="error_${kvId}"></div>
                         </div>
                     </div>
@@ -924,18 +946,26 @@
             return isValid;
         }
 
-        // Save all data
+        // Save all data using bulk API
         function saveAllData() {
             if (!validateAllFields()) {
                 alert('Please fill in all required fields before saving.');
                 return;
             }
             
+            // Validate required IDs
+            if (!currentCatalogId || !currentTemplateId) {
+                alert('Error: Missing catalog or template information. Please reload the data.');
+                return;
+            }
+            
             const saveAllBtn = document.getElementById('saveAllBtn');
+            const originalText = saveAllBtn.innerHTML;
             saveAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
             saveAllBtn.disabled = true;
             
-            const keyValuesToSave = [];
+            // Collect all key-value pairs
+            const keyValues = [];
             const sections = [1, 2, 3];
             
             sections.forEach(sectionId => {
@@ -948,7 +978,9 @@
                         
                         if (textarea) {
                             const newValue = textarea.value.trim();
-                            keyValuesToSave.push({
+                            
+                            // Add to collection
+                            keyValues.push({
                                 section_id: sectionId,
                                 key: keyName,
                                 value: newValue,
@@ -958,50 +990,120 @@
                     });
                 }
             });
-
-            const bulkPayload = {
+            
+            // Prepare bulk save payload
+            const payload = {
                 catalog_id: currentCatalogId,
                 lot_number: currentLotNumber,
-                template_id: currentTemplateId,
-                key_values: keyValuesToSave
+                template_id: currentTemplateId,  // Add template_id to payload
+                key_values: keyValues
             };
-
+            
+            console.log('Sending bulk save with template_id:', currentTemplateId);
+            
+            // Execute bulk save operation
             fetch('api/save_bulk_key_values.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(bulkPayload)
+                body: JSON.stringify(payload)
             })
             .then(response => response.json())
             .then(data => {
-                if (!data.success) {
-                    throw new Error(data.message || 'An unknown error occurred during bulk save.');
+                if (data.success) {
+                    console.log('Bulk save successful:', data.message);
+                    
+                    // Update local data and original data
+                    keyValues.forEach(item => {
+                        const sectionId = item.section_id;
+                        const keyName = item.key;
+                        const keySource = item.source;
+                        const value = item.value;
+                        
+                        // Update local data
+                        if (keySource === 'catalog') {
+                            if (!catalogData[sectionId]) catalogData[sectionId] = {};
+                            catalogData[sectionId][keyName] = value;
+                        } else if (keySource === 'lot') {
+                            if (!lotData[sectionId]) lotData[sectionId] = {};
+                            lotData[sectionId][keyName] = value;
+                        }
+                        
+                        // Update original data
+                        if (!originalData[sectionId]) originalData[sectionId] = {};
+                        originalData[sectionId][keyName] = { value: value, source: keySource };
+                        
+                        // Remove validation error styling
+                        const kvId = `kv_${sectionId}_${keyName.replace(/\s+/g, '_')}`;
+                        const textarea = document.getElementById(`textarea_${kvId}`);
+                        if (textarea) {
+                            textarea.classList.remove('is-invalid');
+                            textarea.classList.remove('border-warning'); // Remove unsaved indicator
+                        }
+                        const errorDiv = document.getElementById(`error_${kvId}`);
+                        if (errorDiv) {
+                            errorDiv.textContent = '';
+                        }
+                    });
+                    
+                    showBulkSaveSuccessFeedback();
+                } else {
+                    throw new Error(data.message || 'Failed to save data');
                 }
-                
-                // Update local and original data stores upon successful save
-                keyValuesToSave.forEach(item => {
-                    const { section_id, key, value, source } = item;
-                    if (source === 'catalog') {
-                        if (!catalogData[section_id]) catalogData[section_id] = {};
-                        catalogData[section_id][key] = value;
-                    } else if (source === 'lot') {
-                        if (!lotData[section_id]) lotData[section_id] = {};
-                        lotData[section_id][key] = value;
-                    }
-                    if (!originalData[section_id]) originalData[section_id] = {};
-                    originalData[section_id][key] = { value: value, source: source };
-                });
-                console.log('All data saved successfully:', data);
-                showBulkSaveSuccessFeedback();
             })
             .catch(error => {
                 console.error('Error saving data:', error);
                 alert('Error saving data: ' + error.message);
-                // Restore button on error
-                saveAllBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All';
+            })
+            .finally(() => {
+                saveAllBtn.innerHTML = originalText;
                 saveAllBtn.disabled = false;
             });
+        }
+
+        // Add this new function to track unsaved changes
+        function markFieldAsChanged(textarea) {
+            textarea.classList.add('border-warning');
+            
+            // Update Save All button to indicate unsaved changes
+            const saveAllBtn = document.getElementById('saveAllBtn');
+            if (saveAllBtn && !saveAllBtn.innerHTML.includes('*')) {
+                const currentHTML = saveAllBtn.innerHTML;
+                saveAllBtn.innerHTML = currentHTML.replace('Save All', 'Save All*');
+            }
+        }
+
+        // Add this function to be called after displayTemplateBasedSections()
+        function addChangeListeners() {
+            const textareas = document.querySelectorAll('.bulk-edit-textarea');
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', function() {
+                    markFieldAsChanged(this);
+                });
+            });
+        }
+
+        // Update the showBulkSaveSuccessFeedback function to remove the asterisk
+        function showBulkSaveSuccessFeedback() {
+            const saveAllBtn = document.getElementById('saveAllBtn');
+            const originalContent = '<i class="fas fa-save me-1"></i> Save All';
+            
+            saveAllBtn.innerHTML = '<i class="fas fa-check text-white me-1"></i> All Saved!';
+            saveAllBtn.classList.add('btn-outline-success');
+            saveAllBtn.classList.remove('btn-success');
+            
+            // Remove unsaved indicators from all fields
+            const textareas = document.querySelectorAll('.bulk-edit-textarea');
+            textareas.forEach(textarea => {
+                textarea.classList.remove('border-warning');
+            });
+            
+            setTimeout(() => {
+                saveAllBtn.innerHTML = originalContent;
+                saveAllBtn.classList.remove('btn-outline-success');
+                saveAllBtn.classList.add('btn-success');
+            }, 3000);
         }
 
         // Cancel all changes
@@ -1019,6 +1121,7 @@
                             if (textarea && originalData[sectionId] && originalData[sectionId][keyName]) {
                                 textarea.value = originalData[sectionId][keyName].value;
                                 textarea.classList.remove('is-invalid');
+                                textarea.classList.remove('border-warning');
                                 const errorDiv = document.getElementById(`error_${kvId}`);
                                 if (errorDiv) {
                                     errorDiv.textContent = '';
@@ -1028,25 +1131,14 @@
                     }
                 });
                 
+                // Reset Save All button text
+                const saveAllBtn = document.getElementById('saveAllBtn');
+                if (saveAllBtn) {
+                    saveAllBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All';
+                }
+                
                 console.log('All changes cancelled, data restored to original state');
             }
-        }
-
-        // Show bulk save success feedback
-        function showBulkSaveSuccessFeedback() {
-            const saveAllBtn = document.getElementById('saveAllBtn');
-            const originalContent = '<i class="fas fa-save me-1"></i> Save All';
-            
-            saveAllBtn.innerHTML = '<i class="fas fa-check me-1"></i> All Saved!';
-            saveAllBtn.classList.add('btn-outline-success');
-            saveAllBtn.classList.remove('btn-success');
-            
-            setTimeout(() => {
-                saveAllBtn.innerHTML = originalContent;
-                saveAllBtn.classList.remove('btn-outline-success');
-                saveAllBtn.classList.add('btn-success');
-                saveAllBtn.disabled = false;
-            }, 3000);
         }
 
         // Show loading state in sections
@@ -1084,7 +1176,8 @@
             const catalogId = document.getElementById('catalogSelect').value;
             const lotNumber = document.getElementById('lotSelect').value;
             const catalogName = document.getElementById('catalogName').value.trim();
-            const templateId = document.getElementById('templateSelect').value;
+            const selectedRadio = document.querySelector('input[name="templateRadio"]:checked');
+            const templateId = selectedRadio ? selectedRadio.value : null;
             
             if (!templateId) {
                 alert('Please select a template first');
@@ -1130,6 +1223,7 @@
                     originalData = {};
                     
                     displayTemplateBasedSections();
+                    addChangeListeners();
                     showBulkEditButtons();
                     document.getElementById('previewBtn').disabled = false;
                     document.getElementById('generateBtn').disabled = false;
@@ -1205,13 +1299,8 @@
 
         // Template Management Functions
         function initializeTemplateManagementHandlers() {
-            const manageTemplateBtn = document.getElementById('manageTemplateBtn');
-            if (manageTemplateBtn) {
-                manageTemplateBtn.addEventListener('click', function() {
-                    openTemplateManagement();
-                });
-            }
-
+            // Removed manage template button handler since we're not showing it
+            
             const createTemplateBtn = document.getElementById('createTemplateBtn');
             if (createTemplateBtn) {
                 createTemplateBtn.addEventListener('click', function() {
@@ -1693,10 +1782,10 @@
 
         // Event listeners
         function initializeEventListeners() {
-            // Catalog selection
+            // Catalog selection - UPDATED VERSION
             const catalogSelect = document.getElementById('catalogSelect');
             if (catalogSelect) {
-                catalogSelect.addEventListener('change', function() {
+                catalogSelect.addEventListener('change', async function() {
                     const catalogId = this.value;
                     if (catalogId) {
                         const selectedOption = this.options[this.selectedIndex];
@@ -1714,13 +1803,17 @@
                             catalogNameField.classList.remove('border-warning');
                         }
                         
+                        // Load template first, then lots
+                        await loadCatalogTemplate(catalogId);
                         loadLots(catalogId);
-                        loadCatalogTemplate(catalogId);
                         
                         document.getElementById('loadDataBtn').disabled = false;
                         document.getElementById('createNewBtn').disabled = false;
                         document.getElementById('addLotBtn').disabled = false;
                     } else {
+                        // Reset everything when no catalog is selected
+                        currentTemplateId = null;
+                        
                         const catalogNameField = document.getElementById('catalogName');
                         catalogNameField.value = '';
                         catalogNameField.readOnly = true;
@@ -1822,17 +1915,23 @@
 
         // Template-related functions
         function initializeTemplateHandlers() {
+            // Template selection - UPDATED VERSION
             const templateSelect = document.getElementById('templateSelect');
             if (templateSelect) {
                 templateSelect.addEventListener('change', function() {
                     const templateId = this.value;
                     const catalogId = document.getElementById('catalogSelect').value;
                     
-                    if (templateId && catalogId) {
-                        updateCatalogTemplate(catalogId, templateId);
+                    if (templateId) {
+                        currentTemplateId = templateId;
+                        
+                        // Only update catalog template if a catalog is selected
+                        if (catalogId) {
+                            updateCatalogTemplate(catalogId, templateId);
+                        }
+                        
+                        updateTemplateDisplay();
                     }
-                    
-                    updateTemplateDisplay();
                 });
             }
         }
@@ -1841,31 +1940,78 @@
             fetch('api/get_templates.php')
                 .then(response => response.json())
                 .then(data => {
-                    const templateSelect = document.getElementById('templateSelect');
-                    templateSelect.innerHTML = '<option value="">Select Template...</option>';
+                    const templateContainer = document.getElementById('templateRadioButtons');
+                    templateContainer.innerHTML = '';
                     
                     if (data.success && data.templates && data.templates.length > 0) {
-                        data.templates.forEach(template => {
-                            const option = document.createElement('option');
-                            option.value = template.id;
-                            option.textContent = template.template_name;
+                        const radioGroup = document.createElement('div');
+                        radioGroup.className = 'template-radio-group';
+                        
+                        data.templates.forEach((template, index) => {
+                            const radioDiv = document.createElement('div');
+                            radioDiv.className = 'template-radio';
+                            
+                            const radioInput = document.createElement('input');
+                            radioInput.type = 'radio';
+                            radioInput.name = 'templateRadio';
+                            radioInput.id = `template_${template.id}`;
+                            radioInput.value = template.id;
+                            radioInput.className = 'form-check-input';
+                            
+                            // Auto-select default template
                             if (template.is_default) {
-                                option.textContent += ' (Default)';
-                                option.selected = true;
+                                radioInput.checked = true;
+                                currentTemplateId = template.id;
                             }
-                            templateSelect.appendChild(option);
+                            
+                            const radioLabel = document.createElement('label');
+                            radioLabel.htmlFor = `template_${template.id}`;
+                            radioLabel.textContent = template.template_name;
+                            if (template.is_default) {
+                                radioLabel.textContent += ' (Default)';
+                            }
+                            radioLabel.className = 'form-check-label';
+                            
+                            radioDiv.appendChild(radioInput);
+                            radioDiv.appendChild(radioLabel);
+                            radioGroup.appendChild(radioDiv);
+                        });
+                        
+                        templateContainer.appendChild(radioGroup);
+                        
+                        // Add event listeners to radio buttons
+                        const radioButtons = templateContainer.querySelectorAll('input[type="radio"]');
+                        radioButtons.forEach(radio => {
+                            radio.addEventListener('change', handleTemplateRadioChange);
                         });
                         
                         updateTemplateDisplay();
                     } else {
-                        templateSelect.innerHTML += '<option value="" disabled>No templates found</option>';
+                        templateContainer.innerHTML = '<div class="text-muted">No templates found</div>';
                     }
                 })
                 .catch(error => {
                     console.error('Error loading templates:', error);
-                    const templateSelect = document.getElementById('templateSelect');
-                    templateSelect.innerHTML = '<option value="" disabled>Error loading templates</option>';
+                    const templateContainer = document.getElementById('templateRadioButtons');
+                    templateContainer.innerHTML = '<div class="text-danger">Error loading templates</div>';
                 });
+        }
+
+        // New function to handle radio button changes
+        function handleTemplateRadioChange(event) {
+            const templateId = event.target.value;
+            const catalogId = document.getElementById('catalogSelect').value;
+            
+            if (templateId) {
+                currentTemplateId = templateId;
+                
+                // Only update catalog template if a catalog is selected
+                if (catalogId) {
+                    updateCatalogTemplate(catalogId, templateId);
+                }
+                
+                updateTemplateDisplay();
+            }
         }
 
         function loadTemplatesIntoModal() {
@@ -1892,14 +2038,41 @@
                 });
         }
 
+        // UPDATED loadCatalogTemplate function
         function loadCatalogTemplate(catalogId) {
-            fetch(`api/get_catalog_template.php?catalog_id=${catalogId}`)
+            return fetch(`api/get_catalog_template.php?catalog_id=${catalogId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.template_id) {
-                        const templateSelect = document.getElementById('templateSelect');
-                        templateSelect.value = data.template_id;
-                        updateTemplateDisplay();
+                        // Find and check the radio button
+                        const templateRadio = document.getElementById(`template_${data.template_id}`);
+                        if (templateRadio) {
+                            templateRadio.checked = true;
+                            
+                            // Update the current template ID
+                            currentTemplateId = data.template_id;
+                            
+                            // Update the template display
+                            updateTemplateDisplay();
+                            
+                            console.log('Loaded template for catalog:', data.template_id);
+                        }
+                    } else {
+                        console.warn('No template found for catalog, using default');
+                        // If no template is set for the catalog, use the default template
+                        const defaultRadio = document.querySelector('input[name="templateRadio"]:checked');
+                        if (!defaultRadio) {
+                            // Find and select the default template
+                            const radioButtons = document.querySelectorAll('input[name="templateRadio"]');
+                            radioButtons.forEach(radio => {
+                                const label = document.querySelector(`label[for="${radio.id}"]`);
+                                if (label && label.textContent.includes('(Default)')) {
+                                    radio.checked = true;
+                                    currentTemplateId = radio.value;
+                                    updateTemplateDisplay();
+                                }
+                            });
+                        }
                     }
                 })
                 .catch(error => {
@@ -1932,12 +2105,14 @@
         }
 
         function updateTemplateDisplay() {
-            const templateSelect = document.getElementById('templateSelect');
-            const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+            const selectedRadio = document.querySelector('input[name="templateRadio"]:checked');
             const displayTemplate = document.getElementById('displayTemplate');
             
-            if (selectedOption && selectedOption.value) {
-                displayTemplate.textContent = selectedOption.textContent;
+            if (selectedRadio) {
+                const label = document.querySelector(`label[for="${selectedRadio.id}"]`);
+                if (label) {
+                    displayTemplate.textContent = label.textContent;
+                }
             } else {
                 displayTemplate.textContent = 'Not selected';
             }
@@ -2150,7 +2325,8 @@
             });
         }
 
-        function addKeyField(button) {
+        function addKeyField(event) {
+            const button = event.target.closest('.add-key-btn');
             const section = button.dataset.section;
             const containerId = `${section}KeysContainer`;
             const container = document.getElementById(containerId);
@@ -2174,7 +2350,8 @@
             }
         }
 
-        function removeKeyField(button) {
+        function removeKeyField(event) {
+            const button = event.target.closest('.remove-key-btn');
             const keyRow = button.closest('.key-row');
             if (keyRow) {
                 keyRow.remove();
