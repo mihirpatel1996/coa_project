@@ -89,37 +89,27 @@
             margin-bottom: 15px;
         }
         
-        /* New template-based workflow styles */
-        .value-display {
-            min-height: 40px;
-            padding: 8px 0;
-        }
-        .value-text {
-            display: block;
-            padding: 8px 12px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            border: 1px solid #e9ecef;
-            min-height: 38px;
-            word-wrap: break-word;
-        }
-        .value-edit textarea {
+        /* Bulk edit mode styles */
+        .bulk-edit-textarea {
             resize: vertical;
             min-height: 60px;
+            width: 100%;
         }
-        .edit-btn, .save-btn, .cancel-btn {
+        .bulk-edit-buttons {
             margin-left: 5px;
-            min-width: 70px;
+        }
+        .save-all-btn, .cancel-all-btn {
+            min-width: 100px;
+            margin-left: 5px;
         }
         
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .key-value-row .col-md-4,
-            .key-value-row .col-md-6,
-            .key-value-row .col-md-2 {
+            .key-value-row .col-md-8 {
                 margin-bottom: 10px;
             }
-            .edit-btn, .save-btn, .cancel-btn {
+            .save-all-btn, .cancel-all-btn {
                 width: 100%;
                 margin-left: 0;
                 margin-bottom: 5px;
@@ -135,6 +125,16 @@
             background-color: #28a745;
             border-color: #28a745;
             color: white;
+        }
+        
+        /* Validation styles */
+        .is-invalid {
+            border-color: #dc3545;
+        }
+        .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875rem;
         }
     </style>
 </head>
@@ -277,6 +277,14 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
                             <h5 class="mb-0">Description</h5>
+                        </div>
+                        <div class="bulk-edit-buttons" id="bulkEditButtons" style="display: none;">
+                            <button class="btn btn-sm btn-success save-all-btn" onclick="saveAllData()" id="saveAllBtn">
+                                <i class="fas fa-save me-1"></i> Save All
+                            </button>
+                            <button class="btn btn-sm btn-secondary cancel-all-btn" onclick="cancelAllChanges()" id="cancelAllBtn">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -640,10 +648,11 @@
         let templateKeys = {}; // Store template structure
         let catalogData = {}; // Store catalog values
         let lotData = {}; // Store lot values
+        let originalData = {}; // Store original data for cancel functionality
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Initializing template-based workflow...');
+            console.log('Initializing template-based workflow with bulk edit...');
             
             loadCatalogs();
             loadTemplates();
@@ -729,6 +738,7 @@
                 })
                 .then(() => {
                     displayTemplateBasedSections();
+                    showBulkEditButtons();
                     document.getElementById('previewBtn').disabled = false;
                     document.getElementById('generateBtn').disabled = false;
                 })
@@ -774,18 +784,22 @@
                     
                     catalogData = {};
                     lotData = {};
+                    originalData = {}; // Store original data for cancel functionality
                     
                     if (data.sections_data) {
                         data.sections_data.forEach(section => {
                             const sectionId = section.section_id;
                             catalogData[sectionId] = {};
                             lotData[sectionId] = {};
+                            originalData[sectionId] = {};
                             
                             section.key_values.forEach(kv => {
                                 if (kv.source === 'catalog') {
                                     catalogData[sectionId][kv.key] = kv.value;
+                                    originalData[sectionId][kv.key] = { value: kv.value, source: kv.source };
                                 } else if (kv.source === 'lot') {
                                     lotData[sectionId][kv.key] = kv.value;
+                                    originalData[sectionId][kv.key] = { value: kv.value, source: kv.source };
                                 }
                             });
                         });
@@ -796,7 +810,7 @@
                 });
         }
 
-        // Display template-based sections
+        // Display template-based sections with bulk edit mode
         function displayTemplateBasedSections() {
             const sections = [1, 2, 3];
             
@@ -817,7 +831,7 @@
                             existingValue = lotData[sectionId][keyName];
                         }
                         
-                        addTemplateKeyToSection(sectionId, keyName, keySource, existingValue);
+                        addBulkEditKeyToSection(sectionId, keyName, keySource, existingValue);
                     });
                 } else {
                     container.innerHTML = `
@@ -830,8 +844,8 @@
             });
         }
 
-        // Add template key to section
-        function addTemplateKeyToSection(sectionId, keyName, keySource, value) {
+        // Add template key to section in bulk edit mode (always editable)
+        function addBulkEditKeyToSection(sectionId, keyName, keySource, value) {
             const container = document.getElementById(`keyValues_${sectionId}`);
             const kvId = `kv_${sectionId}_${keyName.replace(/\s+/g, '_')}`;
             
@@ -841,32 +855,13 @@
             const kvHtml = `
                 <div class="key-value-row" id="${kvId}" data-key="${keyName}" data-source="${keySource}">
                     <div class="row align-items-center">
-                        <div class="col-md-2">
+                        <div class="col-md-4">
                             <label class="form-label">${keyName}</label>
-                            <!--<span class="badge ${sourceColor} source-badge ms-2">
-                                <i class="fas ${sourceIcon} me-1"></i>
-                                ${keySource.charAt(0).toUpperCase() + keySource.slice(1)}
-                            </span>-->
                             <strong class="ms-2">${keySource.charAt(0).toUpperCase() + keySource.slice(1)}</strong>
                         </div>
-                        <div class="col-md-6">
-                            <div class="value-display" id="value_${kvId}">
-                                ${value ? `<span class="value-text">${value}</span>` : '<span class="text-muted">No value set</span>'}
-                            </div>
-                            <div class="value-edit" id="edit_${kvId}" style="display: none;">
-                                <textarea class="form-control" rows="2" id="textarea_${kvId}">${value}</textarea>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-sm btn-outline-secondary edit-btn" onclick="editKeyValue('${kvId}')" id="editBtn_${kvId}">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="btn btn-sm btn-success save-btn" onclick="saveKeyValue('${kvId}')" id="saveBtn_${kvId}" style="display: none;">
-                                <i class="fas fa-save"></i> Save
-                            </button>
-                            <button class="btn btn-sm btn-secondary cancel-btn" onclick="cancelEdit('${kvId}')" id="cancelBtn_${kvId}" style="display: none;">
-                                <i class="fas fa-times"></i> Cancel
-                            </button>
+                        <div class="col-md-8">
+                            <textarea class="form-control bulk-edit-textarea" id="textarea_${kvId}" rows="2" placeholder="Enter ${keyName.toLowerCase()}...">${value}</textarea>
+                            <div class="invalid-feedback" id="error_${kvId}"></div>
                         </div>
                     </div>
                 </div>
@@ -875,152 +870,190 @@
             container.insertAdjacentHTML('beforeend', kvHtml);
         }
 
-        // Edit key value
-        function editKeyValue(kvId) {
-            const displayDiv = document.getElementById(`value_${kvId}`);
-            const editDiv = document.getElementById(`edit_${kvId}`);
-            const editBtn = document.getElementById(`editBtn_${kvId}`);
-            const saveBtn = document.getElementById(`saveBtn_${kvId}`);
-            const cancelBtn = document.getElementById(`cancelBtn_${kvId}`);
-            
-            displayDiv.style.display = 'none';
-            editDiv.style.display = 'block';
-            editBtn.style.display = 'none';
-            saveBtn.style.display = 'inline-block';
-            cancelBtn.style.display = 'inline-block';
-            
-            // Focus on textarea
-            const textarea = document.getElementById(`textarea_${kvId}`);
-            textarea.focus();
+        // Show bulk edit buttons
+        function showBulkEditButtons() {
+            const bulkEditButtons = document.getElementById('bulkEditButtons');
+            if (bulkEditButtons) {
+                bulkEditButtons.style.display = 'block';
+            }
         }
 
-        // Cancel edit
-        function cancelEdit(kvId) {
-            const displayDiv = document.getElementById(`value_${kvId}`);
-            const editDiv = document.getElementById(`edit_${kvId}`);
-            const editBtn = document.getElementById(`editBtn_${kvId}`);
-            const saveBtn = document.getElementById(`saveBtn_${kvId}`);
-            const cancelBtn = document.getElementById(`cancelBtn_${kvId}`);
-            const textarea = document.getElementById(`textarea_${kvId}`);
-            
-            // Reset textarea to original value
-            const keyValueRow = document.getElementById(kvId);
-            const keyName = keyValueRow.getAttribute('data-key');
-            const keySource = keyValueRow.getAttribute('data-source');
-            const sectionId = kvId.split('_')[1];
-            
-            let originalValue = '';
-            if (keySource === 'catalog' && catalogData[sectionId] && catalogData[sectionId][keyName]) {
-                originalValue = catalogData[sectionId][keyName];
-            } else if (keySource === 'lot' && lotData[sectionId] && lotData[sectionId][keyName]) {
-                originalValue = lotData[sectionId][keyName];
+        // Hide bulk edit buttons
+        function hideBulkEditButtons() {
+            const bulkEditButtons = document.getElementById('bulkEditButtons');
+            if (bulkEditButtons) {
+                bulkEditButtons.style.display = 'none';
             }
-            
-            textarea.value = originalValue;
-            
-            displayDiv.style.display = 'block';
-            editDiv.style.display = 'none';
-            editBtn.style.display = 'inline-block';
-            saveBtn.style.display = 'none';
-            cancelBtn.style.display = 'none';
         }
 
-        // Save key value
-        function saveKeyValue(kvId) {
-            const keyValueRow = document.getElementById(kvId);
-            const keyName = keyValueRow.getAttribute('data-key');
-            const keySource = keyValueRow.getAttribute('data-source');
-            const sectionId = kvId.split('_')[1];
-            const textarea = document.getElementById(`textarea_${kvId}`);
-            const newValue = textarea.value.trim();
+        // Validate all fields are filled
+        function validateAllFields() {
+            let isValid = true;
+            const sections = [1, 2, 3];
             
-            // Save to database
-            const payload = {
-                catalog_id: currentCatalogId,
-                section_id: sectionId,
-                key: keyName,
-                value: newValue,
-                source: keySource
-            };
-            
-            if (keySource === 'lot') {
-                payload.lot_number = currentLotNumber;
-            }
-            
-            // Show saving state
-            const saveBtn = document.getElementById(`saveBtn_${kvId}`);
-            const originalSaveText = saveBtn.innerHTML;
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            saveBtn.disabled = true;
-            
-            fetch('api/save_key_value_pair.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update local data
-                    if (keySource === 'catalog') {
-                        if (!catalogData[sectionId]) catalogData[sectionId] = {};
-                        catalogData[sectionId][keyName] = newValue;
-                    } else if (keySource === 'lot') {
-                        if (!lotData[sectionId]) lotData[sectionId] = {};
-                        lotData[sectionId][keyName] = newValue;
-                    }
-                    
-                    // Update display
-                    const displayDiv = document.getElementById(`value_${kvId}`);
-                    displayDiv.innerHTML = newValue ? `<span class="value-text">${newValue}</span>` : '<span class="text-muted">No value set</span>';
-                    
-                    // Exit edit mode
-                    const editDiv = document.getElementById(`edit_${kvId}`);
-                    const editBtn = document.getElementById(`editBtn_${kvId}`);
-                    const cancelBtn = document.getElementById(`cancelBtn_${kvId}`);
-                    
-                    displayDiv.style.display = 'block';
-                    editDiv.style.display = 'none';
-                    editBtn.style.display = 'inline-block';
-                    saveBtn.style.display = 'none';
-                    cancelBtn.style.display = 'none';
-                    
-                    console.log('Value saved successfully:', data);
-                    
-                    // Show success feedback
-                    showSaveSuccessFeedback(kvId);
-                    
-                } else {
-                    alert('Error saving value: ' + (data.message || 'Unknown error'));
+            sections.forEach(sectionId => {
+                if (templateKeys[sectionId] && templateKeys[sectionId].keys) {
+                    templateKeys[sectionId].keys.forEach(key => {
+                        const keyName = key.key_name;
+                        const kvId = `kv_${sectionId}_${keyName.replace(/\s+/g, '_')}`;
+                        const textarea = document.getElementById(`textarea_${kvId}`);
+                        const errorDiv = document.getElementById(`error_${kvId}`);
+                        
+                        if (textarea) {
+                            const value = textarea.value.trim();
+                            if (!value) {
+                                isValid = false;
+                                textarea.classList.add('is-invalid');
+                                if (errorDiv) {
+                                    errorDiv.textContent = `${keyName} is required`;
+                                }
+                            } else {
+                                textarea.classList.remove('is-invalid');
+                                if (errorDiv) {
+                                    errorDiv.textContent = '';
+                                }
+                            }
+                        }
+                    });
                 }
-            })
-            .catch(error => {
-                console.error('Error saving value:', error);
-                alert('Error saving value. Please try again.');
-            })
-            .finally(() => {
-                // Reset button
-                saveBtn.innerHTML = originalSaveText;
-                saveBtn.disabled = false;
             });
+            
+            return isValid;
         }
 
-        // Show save success feedback
-        function showSaveSuccessFeedback(kvId) {
-            const editBtn = document.getElementById(`editBtn_${kvId}`);
-            const originalContent = editBtn.innerHTML;
+        // Save all data
+        function saveAllData() {
+            if (!validateAllFields()) {
+                alert('Please fill in all required fields before saving.');
+                return;
+            }
             
-            editBtn.innerHTML = '<i class="fas fa-check text-success"></i> Saved';
-            editBtn.classList.add('btn-outline-success');
-            editBtn.classList.remove('btn-outline-secondary');
+            const saveAllBtn = document.getElementById('saveAllBtn');
+            const originalText = saveAllBtn.innerHTML;
+            saveAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
+            saveAllBtn.disabled = true;
+            
+            const savePromises = [];
+            const sections = [1, 2, 3];
+            
+            sections.forEach(sectionId => {
+                if (templateKeys[sectionId] && templateKeys[sectionId].keys) {
+                    templateKeys[sectionId].keys.forEach(key => {
+                        const keyName = key.key_name;
+                        const keySource = key.key_source;
+                        const kvId = `kv_${sectionId}_${keyName.replace(/\s+/g, '_')}`;
+                        const textarea = document.getElementById(`textarea_${kvId}`);
+                        
+                        if (textarea) {
+                            const newValue = textarea.value.trim();
+                            
+                            // Create save payload
+                            const payload = {
+                                catalog_id: currentCatalogId,
+                                section_id: sectionId,
+                                key: keyName,
+                                value: newValue,
+                                source: keySource
+                            };
+                            
+                            if (keySource === 'lot') {
+                                payload.lot_number = currentLotNumber;
+                            }
+                            
+                            // Add to promises array
+                            const savePromise = fetch('api/save_key_value_pair.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(payload)
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Update local data
+                                    if (keySource === 'catalog') {
+                                        if (!catalogData[sectionId]) catalogData[sectionId] = {};
+                                        catalogData[sectionId][keyName] = newValue;
+                                    } else if (keySource === 'lot') {
+                                        if (!lotData[sectionId]) lotData[sectionId] = {};
+                                        lotData[sectionId][keyName] = newValue;
+                                    }
+                                    
+                                    // Update original data
+                                    if (!originalData[sectionId]) originalData[sectionId] = {};
+                                    originalData[sectionId][keyName] = { value: newValue, source: keySource };
+                                    
+                                    return { success: true, key: keyName };
+                                } else {
+                                    throw new Error(`Error saving ${keyName}: ${data.message}`);
+                                }
+                            });
+                            
+                            savePromises.push(savePromise);
+                        }
+                    });
+                }
+            });
+            
+            // Execute all save operations
+            Promise.all(savePromises)
+                .then(results => {
+                    console.log('All data saved successfully:', results);
+                    showBulkSaveSuccessFeedback();
+                })
+                .catch(error => {
+                    console.error('Error saving data:', error);
+                    alert('Error saving data: ' + error.message);
+                })
+                .finally(() => {
+                    saveAllBtn.innerHTML = originalText;
+                    saveAllBtn.disabled = false;
+                });
+        }
+
+        // Cancel all changes
+        function cancelAllChanges() {
+            if (confirm('Are you sure you want to cancel all changes? All unsaved data will be lost.')) {
+                const sections = [1, 2, 3];
+                
+                sections.forEach(sectionId => {
+                    if (templateKeys[sectionId] && templateKeys[sectionId].keys) {
+                        templateKeys[sectionId].keys.forEach(key => {
+                            const keyName = key.key_name;
+                            const kvId = `kv_${sectionId}_${keyName.replace(/\s+/g, '_')}`;
+                            const textarea = document.getElementById(`textarea_${kvId}`);
+                            
+                            if (textarea && originalData[sectionId] && originalData[sectionId][keyName]) {
+                                textarea.value = originalData[sectionId][keyName].value;
+                                textarea.classList.remove('is-invalid');
+                                const errorDiv = document.getElementById(`error_${kvId}`);
+                                if (errorDiv) {
+                                    errorDiv.textContent = '';
+                                }
+                            }
+                        });
+                    }
+                });
+                
+                console.log('All changes cancelled, data restored to original state');
+            }
+        }
+
+        // Show bulk save success feedback
+        function showBulkSaveSuccessFeedback() {
+            const saveAllBtn = document.getElementById('saveAllBtn');
+            const originalContent = saveAllBtn.innerHTML;
+            
+            saveAllBtn.innerHTML = '<i class="fas fa-check text-white me-1"></i> All Saved!';
+            saveAllBtn.classList.add('btn-outline-success');
+            saveAllBtn.classList.remove('btn-success');
             
             setTimeout(() => {
-                editBtn.innerHTML = originalContent;
-                editBtn.classList.remove('btn-outline-success');
-                editBtn.classList.add('btn-outline-secondary');
-            }, 2000);
+                saveAllBtn.innerHTML = originalContent;
+                saveAllBtn.classList.remove('btn-outline-success');
+                saveAllBtn.classList.add('btn-success');
+            }, 3000);
         }
 
         // Show loading state in sections
@@ -1035,6 +1068,7 @@
                     </div>
                 `;
             });
+            hideBulkEditButtons();
         }
 
         // Show error in sections
@@ -1049,6 +1083,7 @@
                     </div>
                 `;
             });
+            hideBulkEditButtons();
         }
 
         // Create new CoA (with template structure)
@@ -1099,12 +1134,14 @@
                     // Initialize empty data
                     catalogData = {};
                     lotData = {};
+                    originalData = {};
                     
                     displayTemplateBasedSections();
+                    showBulkEditButtons();
                     document.getElementById('previewBtn').disabled = false;
                     document.getElementById('generateBtn').disabled = false;
                     
-                    alert('New CoA template loaded! You can now edit the values for each key.');
+                    alert('New CoA template loaded! Fill in all values and click "Save All" to save your data.');
                 })
                 .catch(error => {
                     console.error('Error creating new CoA:', error);
@@ -1144,6 +1181,7 @@
                 templateKeys = {};
                 catalogData = {};
                 lotData = {};
+                originalData = {};
                 sectionsData = {};
                 
                 // Disable buttons
@@ -1169,6 +1207,7 @@
                     </div>
                 `;
             });
+            hideBulkEditButtons();
         }
 
         // Template Management Functions
