@@ -199,7 +199,7 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <label for="catalogSelect" class="form-label">Catalog Number</label>
+                                <label for="catalogSelect" class="form-label" style="color: red;">Catalog Number</label>
                                 <div class="input-group">
                                     <select class="form-select" id="catalogSelect">
                                         <option value="">Select Catalog...</option>
@@ -210,11 +210,11 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <label for="catalogName" class="form-label">Catalog Name</label>
+                                <label for="catalogName" class="form-label" style="color: red;">Catalog Name</label>
                                 <input type="text" class="form-control" id="catalogName" placeholder="Enter catalog name" readonly>
                             </div>
                             <div class="col-md-3">
-                                <label for="lotSelect" class="form-label">Lot Number</label>
+                                <label for="lotSelect" class="form-label" style="color: green;">Lot Number</label>
                                 <div class="input-group">
                                     <select class="form-select" id="lotSelect" disabled>
                                         <option value="">Select Lot...</option>
@@ -231,7 +231,7 @@
                                     <i class="fas fa-download me-1"></i>
                                     Load Data
                                 </button>
-                                <button class="btn btn-outline-primary me-2" id="createNewBtn" disabled>
+                                <button class="btn btn-outline-primary me-2" id="createNewBtn" disabled hidden>
                                     <i class="fas fa-magic me-1"></i>
                                     Create New CoA
                                 </button>
@@ -849,15 +849,16 @@
             const container = document.getElementById(`keyValues_${sectionId}`);
             const kvId = `kv_${sectionId}_${keyName.replace(/\s+/g, '_')}`;
             
-            const sourceColor = keySource === 'catalog' ? 'bg-primary' : 'bg-success';
+            // const sourceColor = keySource === 'catalog' ? 'bg-primary' : 'bg-success';
+            const sourceColor = keySource === 'catalog' ? 'red' : 'green';
             const sourceIcon = keySource === 'catalog' ? 'fa-database' : 'fa-tag';
             
             const kvHtml = `
                 <div class="key-value-row" id="${kvId}" data-key="${keyName}" data-source="${keySource}">
                     <div class="row align-items-center">
                         <div class="col-md-4">
-                            <label class="form-label">${keyName}</label>
-                            <strong class="ms-2">${keySource.charAt(0).toUpperCase() + keySource.slice(1)}</strong>
+                            <label class="form-label" style="color: ${sourceColor};">${keyName}</label>
+                            <!--<strong class="ms-2">${keySource.charAt(0).toUpperCase() + keySource.slice(1)}</strong>-->
                         </div>
                         <div class="col-md-8">
                             <textarea class="form-control bulk-edit-textarea" id="textarea_${kvId}" rows="2" placeholder="Enter ${keyName.toLowerCase()}...">${value}</textarea>
