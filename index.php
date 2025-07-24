@@ -10,7 +10,7 @@
         .section-card {
             /* border: 1px solid #dee2e6; */
             border-radius: 8px;
-            margin-bottom: 10px;
+            /* margin-bottom: 10px; */
         }
         .section-header {
             /* background-color: #f8f9fa; */
@@ -20,7 +20,7 @@
         }
         .section-content {
             padding: 8px;
-            padding-top:0px;
+            padding-top:5px;
             padding-bottom: 0px;
             overflow: auto;
         }
@@ -32,6 +32,8 @@
             /* border: 1px solid #e9ecef; */
             border-radius: 5px;
             padding: 5px;
+            padding-top:0px;
+            padding-bottom: 0px;                                                                                                    
             margin-bottom: 0px;
             cursor: move;
             transition: all 0.2s ease;
@@ -861,7 +863,7 @@
                             <!--<strong class="ms-2">${keySource.charAt(0).toUpperCase() + keySource.slice(1)}</strong>-->
                         </div>
                         <div class="col-md-8">
-                            <textarea class="form-control bulk-edit-textarea" id="textarea_${kvId}" rows="2" placeholder="Enter ${keyName.toLowerCase()}...">${value}</textarea>
+                            <textarea class="form-control bulk-edit-textarea" id="textarea_${kvId}" rows="2" style="height: 38px;" placeholder="Enter ${keyName.toLowerCase()}...">${value}</textarea>
                             <div class="invalid-feedback" id="error_${kvId}"></div>
                         </div>
                     </div>
