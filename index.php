@@ -929,11 +929,10 @@
             }
             
             const saveAllBtn = document.getElementById('saveAllBtn');
-            const originalText = saveAllBtn.innerHTML;
             saveAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
             saveAllBtn.disabled = true;
             
-            const savePromises = [];
+            const keyValuesToSave = [];
             const sections = [1, 2, 3];
             
             sections.forEach(sectionId => {
@@ -946,70 +945,59 @@
                         
                         if (textarea) {
                             const newValue = textarea.value.trim();
-                            
-                            // Create save payload
-                            const payload = {
-                                catalog_id: currentCatalogId,
+                            keyValuesToSave.push({
                                 section_id: sectionId,
                                 key: keyName,
                                 value: newValue,
                                 source: keySource
-                            };
-                            
-                            if (keySource === 'lot') {
-                                payload.lot_number = currentLotNumber;
-                            }
-                            
-                            // Add to promises array
-                            const savePromise = fetch('api/save_key_value_pair.php', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify(payload)
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    // Update local data
-                                    if (keySource === 'catalog') {
-                                        if (!catalogData[sectionId]) catalogData[sectionId] = {};
-                                        catalogData[sectionId][keyName] = newValue;
-                                    } else if (keySource === 'lot') {
-                                        if (!lotData[sectionId]) lotData[sectionId] = {};
-                                        lotData[sectionId][keyName] = newValue;
-                                    }
-                                    
-                                    // Update original data
-                                    if (!originalData[sectionId]) originalData[sectionId] = {};
-                                    originalData[sectionId][keyName] = { value: newValue, source: keySource };
-                                    
-                                    return { success: true, key: keyName };
-                                } else {
-                                    throw new Error(`Error saving ${keyName}: ${data.message}`);
-                                }
                             });
-                            
-                            savePromises.push(savePromise);
                         }
                     });
                 }
             });
-            
-            // Execute all save operations
-            Promise.all(savePromises)
-                .then(results => {
-                    console.log('All data saved successfully:', results);
-                    showBulkSaveSuccessFeedback();
-                })
-                .catch(error => {
-                    console.error('Error saving data:', error);
-                    alert('Error saving data: ' + error.message);
-                })
-                .finally(() => {
-                    saveAllBtn.innerHTML = originalText;
-                    saveAllBtn.disabled = false;
+
+            const bulkPayload = {
+                catalog_id: currentCatalogId,
+                lot_number: currentLotNumber,
+                key_values: keyValuesToSave
+            };
+
+            fetch('api/save_bulk_key_values.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bulkPayload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    throw new Error(data.message || 'An unknown error occurred during bulk save.');
+                }
+                
+                // Update local and original data stores upon successful save
+                keyValuesToSave.forEach(item => {
+                    const { section_id, key, value, source } = item;
+                    if (source === 'catalog') {
+                        if (!catalogData[section_id]) catalogData[section_id] = {};
+                        catalogData[section_id][key] = value;
+                    } else if (source === 'lot') {
+                        if (!lotData[section_id]) lotData[section_id] = {};
+                        lotData[section_id][key] = value;
+                    }
+                    if (!originalData[section_id]) originalData[section_id] = {};
+                    originalData[section_id][key] = { value: value, source: source };
                 });
+                console.log('All data saved successfully:', data);
+                showBulkSaveSuccessFeedback();
+            })
+            .catch(error => {
+                console.error('Error saving data:', error);
+                alert('Error saving data: ' + error.message);
+                // Restore button on error
+                saveAllBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All';
+                saveAllBtn.disabled = false;
+            });
         }
 
         // Cancel all changes
@@ -1043,9 +1031,9 @@
         // Show bulk save success feedback
         function showBulkSaveSuccessFeedback() {
             const saveAllBtn = document.getElementById('saveAllBtn');
-            const originalContent = saveAllBtn.innerHTML;
+            const originalContent = '<i class="fas fa-save me-1"></i> Save All';
             
-            saveAllBtn.innerHTML = '<i class="fas fa-check text-white me-1"></i> All Saved!';
+            saveAllBtn.innerHTML = '<i class="fas fa-check me-1"></i> All Saved!';
             saveAllBtn.classList.add('btn-outline-success');
             saveAllBtn.classList.remove('btn-success');
             
@@ -1053,6 +1041,7 @@
                 saveAllBtn.innerHTML = originalContent;
                 saveAllBtn.classList.remove('btn-outline-success');
                 saveAllBtn.classList.add('btn-success');
+                saveAllBtn.disabled = false;
             }, 3000);
         }
 
