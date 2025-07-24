@@ -959,6 +959,7 @@
             const bulkPayload = {
                 catalog_id: currentCatalogId,
                 lot_number: currentLotNumber,
+                template_id: currentTemplateId,
                 key_values: keyValuesToSave
             };
 
