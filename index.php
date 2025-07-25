@@ -71,23 +71,6 @@
             background-color: #e7f3ff;
             font-weight: 500;
         }
-        /* Updated styles for inline switching */
-        .input-with-switch {
-            position: relative;
-            width: 100%;
-        }
-        .switch-to-search-btn {
-            position: absolute;
-            right: 5px;
-            top: 50%;
-            transform: translateY(-50%);
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-            z-index: 10;
-        }
-        .inline-input {
-            padding-right: 40px;
-        }
         /* Searchable dropdown styles */
         .searchable-dropdown {
             position: relative;
@@ -98,7 +81,7 @@
             text-align: left;
             background-color: white;
             border: 1px solid #ced4da;
-            padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+            padding: 0.375rem 0.75rem;
             font-size: 1rem;
             border-radius: 0.25rem;
             cursor: pointer;
@@ -106,6 +89,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            padding-right: 2rem;
         }
         .searchable-dropdown-toggle:hover {
             border-color: #86b7fe;
@@ -237,54 +221,40 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <label for="catalogSelect" class="form-label">Catalog Number</label>
-                                <div class="d-flex">
-                                    <div id="catalogContainer" style="flex: 1;">
-                                        <!-- This will contain either dropdown or input -->
-                                        <div class="searchable-dropdown" id="catalogDropdown">
-                                            <button type="button" class="searchable-dropdown-toggle" id="catalogDropdownToggle">
-                                                Select Catalog...
-                                            </button>
-                                            <div class="searchable-dropdown-menu" id="catalogDropdownMenu">
-                                                <div class="searchable-dropdown-search">
-                                                    <input type="text" class="form-control form-control-sm" placeholder="Search catalog..." id="catalogSearchInput">
-                                                </div>
-                                                <div class="searchable-dropdown-items" id="catalogDropdownItems">
-                                                    <div class="searchable-dropdown-no-results">Loading catalogs...</div>
-                                                </div>
-                                            </div>
+                                <!-- <small class="text-muted d-block mb-1">Search existing or create new</small> -->
+                                <div class="searchable-dropdown" id="catalogDropdown">
+                                    <button type="button" class="searchable-dropdown-toggle" id="catalogDropdownToggle">
+                                        Select Catalog...
+                                    </button>
+                                    <div class="searchable-dropdown-menu" id="catalogDropdownMenu">
+                                        <div class="searchable-dropdown-search">
+                                            <input type="text" class="form-control form-control-sm" placeholder="Search catalogs (new ones can be created)" id="catalogSearchInput">
+                                        </div>
+                                        <div class="searchable-dropdown-items" id="catalogDropdownItems">
+                                            <div class="searchable-dropdown-no-results">Loading catalogs... Search to create new ones.</div>
                                         </div>
                                     </div>
-                                    <button class="btn btn-outline-primary ms-2" type="button" id="catalogModeToggleBtn" title="Add new catalog">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <label for="catalogName" class="form-label">Catalog Name</label>
-                                <input type="text" class="form-control" id="catalogName" placeholder="Enter catalog name">
+                                <input type="text" class="form-control" id="catalogName" placeholder="Select a catalog first" readonly>
                             </div>
                             <div class="col-md-4">
                                 <label for="lotSelect" class="form-label">Lot Number</label>
-                                <div class="d-flex">
-                                    <div id="lotContainer" style="flex: 1;">
-                                        <!-- This will contain either dropdown or input -->
-                                        <div class="searchable-dropdown" id="lotDropdown">
-                                            <button type="button" class="searchable-dropdown-toggle" id="lotDropdownToggle" disabled>
-                                                Select Lot...
-                                            </button>
-                                            <div class="searchable-dropdown-menu" id="lotDropdownMenu">
-                                                <div class="searchable-dropdown-search">
-                                                    <input type="text" class="form-control form-control-sm" placeholder="Search lot..." id="lotSearchInput">
-                                                </div>
-                                                <div class="searchable-dropdown-items" id="lotDropdownItems">
-                                                    <div class="searchable-dropdown-no-results">Select a catalog first</div>
-                                                </div>
-                                            </div>
+                                <!-- <small class="text-muted d-block mb-1">Search existing or create new</small> -->
+                                <div class="searchable-dropdown" id="lotDropdown">
+                                    <button type="button" class="searchable-dropdown-toggle" id="lotDropdownToggle" disabled>
+                                        Select Lot...
+                                    </button>
+                                    <div class="searchable-dropdown-menu" id="lotDropdownMenu">
+                                        <div class="searchable-dropdown-search">
+                                            <input type="text" class="form-control form-control-sm" placeholder="Search lots (new ones can be created)" id="lotSearchInput">
+                                        </div>
+                                        <div class="searchable-dropdown-items" id="lotDropdownItems">
+                                            <div class="searchable-dropdown-no-results">Select a catalog first to view/create lots</div>
                                         </div>
                                     </div>
-                                    <button class="btn btn-outline-primary ms-2" type="button" id="lotModeToggleBtn" disabled title="Add new lot">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -366,7 +336,73 @@
             </div>
         </div>
     </div>
-<!-- Continue from Part 1 - Add this after the closing </div> of container -->
+
+    <!-- Create Catalog Modal -->
+    <div class="modal fade" id="createCatalogModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Catalog</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No matching catalog found in the system. You can create a new catalog by filling in the details below.
+                    </div>
+                    <div class="mb-3">
+                        <label for="newCatalogNumber" class="form-label">Catalog Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="newCatalogNumber" placeholder="Enter catalog number (e.g., ABC-123)" required>
+                        <div class="form-text">This will be the unique identifier for your catalog</div>
+                        <div class="invalid-feedback">
+                            Catalog number is required
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newCatalogName" class="form-label">Catalog Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="newCatalogName" placeholder="Enter catalog name" required>
+                        <div class="invalid-feedback">
+                            Catalog name is required
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmCreateCatalogBtn">Create Catalog</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Lot Modal -->
+    <div class="modal fade" id="createLotModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Lot</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No matching lot found for this catalog. You can create a new lot by entering the lot number below.
+                    </div>
+                    <div class="mb-3">
+                        <label for="newLotNumber" class="form-label">Lot Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="newLotNumber" placeholder="Enter lot number (e.g., LOT-2024-001)" required>
+                        <div class="form-text">This will be the unique lot identifier for this catalog</div>
+                        <div class="invalid-feedback">
+                            Lot number is required
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmCreateLotBtn">Create Lot</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Template Management Modal -->
     <div class="modal fade" id="templateManagementModal" tabindex="-1">
@@ -531,15 +567,14 @@
         let currentData = {};
         let originalData = {};
         let hasUnsavedChanges = false;
-        let isNewCatalog = false;
-        let isNewLot = false;
         let catalogsData = [];
         let lotsData = [];
         let currentSectionIdForKey = null;
+        let searchTimeout = null;
 
         // Initialize on DOM load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Initializing new workflow...');
+            console.log('Initializing workflow with smart add functionality...');
             initializeSearchableDropdowns();
             loadTemplates();
             loadCatalogs();
@@ -639,147 +674,6 @@
             });
         }
 
-        // Toggle between dropdown and input for catalog
-        function toggleCatalogMode() {
-            const container = document.getElementById('catalogContainer');
-            const toggleBtn = document.getElementById('catalogModeToggleBtn');
-            const isDropdownMode = container.querySelector('.searchable-dropdown');
-            
-            if (isDropdownMode) {
-                // Switch to input mode
-                isNewCatalog = true;
-                currentCatalogId = null;
-                currentCatalogNumber = null;
-                
-                container.innerHTML = `
-                    <div class="input-with-switch">
-                        <input type="text" class="form-control inline-input" id="catalogNumberInput" 
-                               placeholder="Enter new catalog number">
-                        <button class="btn btn-sm btn-outline-secondary switch-to-search-btn" 
-                                onclick="toggleCatalogMode()" title="Search existing">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                `;
-                toggleBtn.innerHTML = '<i class="fas fa-search"></i>';
-                toggleBtn.title = 'Search existing catalog';
-                
-                // Clear catalog name and reset lot
-                document.getElementById('catalogName').value = '';
-                resetLotSelection();
-                disableAllTextareas();
-                
-                // Enable save/cancel buttons for new entry
-                updateButtonStates();
-                
-            } else {
-                // Switch back to dropdown mode
-                isNewCatalog = false;
-                
-                container.innerHTML = `
-                    <div class="searchable-dropdown" id="catalogDropdown">
-                        <button type="button" class="searchable-dropdown-toggle" id="catalogDropdownToggle">
-                            Select Catalog...
-                        </button>
-                        <div class="searchable-dropdown-menu" id="catalogDropdownMenu">
-                            <div class="searchable-dropdown-search">
-                                <input type="text" class="form-control form-control-sm" 
-                                       placeholder="Search catalog..." id="catalogSearchInput">
-                            </div>
-                            <div class="searchable-dropdown-items" id="catalogDropdownItems">
-                                <div class="searchable-dropdown-no-results">Loading catalogs...</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                toggleBtn.innerHTML = '<i class="fas fa-plus"></i>';
-                toggleBtn.title = 'Add new catalog';
-                
-                // Reinitialize dropdown
-                initializeCatalogDropdown();
-                populateCatalogDropdown(catalogsData);
-                
-                // Reset states
-                document.getElementById('catalogName').value = '';
-                resetLotSelection();
-                clearAllFields();
-                updateButtonStates();
-            }
-        }
-
-        // Toggle between dropdown and input for lot
-        function toggleLotMode() {
-            const container = document.getElementById('lotContainer');
-            const toggleBtn = document.getElementById('lotModeToggleBtn');
-            const isDropdownMode = container.querySelector('.searchable-dropdown');
-            
-            if (isDropdownMode) {
-                // Switch to input mode
-                isNewLot = true;
-                currentLotNumber = null;
-                
-                container.innerHTML = `
-                    <div class="input-with-switch">
-                        <input type="text" class="form-control inline-input" id="lotNumberInput" 
-                               placeholder="Enter new lot number">
-                        <button class="btn btn-sm btn-outline-secondary switch-to-search-btn" 
-                                onclick="toggleLotMode()" title="Search existing">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                `;
-                toggleBtn.innerHTML = '<i class="fas fa-search"></i>';
-                toggleBtn.title = 'Search existing lot';
-                
-                // Clear lot-specific fields
-                clearLotFields();
-                
-                // Enable textareas if catalog is selected
-                if (currentCatalogId || isNewCatalog) {
-                    enableAllTextareas();
-                }
-                updateButtonStates();
-                
-            } else {
-                // Switch back to dropdown mode
-                isNewLot = false;
-                
-                container.innerHTML = `
-                    <div class="searchable-dropdown" id="lotDropdown">
-                        <button type="button" class="searchable-dropdown-toggle" id="lotDropdownToggle">
-                            Select Lot...
-                        </button>
-                        <div class="searchable-dropdown-menu" id="lotDropdownMenu">
-                            <div class="searchable-dropdown-search">
-                                <input type="text" class="form-control form-control-sm" 
-                                       placeholder="Search lot..." id="lotSearchInput">
-                            </div>
-                            <div class="searchable-dropdown-items" id="lotDropdownItems">
-                                <div class="searchable-dropdown-no-results">Select a catalog first</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                toggleBtn.innerHTML = '<i class="fas fa-plus"></i>';
-                toggleBtn.title = 'Add new lot';
-                
-                // Reinitialize dropdown
-                initializeLotDropdown();
-                if (currentCatalogId) {
-                    populateLotDropdown(lotsData);
-                }
-                
-                // Clear lot fields and disable textareas
-                clearLotFields();
-                if (!currentCatalogId) {
-                    disableAllTextareas();
-                }
-                updateButtonStates();
-            }
-        }
-
         // Load catalog data when catalog is selected
         function loadCatalogData() {
             if (!currentTemplateId || !currentCatalogId) return;
@@ -867,8 +761,8 @@
         // Update button states
         function updateButtonStates() {
             const hasTemplate = !!currentTemplateId;
-            const hasCatalog = !!(currentCatalogId || isNewCatalog);
-            const hasLot = !!(currentLotNumber || isNewLot);
+            const hasCatalog = !!currentCatalogId;
+            const hasLot = !!currentLotNumber;
             const canSave = hasTemplate && hasCatalog && hasLot;
             
             document.getElementById('saveAllBtn').disabled = !canSave;
@@ -876,8 +770,7 @@
             document.getElementById('previewBtn').disabled = !canSave;
             document.getElementById('generateBtn').disabled = !canSave;
             
-            // Lot button state
-            document.getElementById('lotModeToggleBtn').disabled = !hasCatalog;
+            // Lot dropdown state
             const lotToggle = document.getElementById('lotDropdownToggle');
             if (lotToggle) {
                 lotToggle.disabled = !hasCatalog;
@@ -914,23 +807,6 @@
                 isValid = false;
             } else {
                 catalogName.classList.remove('is-invalid');
-            }
-            
-            // Validate new inputs if in input mode
-            if (isNewCatalog) {
-                const catalogInput = document.getElementById('catalogNumberInput');
-                if (catalogInput && !catalogInput.value.trim()) {
-                    catalogInput.classList.add('is-invalid');
-                    isValid = false;
-                }
-            }
-            
-            if (isNewLot) {
-                const lotInput = document.getElementById('lotNumberInput');
-                if (lotInput && !lotInput.value.trim()) {
-                    lotInput.classList.add('is-invalid');
-                    isValid = false;
-                }
             }
             
             return isValid;
@@ -979,10 +855,6 @@
             manageBtn.onclick = openTemplateManagement;
             document.getElementById('templateRadioButtons').parentElement.appendChild(manageBtn);
             
-            // Mode toggle buttons
-            document.getElementById('catalogModeToggleBtn').addEventListener('click', toggleCatalogMode);
-            document.getElementById('lotModeToggleBtn').addEventListener('click', toggleLotMode);
-            
             // Action buttons
             document.getElementById('saveAllBtn').addEventListener('click', saveAllData);
             document.getElementById('cancelBtn').addEventListener('click', cancelChanges);
@@ -998,6 +870,29 @@
             document.addEventListener('input', function(e) {
                 if (e.target.classList.contains('bulk-edit-textarea')) {
                     markFieldAsChanged(e.target);
+                }
+            });
+            
+            // Create catalog/lot modal buttons
+            document.getElementById('confirmCreateCatalogBtn').addEventListener('click', createNewCatalog);
+            document.getElementById('confirmCreateLotBtn').addEventListener('click', createNewLot);
+            
+            // Enter key support in modal inputs
+            document.getElementById('newCatalogNumber').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('newCatalogName').focus();
+                }
+            });
+            
+            document.getElementById('newCatalogName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    createNewCatalog();
+                }
+            });
+            
+            document.getElementById('newLotNumber').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    createNewLot();
                 }
             });
         }
@@ -1028,7 +923,7 @@
             
             if (search) {
                 search.addEventListener('input', function() {
-                    filterDropdownItems('catalog', this.value);
+                    handleCatalogSearch(this.value);
                 });
                 search.addEventListener('click', e => e.stopPropagation());
             }
@@ -1049,37 +944,43 @@
             
             if (search) {
                 search.addEventListener('input', function() {
-                    filterDropdownItems('lot', this.value);
+                    handleLotSearch(this.value);
                 });
                 search.addEventListener('click', e => e.stopPropagation());
             }
         }
 
-        function toggleDropdown(type) {
-            const menu = document.getElementById(`${type}DropdownMenu`);
-            const search = document.getElementById(`${type}SearchInput`);
-            const isOpen = menu.classList.contains('show');
+        // Smart search handlers
+        function handleCatalogSearch(searchTerm) {
+            // Clear previous timeout
+            if (searchTimeout) clearTimeout(searchTimeout);
             
-            closeAllDropdowns();
-            
-            if (!isOpen) {
-                menu.classList.add('show');
-                setTimeout(() => {
-                    search.focus();
-                    search.value = '';
-                    filterDropdownItems(type, '');
-                }, 100);
-            }
+            searchTimeout = setTimeout(() => {
+                filterCatalogItems(searchTerm);
+                
+                // If search term exists and no results found, show create option
+                if (searchTerm.trim() && !hasVisibleCatalogItems()) {
+                    showCreateCatalogOption(searchTerm.trim());
+                }
+            }, 1100); // Debounce for 1100ms
         }
 
-        function closeAllDropdowns() {
-            document.querySelectorAll('.searchable-dropdown-menu').forEach(menu => {
-                menu.classList.remove('show');
-            });
+        function handleLotSearch(searchTerm) {
+            // Clear previous timeout
+            if (searchTimeout) clearTimeout(searchTimeout);
+            
+            searchTimeout = setTimeout(() => {
+                filterLotItems(searchTerm);
+                
+                // If search term exists and no results found, show create option
+                if (searchTerm.trim() && !hasVisibleLotItems()) {
+                    showCreateLotOption(searchTerm.trim());
+                }
+            }, 300); // Debounce for 300ms
         }
 
-        function filterDropdownItems(type, searchTerm) {
-            const container = document.getElementById(`${type}DropdownItems`);
+        function filterCatalogItems(searchTerm) {
+            const container = document.getElementById('catalogDropdownItems');
             const items = container.querySelectorAll('.searchable-dropdown-item');
             const searchLower = searchTerm.toLowerCase();
             let hasVisibleItems = false;
@@ -1094,31 +995,264 @@
                 }
             });
             
-            // Show no results message if needed
-            if (!hasVisibleItems && items.length > 0) {
-                let noResults = container.querySelector('.no-search-results');
-                if (!noResults) {
-                    noResults = document.createElement('div');
-                    noResults.className = 'searchable-dropdown-no-results no-search-results';
-                    noResults.textContent = 'No matching results found';
-                    container.appendChild(noResults);
+            return hasVisibleItems;
+        }
+
+        function filterLotItems(searchTerm) {
+            const container = document.getElementById('lotDropdownItems');
+            const items = container.querySelectorAll('.searchable-dropdown-item');
+            const searchLower = searchTerm.toLowerCase();
+            let hasVisibleItems = false;
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(searchLower)) {
+                    item.classList.remove('hidden');
+                    hasVisibleItems = true;
+                } else {
+                    item.classList.add('hidden');
                 }
+            });
+            
+            return hasVisibleItems;
+        }
+
+        function hasVisibleCatalogItems() {
+            const container = document.getElementById('catalogDropdownItems');
+            const visibleItems = container.querySelectorAll('.searchable-dropdown-item:not(.hidden)');
+            return visibleItems.length > 0;
+        }
+
+        function hasVisibleLotItems() {
+            const container = document.getElementById('lotDropdownItems');
+            const visibleItems = container.querySelectorAll('.searchable-dropdown-item:not(.hidden)');
+            return visibleItems.length > 0;
+        }
+
+        function showCreateCatalogOption(searchTerm) {
+            // Show modal for creating new catalog
+            // Pre-fill with search term but allow user to change it
+            document.getElementById('newCatalogNumber').value = searchTerm;
+            document.getElementById('newCatalogName').value = '';
+            document.getElementById('newCatalogNumber').classList.remove('is-invalid');
+            document.getElementById('newCatalogName').classList.remove('is-invalid');
+            
+            // Close dropdown
+            closeAllDropdowns();
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('createCatalogModal'));
+            modal.show();
+            
+            // Focus on catalog number input when modal is shown
+            document.getElementById('createCatalogModal').addEventListener('shown.bs.modal', function() {
+                document.getElementById('newCatalogNumber').focus();
+                // Select all text for easy replacement
+                document.getElementById('newCatalogNumber').select();
+            }, { once: true });
+        }
+
+        function showCreateLotOption(searchTerm) {
+            // Show modal for creating new lot
+            // Pre-fill with search term but allow user to change it
+            document.getElementById('newLotNumber').value = searchTerm;
+            document.getElementById('newLotNumber').classList.remove('is-invalid');
+            
+            // Close dropdown
+            closeAllDropdowns();
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('createLotModal'));
+            modal.show();
+            
+            // Focus on lot number input when modal is shown
+            document.getElementById('createLotModal').addEventListener('shown.bs.modal', function() {
+                document.getElementById('newLotNumber').focus();
+                // Select all text for easy replacement
+                document.getElementById('newLotNumber').select();
+            }, { once: true });
+        }
+
+        function createNewCatalog() {
+            const catalogNumber = document.getElementById('newCatalogNumber').value.trim();
+            const catalogName = document.getElementById('newCatalogName').value.trim();
+            
+            let isValid = true;
+            
+            if (!catalogNumber) {
+                document.getElementById('newCatalogNumber').classList.add('is-invalid');
+                isValid = false;
             } else {
-                const noResults = container.querySelector('.no-search-results');
-                if (noResults) noResults.remove();
+                document.getElementById('newCatalogNumber').classList.remove('is-invalid');
+                
+                // Check if catalog number already exists
+                const existingCatalog = catalogsData.find(cat => cat.catalog_number.toLowerCase() === catalogNumber.toLowerCase());
+                if (existingCatalog) {
+                    document.getElementById('newCatalogNumber').classList.add('is-invalid');
+                    const feedback = document.getElementById('newCatalogNumber').nextElementSibling.nextElementSibling;
+                    feedback.textContent = 'This catalog number already exists';
+                    isValid = false;
+                }
+            }
+            
+            if (!catalogName) {
+                document.getElementById('newCatalogName').classList.add('is-invalid');
+                isValid = false;
+            } else {
+                document.getElementById('newCatalogName').classList.remove('is-invalid');
+            }
+            
+            if (!isValid) return;
+            
+            // Get current template ID
+            if (!currentTemplateId) {
+                alert('Please select a template first');
+                return;
+            }
+            
+            // Create payload
+            const payload = {
+                catalog_number: catalogNumber,
+                catalog_name: catalogName,
+                template_id: parseInt(currentTemplateId)
+            };
+            
+            // Call API to create catalog
+            fetch('api/save_catalog.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('createCatalogModal')).hide();
+                    
+                    // Clear search input
+                    document.getElementById('catalogSearchInput').value = '';
+                    
+                    // Reload catalogs
+                    loadCatalogs();
+                    
+                    // After catalogs are loaded, select the new one
+                    setTimeout(() => {
+                        selectCatalog(data.catalog_id, catalogNumber, catalogName);
+                    }, 500);
+                    
+                    console.log('Catalog created successfully');
+                } else {
+                    alert('Error creating catalog: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error creating catalog:', error);
+                alert('Error creating catalog. Please try again.');
+            });
+        }
+
+        function createNewLot() {
+            const lotNumber = document.getElementById('newLotNumber').value.trim();
+            
+            if (!lotNumber) {
+                document.getElementById('newLotNumber').classList.add('is-invalid');
+                return;
+            } else {
+                document.getElementById('newLotNumber').classList.remove('is-invalid');
+                
+                // Check if lot number already exists
+                const existingLot = lotsData.find(lot => lot.lot_number.toLowerCase() === lotNumber.toLowerCase());
+                if (existingLot) {
+                    document.getElementById('newLotNumber').classList.add('is-invalid');
+                    const feedback = document.getElementById('newLotNumber').nextElementSibling.nextElementSibling;
+                    feedback.textContent = 'This lot number already exists for this catalog';
+                    return;
+                }
+            }
+            
+            if (!currentCatalogId) {
+                alert('Please select a catalog first');
+                return;
+            }
+            
+            // Create payload
+            const payload = {
+                catalog_id: currentCatalogId,
+                lot_number: lotNumber
+            };
+            
+            // Call API to create lot
+            fetch('api/save_lot.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('createLotModal')).hide();
+                    
+                    // Clear search input
+                    document.getElementById('lotSearchInput').value = '';
+                    
+                    // Reload lots
+                    loadLots(currentCatalogId);
+                    
+                    // After lots are loaded, select the new one
+                    setTimeout(() => {
+                        selectLot(lotNumber);
+                    }, 500);
+                    
+                    console.log('Lot created successfully');
+                } else {
+                    alert('Error creating lot: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error creating lot:', error);
+                alert('Error creating lot. Please try again.');
+            });
+        }
+
+        function toggleDropdown(type) {
+            const menu = document.getElementById(`${type}DropdownMenu`);
+            const search = document.getElementById(`${type}SearchInput`);
+            const isOpen = menu.classList.contains('show');
+            
+            closeAllDropdowns();
+            
+            if (!isOpen) {
+                menu.classList.add('show');
+                setTimeout(() => {
+                    search.focus();
+                    search.value = '';
+                    if (type === 'catalog') {
+                        filterCatalogItems('');
+                    } else {
+                        filterLotItems('');
+                    }
+                }, 100);
             }
         }
 
-        function selectCatalogFromDropdown(catalogId, catalogNumber, catalogName) {
+        function closeAllDropdowns() {
+            document.querySelectorAll('.searchable-dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+
+        function selectCatalog(catalogId, catalogNumber, catalogName) {
             const toggle = document.getElementById('catalogDropdownToggle');
             toggle.textContent = catalogNumber;
             
             currentCatalogId = catalogId;
             currentCatalogNumber = catalogNumber;
-            isNewCatalog = false;
             
             // Update catalog name field
-            document.getElementById('catalogName').value = catalogName || '';
+            const catalogNameField = document.getElementById('catalogName');
+            catalogNameField.value = catalogName || '';
+            catalogNameField.readOnly = true;
             
             closeAllDropdowns();
             
@@ -1133,12 +1267,11 @@
             updateButtonStates();
         }
 
-        function selectLotFromDropdown(lotNumber) {
+        function selectLot(lotNumber) {
             const toggle = document.getElementById('lotDropdownToggle');
             toggle.textContent = lotNumber;
             
             currentLotNumber = lotNumber;
-            isNewLot = false;
             
             closeAllDropdowns();
             
@@ -1155,13 +1288,13 @@
             container.innerHTML = '';
             
             if (catalogs.length === 0) {
-                container.innerHTML = '<div class="searchable-dropdown-no-results">No catalogs found</div>';
+                container.innerHTML = '<div class="searchable-dropdown-no-results">No catalogs found. Search above to create one.</div>';
             } else {
                 catalogs.forEach(catalog => {
                     const item = document.createElement('div');
                     item.className = 'searchable-dropdown-item';
                     item.textContent = catalog.catalog_number;
-                    item.onclick = () => selectCatalogFromDropdown(
+                    item.onclick = () => selectCatalog(
                         catalog.id, 
                         catalog.catalog_number, 
                         catalog.catalog_name
@@ -1176,34 +1309,16 @@
             container.innerHTML = '';
             
             if (lots.length === 0) {
-                container.innerHTML = '<div class="searchable-dropdown-no-results">No lots found</div>';
+                container.innerHTML = '<div class="searchable-dropdown-no-results">No lots found. Search above to create one.</div>';
             } else {
                 lots.forEach(lot => {
                     const item = document.createElement('div');
                     item.className = 'searchable-dropdown-item';
                     item.textContent = lot.lot_number;
-                    item.onclick = () => selectLotFromDropdown(lot.lot_number);
+                    item.onclick = () => selectLot(lot.lot_number);
                     container.appendChild(item);
                 });
             }
-        }
-
-        function resetLotSelection() {
-            currentLotNumber = null;
-            isNewLot = false;
-            
-            const container = document.getElementById('lotContainer');
-            if (container.querySelector('.searchable-dropdown')) {
-                const toggle = document.getElementById('lotDropdownToggle');
-                if (toggle) {
-                    toggle.textContent = 'Select Lot...';
-                    toggle.disabled = true;
-                }
-                clearDropdown('lot');
-            }
-            
-            document.getElementById('lotModeToggleBtn').disabled = true;
-            lotsData = [];
         }
 
         function clearDropdown(type) {
@@ -1291,7 +1406,6 @@
                     if (lotToggle) {
                         lotToggle.disabled = false;
                     }
-                    document.getElementById('lotModeToggleBtn').disabled = false;
                 })
                 .catch(error => {
                     console.error('Error loading lots:', error);
