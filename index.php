@@ -10,7 +10,7 @@
         .section-card {
             /* border: 1px solid #dee2e6; */
             border-radius: 8px;
-            margin-bottom: 10px;
+            /* margin-bottom: 10px; */
         }
         .section-header {
             /* background-color: #f8f9fa; */
@@ -20,7 +20,7 @@
         }
         .section-content {
             padding: 8px;
-            padding-top:0px;
+            padding-top: 5px;
             padding-bottom: 0px;
             overflow: auto;
         }
@@ -159,6 +159,105 @@
             background-color: #e7f3ff;
             font-weight: 500;
         }
+        
+        /* Custom searchable dropdown styles */
+        .searchable-dropdown {
+            position: relative;
+            width: 100%;
+        }
+        .searchable-dropdown-toggle {
+            width: 100%;
+            text-align: left;
+            background-color: white;
+            border: 1px solid #ced4da;
+            padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+            font-size: 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .searchable-dropdown-toggle:hover {
+            border-color: #86b7fe;
+        }
+        .searchable-dropdown-toggle:focus {
+            border-color: #86b7fe;
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgb(13 110 253 / 25%);
+        }
+        .searchable-dropdown-toggle::after {
+            content: "▼";
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+        }
+        .searchable-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1050;
+            display: none;
+            background-color: white;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            max-height: 300px;
+            overflow: hidden;
+            margin-top: 2px;
+        }
+        .searchable-dropdown-menu.show {
+            display: block;
+        }
+        .searchable-dropdown-search {
+            padding: 8px;
+            border-bottom: 1px solid #dee2e6;
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 1;
+        }
+        .searchable-dropdown-search input {
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .searchable-dropdown-search input:focus {
+            outline: none;
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.2rem rgb(13 110 253 / 25%);
+        }
+        .searchable-dropdown-items {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .searchable-dropdown-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+        .searchable-dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        .searchable-dropdown-item.selected {
+            background-color: #e9ecef;
+            font-weight: 500;
+        }
+        .searchable-dropdown-item.hidden {
+            display: none;
+        }
+        .searchable-dropdown-no-results {
+            padding: 1rem;
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -224,11 +323,21 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <label for="catalogSelect" class="form-label">Catalog Number</label>
-                                <div class="input-group">
-                                    <select class="form-select" id="catalogSelect">
-                                        <option value="">Select Catalog...</option>
-                                    </select>
-                                    <button class="btn btn-outline-primary" type="button" id="addCatalogBtn">
+                                <div class="d-flex">
+                                    <div class="searchable-dropdown flex-grow-1" id="catalogDropdown">
+                                        <button type="button" class="searchable-dropdown-toggle" id="catalogDropdownToggle">
+                                            Select Catalog...
+                                        </button>
+                                        <div class="searchable-dropdown-menu" id="catalogDropdownMenu">
+                                            <div class="searchable-dropdown-search">
+                                                <input type="text" class="form-control form-control-sm" placeholder="Search catalog..." id="catalogSearchInput">
+                                            </div>
+                                            <div class="searchable-dropdown-items" id="catalogDropdownItems">
+                                                <div class="searchable-dropdown-no-results">Loading catalogs...</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-outline-primary ms-2" type="button" id="addCatalogBtn">
                                         <i class="fas fa-plus"></i>
                                     </button>
                                 </div>
@@ -239,11 +348,21 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="lotSelect" class="form-label">Lot Number</label>
-                                <div class="input-group">
-                                    <select class="form-select" id="lotSelect" disabled>
-                                        <option value="">Select Lot...</option>
-                                    </select>
-                                    <button class="btn btn-outline-primary" type="button" id="addLotBtn" disabled>
+                                <div class="d-flex">
+                                    <div class="searchable-dropdown flex-grow-1" id="lotDropdown">
+                                        <button type="button" class="searchable-dropdown-toggle" id="lotDropdownToggle" disabled>
+                                            Select Lot...
+                                        </button>
+                                        <div class="searchable-dropdown-menu" id="lotDropdownMenu">
+                                            <div class="searchable-dropdown-search">
+                                                <input type="text" class="form-control form-control-sm" placeholder="Search lot..." id="lotSearchInput">
+                                            </div>
+                                            <div class="searchable-dropdown-items" id="lotDropdownItems">
+                                                <div class="searchable-dropdown-no-results">Select a catalog first</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-outline-primary ms-2" type="button" id="addLotBtn" disabled>
                                         <i class="fas fa-plus"></i>
                                     </button>
                                 </div>
@@ -386,24 +505,18 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="newCatalogName" class="form-label">Catalog Name</label>
-                        <input type="text" class="form-control" id="newCatalogName" placeholder="Enter catalog name (e.g., AKT (SGK) Substrate)">
-                        <div class="form-text">This will be the product name displayed at the top of the CoA.</div>
-                    </div>
-                    <div class="mb-3">
                         <label for="newCatalogNumber" class="form-label">Catalog Number</label>
                         <input type="text" class="form-control" id="newCatalogNumber" placeholder="Enter catalog number (e.g., A08-58)">
-                        <div class="form-text">This will be the unique identifier for your catalog.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newCatalogName" class="form-label">Catalog Name</label>
+                        <input type="text" class="form-control" id="newCatalogName" placeholder="Enter catalog name (e.g., AKT (SGK) Substrate)">
                     </div>
                     <div class="mb-3">
                         <label for="catalogTemplateSelect" class="form-label">Template (Optional)</label>
                         <select class="form-select" id="catalogTemplateSelect">
                             <option value="">Use default template</option>
                         </select>
-                        <div class="form-text">Select a specific template or leave blank to use the default.</div>
-                    </div>
-                    <div class="alert alert-info">
-                        <small><i class="fas fa-info-circle me-1"></i>Both catalog name and number will be created if they don't exist in the database.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -430,7 +543,6 @@
                     <div class="mb-3">
                         <label for="newLotNumber" class="form-label">Lot Number</label>
                         <input type="text" class="form-control" id="newLotNumber" placeholder="Enter lot number (e.g., Z1157-5)">
-                        <div class="form-text">This will be the unique identifier for this lot within the catalog.</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -673,11 +785,266 @@
         let catalogData = {}; // Store catalog values
         let lotData = {}; // Store lot values
         let originalData = {}; // Store original data for cancel functionality
+        let catalogsData = []; // Store all catalogs for searching
+        let lotsData = []; // Store all lots for searching
+
+        // Searchable dropdown functionality
+        function initializeSearchableDropdowns() {
+            // Initialize catalog dropdown
+            const catalogToggle = document.getElementById('catalogDropdownToggle');
+            const catalogMenu = document.getElementById('catalogDropdownMenu');
+            const catalogSearch = document.getElementById('catalogSearchInput');
+            
+            if (catalogToggle) {
+                catalogToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleDropdown('catalog');
+                });
+            }
+            
+            if (catalogSearch) {
+                catalogSearch.addEventListener('input', function() {
+                    filterDropdownItems('catalog', this.value);
+                });
+                
+                catalogSearch.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+            
+            // Initialize lot dropdown
+            const lotToggle = document.getElementById('lotDropdownToggle');
+            const lotMenu = document.getElementById('lotDropdownMenu');
+            const lotSearch = document.getElementById('lotSearchInput');
+            
+            if (lotToggle) {
+                lotToggle.addEventListener('click', function(e) {
+                    if (!this.disabled) {
+                        e.stopPropagation();
+                        toggleDropdown('lot');
+                    }
+                });
+            }
+            
+            if (lotSearch) {
+                lotSearch.addEventListener('input', function() {
+                    filterDropdownItems('lot', this.value);
+                });
+                
+                lotSearch.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.searchable-dropdown')) {
+                    closeAllDropdowns();
+                }
+            });
+        }
+
+        function toggleDropdown(type) {
+            const menu = document.getElementById(`${type}DropdownMenu`);
+            const search = document.getElementById(`${type}SearchInput`);
+            const isOpen = menu.classList.contains('show');
+            
+            closeAllDropdowns();
+            
+            if (!isOpen) {
+                menu.classList.add('show');
+                setTimeout(() => {
+                    search.focus();
+                    search.value = '';
+                    filterDropdownItems(type, '');
+                }, 100);
+            }
+        }
+
+        function closeAllDropdowns() {
+            document.querySelectorAll('.searchable-dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+
+        function filterDropdownItems(type, searchTerm) {
+            const itemsContainer = document.getElementById(`${type}DropdownItems`);
+            const items = itemsContainer.querySelectorAll('.searchable-dropdown-item');
+            const searchLower = searchTerm.toLowerCase();
+            let hasVisibleItems = false;
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(searchLower)) {
+                    item.classList.remove('hidden');
+                    hasVisibleItems = true;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+            
+            // Show/hide no results message
+            const noResults = itemsContainer.querySelector('.searchable-dropdown-no-results');
+            if (noResults) {
+                if (!hasVisibleItems && items.length > 0) {
+                    if (!itemsContainer.querySelector('.no-search-results')) {
+                        const noSearchResults = document.createElement('div');
+                        noSearchResults.className = 'searchable-dropdown-no-results no-search-results';
+                        noSearchResults.textContent = 'No matching results found';
+                        itemsContainer.appendChild(noSearchResults);
+                    }
+                } else {
+                    const noSearchResults = itemsContainer.querySelector('.no-search-results');
+                    if (noSearchResults) {
+                        noSearchResults.remove();
+                    }
+                }
+            }
+        }
+
+        function selectDropdownItem(type, value, text, additionalData = {}) {
+            const toggle = document.getElementById(`${type}DropdownToggle`);
+            toggle.textContent = text;
+            toggle.setAttribute('data-value', value);
+            
+            // Store additional data as attributes
+            Object.keys(additionalData).forEach(key => {
+                toggle.setAttribute(`data-${key}`, additionalData[key]);
+            });
+            
+            closeAllDropdowns();
+            
+            // Trigger change event
+            if (type === 'catalog') {
+                handleCatalogChange(value);
+            } else if (type === 'lot') {
+                handleLotChange(value);
+            }
+        }
+
+        function clearDropdown(type) {
+            const toggle = document.getElementById(`${type}DropdownToggle`);
+            toggle.textContent = type === 'catalog' ? 'Select Catalog...' : 'Select Lot...';
+            toggle.removeAttribute('data-value');
+            
+            const itemsContainer = document.getElementById(`${type}DropdownItems`);
+            itemsContainer.innerHTML = '<div class="searchable-dropdown-no-results">No items available</div>';
+        }
+
+        // Update catalog dropdown with data
+        function populateCatalogDropdown(catalogs) {
+            const itemsContainer = document.getElementById('catalogDropdownItems');
+            itemsContainer.innerHTML = '';
+            
+            if (catalogs.length === 0) {
+                itemsContainer.innerHTML = '<div class="searchable-dropdown-no-results">No catalogs found - Click + to add one</div>';
+            } else {
+                catalogs.forEach(catalog => {
+                    const item = document.createElement('div');
+                    item.className = 'searchable-dropdown-item';
+                    item.textContent = catalog.catalog_number;
+                    item.setAttribute('data-value', catalog.id);
+                    item.setAttribute('data-catalog-name', catalog.catalog_name || '');
+                    item.setAttribute('data-catalog-number', catalog.catalog_number);
+                    
+                    item.addEventListener('click', function() {
+                        selectDropdownItem('catalog', catalog.id, catalog.catalog_number, {
+                            'catalog-name': catalog.catalog_name || '',
+                            'catalog-number': catalog.catalog_number
+                        });
+                    });
+                    
+                    itemsContainer.appendChild(item);
+                });
+            }
+        }
+
+        // Update lot dropdown with data
+        function populateLotDropdown(lots) {
+            const itemsContainer = document.getElementById('lotDropdownItems');
+            itemsContainer.innerHTML = '';
+            
+            if (lots.length === 0) {
+                itemsContainer.innerHTML = '<div class="searchable-dropdown-no-results">No lots found - Click + to add one</div>';
+            } else {
+                lots.forEach(lot => {
+                    const item = document.createElement('div');
+                    item.className = 'searchable-dropdown-item';
+                    item.textContent = lot.lot_number;
+                    item.setAttribute('data-value', lot.lot_number);
+                    
+                    item.addEventListener('click', function() {
+                        selectDropdownItem('lot', lot.lot_number, lot.lot_number);
+                    });
+                    
+                    itemsContainer.appendChild(item);
+                });
+            }
+        }
+
+        // Handle catalog selection change
+        function handleCatalogChange(catalogId) {
+            if (catalogId) {
+                const toggle = document.getElementById('catalogDropdownToggle');
+                const catalogName = toggle.getAttribute('data-catalog-name');
+                const catalogNumber = toggle.getAttribute('data-catalog-number');
+                
+                const catalogNameField = document.getElementById('catalogName');
+                catalogNameField.value = catalogName || '';
+                catalogNameField.readOnly = !!catalogName;
+                
+                if (!catalogName) {
+                    catalogNameField.placeholder = 'Enter catalog name for ' + catalogNumber;
+                    catalogNameField.classList.add('border-warning');
+                } else {
+                    catalogNameField.classList.remove('border-warning');
+                }
+                
+                // Store current catalog ID
+                currentCatalogId = catalogId;
+                
+                // Load template and lots
+                loadCatalogTemplate(catalogId).then(() => {
+                    loadLots(catalogId);
+                });
+                
+                document.getElementById('loadDataBtn').disabled = false;
+                document.getElementById('createNewBtn').disabled = false;
+                document.getElementById('addLotBtn').disabled = false;
+                document.getElementById('lotDropdownToggle').disabled = false;
+            } else {
+                // Reset everything when no catalog is selected
+                currentTemplateId = null;
+                currentCatalogId = null;
+                
+                const catalogNameField = document.getElementById('catalogName');
+                catalogNameField.value = '';
+                catalogNameField.readOnly = true;
+                catalogNameField.placeholder = 'Enter catalog name';
+                catalogNameField.classList.remove('border-warning');
+                
+                document.getElementById('catalogTitle').textContent = 'Select a catalog to begin';
+                document.getElementById('displayCatalogNumber').textContent = 'Not selected';
+                document.getElementById('displayLotNumber').textContent = 'Not selected';
+                document.getElementById('displayTemplate').textContent = 'Not selected';
+                
+                document.getElementById('lotDropdownToggle').disabled = true;
+                clearDropdown('lot');
+                document.getElementById('loadDataBtn').disabled = true;
+                document.getElementById('createNewBtn').disabled = true;
+                document.getElementById('addLotBtn').disabled = true;
+                
+                document.getElementById('certificateHeader').hidden = true;
+                
+                resetSectionsToDefault();
+            }
+        }
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Initializing template-based workflow with bulk edit...');
             
+            initializeSearchableDropdowns();
             loadCatalogs();
             loadTemplates();
             initializeEventListeners();
@@ -698,8 +1065,10 @@
 
         // Load data based on selections
         function loadData() {
-            const catalogId = document.getElementById('catalogSelect').value;
-            const lotNumber = document.getElementById('lotSelect').value;
+            const catalogToggle = document.getElementById('catalogDropdownToggle');
+            const catalogId = catalogToggle.getAttribute('data-value');
+            const lotToggle = document.getElementById('lotDropdownToggle');
+            const lotNumber = lotToggle.getAttribute('data-value');
             const catalogName = document.getElementById('catalogName').value.trim();
             const selectedRadio = document.querySelector('input[name="templateRadio"]:checked');
             const templateId = selectedRadio ? selectedRadio.value : null;
@@ -728,8 +1097,7 @@
             currentLotNumber = lotNumber;
             currentTemplateId = templateId;
             
-            const selectedOption = document.getElementById('catalogSelect').options[document.getElementById('catalogSelect').selectedIndex];
-            const catalogNumber = selectedOption.getAttribute('data-catalog-number');
+            const catalogNumber = catalogToggle.getAttribute('data-catalog-number');
             
             // Update header display
             document.getElementById('catalogTitle').textContent = catalogName;
@@ -766,6 +1134,9 @@
                     showBulkEditButtons();
                     document.getElementById('previewBtn').disabled = false;
                     document.getElementById('generateBtn').disabled = false;
+                    
+                    // Show certificate header
+                    document.getElementById('certificateHeader').hidden = true;
                 })
                 .catch(error => {
                     console.error('Error loading template-based data:', error);
@@ -874,18 +1245,19 @@
             const container = document.getElementById(`keyValues_${sectionId}`);
             const kvId = `kv_${sectionId}_${keyName.replace(/\s+/g, '_')}`;
             
-            const sourceColor = keySource === 'catalog' ? 'bg-primary' : 'bg-success';
+            // const sourceColor = keySource === 'catalog' ? 'bg-primary' : 'bg-success';
+            const sourceColor = keySource === 'catalog' ? 'red' : 'green';
             const sourceIcon = keySource === 'catalog' ? 'fa-database' : 'fa-tag';
             
             const kvHtml = `
                 <div class="key-value-row" id="${kvId}" data-key="${keyName}" data-source="${keySource}">
                     <div class="row align-items-center">
                         <div class="col-md-4">
-                            <label class="form-label">${keyName}</label>
-                            <strong class="ms-2">${keySource.charAt(0).toUpperCase() + keySource.slice(1)}</strong>
+                            <label class="form-label" style="color: ${sourceColor};">${keyName}</label>
+                            <!--<strong class="ms-2">${keySource.charAt(0).toUpperCase() + keySource.slice(1)}</strong>-->
                         </div>
                         <div class="col-md-8">
-                            <textarea class="form-control bulk-edit-textarea" id="textarea_${kvId}" rows="2" placeholder="Enter ${keyName.toLowerCase()}...">${value}</textarea>
+                            <textarea class="form-control bulk-edit-textarea" id="textarea_${kvId}" rows="2" style="height: 38px;" placeholder="Enter ${keyName.toLowerCase()}...">${value}</textarea>
                             <div class="invalid-feedback" id="error_${kvId}"></div>
                         </div>
                     </div>
@@ -1173,8 +1545,10 @@
 
         // Create new CoA (with template structure)
         function createNewCoA() {
-            const catalogId = document.getElementById('catalogSelect').value;
-            const lotNumber = document.getElementById('lotSelect').value;
+            const catalogToggle = document.getElementById('catalogDropdownToggle');
+            const catalogId = catalogToggle.getAttribute('data-value');
+            const lotToggle = document.getElementById('lotDropdownToggle');
+            const lotNumber = lotToggle.getAttribute('data-value');
             const catalogName = document.getElementById('catalogName').value.trim();
             const selectedRadio = document.querySelector('input[name="templateRadio"]:checked');
             const templateId = selectedRadio ? selectedRadio.value : null;
@@ -1203,8 +1577,7 @@
             currentLotNumber = lotNumber;
             currentTemplateId = templateId;
             
-            const selectedOption = document.getElementById('catalogSelect').options[document.getElementById('catalogSelect').selectedIndex];
-            const catalogNumber = selectedOption.getAttribute('data-catalog-number');
+            const catalogNumber = catalogToggle.getAttribute('data-catalog-number');
             
             // Update header display
             document.getElementById('catalogTitle').textContent = catalogName;
@@ -1228,6 +1601,9 @@
                     document.getElementById('previewBtn').disabled = false;
                     document.getElementById('generateBtn').disabled = false;
                     
+                    // Show certificate header
+                    document.getElementById('certificateHeader').hidden = true;
+                    
                     alert('New CoA template loaded! Fill in all values and click "Save All" to save your data.');
                 })
                 .catch(error => {
@@ -1240,7 +1616,8 @@
         function clearAllData() {
             if (confirm('Are you sure you want to clear all data and reset the form?')) {
                 // Reset form selections
-                document.getElementById('catalogSelect').selectedIndex = 0;
+                clearDropdown('catalog');
+                clearDropdown('lot');
                 
                 const catalogNameField = document.getElementById('catalogName');
                 catalogNameField.value = '';
@@ -1248,15 +1625,12 @@
                 catalogNameField.placeholder = 'Enter catalog name';
                 catalogNameField.classList.remove('border-warning');
                 
-                const lotSelect = document.getElementById('lotSelect');
-                lotSelect.innerHTML = '<option value="">Select Lot...</option>';
-                lotSelect.disabled = true;
-                
                 // Reset header display
                 document.getElementById('catalogTitle').textContent = 'Select a catalog to begin';
                 document.getElementById('displayCatalogNumber').textContent = 'Not selected';
                 document.getElementById('displayLotNumber').textContent = 'Not selected';
                 document.getElementById('displayTemplate').textContent = 'Not selected';
+                document.getElementById('certificateHeader').hidden = true;
                 
                 // Reset sections
                 resetSectionsToDefault();
@@ -1272,6 +1646,7 @@
                 sectionsData = {};
                 
                 // Disable buttons
+                document.getElementById('lotDropdownToggle').disabled = true;
                 document.getElementById('loadDataBtn').disabled = true;
                 document.getElementById('createNewBtn').disabled = true;
                 document.getElementById('addLotBtn').disabled = true;
@@ -1782,64 +2157,12 @@
 
         // Event listeners
         function initializeEventListeners() {
-            // Catalog selection - UPDATED VERSION
-            const catalogSelect = document.getElementById('catalogSelect');
-            if (catalogSelect) {
-                catalogSelect.addEventListener('change', async function() {
-                    const catalogId = this.value;
-                    if (catalogId) {
-                        const selectedOption = this.options[this.selectedIndex];
-                        const catalogName = selectedOption.getAttribute('data-catalog-name');
-                        const catalogNumber = selectedOption.getAttribute('data-catalog-number');
-                        
-                        const catalogNameField = document.getElementById('catalogName');
-                        catalogNameField.value = catalogName || '';
-                        catalogNameField.readOnly = !!catalogName;
-                        
-                        if (!catalogName) {
-                            catalogNameField.placeholder = 'Enter catalog name for ' + catalogNumber;
-                            catalogNameField.classList.add('border-warning');
-                        } else {
-                            catalogNameField.classList.remove('border-warning');
-                        }
-                        
-                        // Load template first, then lots
-                        await loadCatalogTemplate(catalogId);
-                        loadLots(catalogId);
-                        
-                        document.getElementById('loadDataBtn').disabled = false;
-                        document.getElementById('createNewBtn').disabled = false;
-                        document.getElementById('addLotBtn').disabled = false;
-                    } else {
-                        // Reset everything when no catalog is selected
-                        currentTemplateId = null;
-                        
-                        const catalogNameField = document.getElementById('catalogName');
-                        catalogNameField.value = '';
-                        catalogNameField.readOnly = true;
-                        catalogNameField.placeholder = 'Enter catalog name';
-                        catalogNameField.classList.remove('border-warning');
-                        
-                        document.getElementById('catalogTitle').textContent = 'Select a catalog to begin';
-                        document.getElementById('displayCatalogNumber').textContent = 'Not selected';
-                        document.getElementById('displayLotNumber').textContent = 'Not selected';
-                        document.getElementById('displayTemplate').textContent = 'Not selected';
-                        
-                        document.getElementById('lotSelect').disabled = true;
-                        document.getElementById('loadDataBtn').disabled = true;
-                        document.getElementById('createNewBtn').disabled = true;
-                        document.getElementById('addLotBtn').disabled = true;
-                        
-                        resetSectionsToDefault();
-                    }
-                });
-            }
-
             // Catalog name field change
             const catalogName = document.getElementById('catalogName');
             if (catalogName) {
                 catalogName.addEventListener('blur', function() {
-                    const catalogId = document.getElementById('catalogSelect').value;
+                    const catalogToggle = document.getElementById('catalogDropdownToggle');
+                    const catalogId = catalogToggle.getAttribute('data-value');
                     const newCatalogName = this.value.trim();
                     
                     if (catalogId && newCatalogName && !this.readOnly) {
@@ -1861,10 +2184,9 @@
             const addLotBtn = document.getElementById('addLotBtn');
             if (addLotBtn) {
                 addLotBtn.addEventListener('click', function() {
-                    const catalogSelect = document.getElementById('catalogSelect');
-                    const selectedOption = catalogSelect.options[catalogSelect.selectedIndex];
+                    const catalogToggle = document.getElementById('catalogDropdownToggle');
                     const catalogName = document.getElementById('catalogName').value || 'Unnamed Product';
-                    const catalogNumber = selectedOption.getAttribute('data-catalog-number');
+                    const catalogNumber = catalogToggle.getAttribute('data-catalog-number');
                     document.getElementById('selectedCatalogInfo').value = `${catalogName} (${catalogNumber})`;
                     new bootstrap.Modal(document.getElementById('addLotModal')).show();
                 });
@@ -2123,26 +2445,13 @@
             fetch('api/get_catalog_data.php')
                 .then(response => response.json())
                 .then(data => {
-                    const catalogSelect = document.getElementById('catalogSelect');
-                    catalogSelect.innerHTML = '<option value="">Select Catalog...</option>';
-                    
-                    if (data.length === 0) {
-                        catalogSelect.innerHTML += '<option value="" disabled>No catalogs found - Click + to add one</option>';
-                    } else {
-                        data.forEach(catalog => {
-                            const option = document.createElement('option');
-                            option.value = catalog.id;
-                            option.textContent = catalog.catalog_number;
-                            option.setAttribute('data-catalog-name', catalog.catalog_name || '');
-                            option.setAttribute('data-catalog-number', catalog.catalog_number);
-                            catalogSelect.appendChild(option);
-                        });
-                    }
+                    catalogsData = data; // Store for searching
+                    populateCatalogDropdown(data);
                 })
                 .catch(error => {
                     console.error('Error loading catalogs:', error);
-                    const catalogSelect = document.getElementById('catalogSelect');
-                    catalogSelect.innerHTML = '<option value="" disabled>Error loading catalogs</option>';
+                    const itemsContainer = document.getElementById('catalogDropdownItems');
+                    itemsContainer.innerHTML = '<div class="searchable-dropdown-no-results text-danger">Error loading catalogs</div>';
                 });
         }
 
@@ -2151,25 +2460,16 @@
             fetch(`api/get_lot_data.php?catalog_id=${catalogId}`)
                 .then(response => response.json())
                 .then(data => {
-                    const lotSelect = document.getElementById('lotSelect');
-                    lotSelect.innerHTML = '<option value="">Select Lot...</option>';
-                    lotSelect.disabled = false;
+                    lotsData = data; // Store for searching
+                    populateLotDropdown(data);
                     
-                    if (data.length === 0) {
-                        lotSelect.innerHTML += '<option value="" disabled>No lots found - Click + to add one</option>';
-                    } else {
-                        data.forEach(lot => {
-                            const option = document.createElement('option');
-                            option.value = lot.lot_number;
-                            option.textContent = lot.lot_number;
-                            lotSelect.appendChild(option);
-                        });
-                    }
+                    // Enable lot dropdown
+                    document.getElementById('lotDropdownToggle').disabled = false;
                 })
                 .catch(error => {
                     console.error('Error loading lots:', error);
-                    const lotSelect = document.getElementById('lotSelect');
-                    lotSelect.innerHTML = '<option value="" disabled>Error loading lots</option>';
+                    const itemsContainer = document.getElementById('lotDropdownItems');
+                    itemsContainer.innerHTML = '<div class="searchable-dropdown-no-results text-danger">Error loading lots</div>';
                 });
         }
 
@@ -2211,9 +2511,15 @@
                     loadCatalogs();
                     
                     setTimeout(() => {
-                        document.getElementById('catalogSelect').value = data.catalog_id;
-                        document.getElementById('catalogSelect').dispatchEvent(new Event('change'));
-                    }, 100);
+                        // Find and select the new catalog in the dropdown
+                        const itemsContainer = document.getElementById('catalogDropdownItems');
+                        const items = itemsContainer.querySelectorAll('.searchable-dropdown-item');
+                        items.forEach(item => {
+                            if (item.getAttribute('data-value') === String(data.catalog_id)) {
+                                item.click();
+                            }
+                        });
+                    }, 500);
                     
                     document.getElementById('newCatalogName').value = '';
                     document.getElementById('newCatalogNumber').value = '';
@@ -2239,7 +2545,8 @@
 
         // Save new lot
         function saveNewLot() {
-            const catalogId = document.getElementById('catalogSelect').value;
+            const catalogToggle = document.getElementById('catalogDropdownToggle');
+            const catalogId = catalogToggle.getAttribute('data-value');
             const lotNumber = document.getElementById('newLotNumber').value.trim();
             
             if (!catalogId) {
@@ -2268,8 +2575,15 @@
                     loadLots(catalogId);
                     
                     setTimeout(() => {
-                        document.getElementById('lotSelect').value = lotNumber;
-                    }, 100);
+                        // Find and select the new lot in the dropdown
+                        const itemsContainer = document.getElementById('lotDropdownItems');
+                        const items = itemsContainer.querySelectorAll('.searchable-dropdown-item');
+                        items.forEach(item => {
+                            if (item.getAttribute('data-value') === lotNumber) {
+                                item.click();
+                            }
+                        });
+                    }, 500);
                     
                     document.getElementById('newLotNumber').value = '';
                     bootstrap.Modal.getInstance(document.getElementById('addLotModal')).hide();
@@ -2306,9 +2620,24 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    const catalogSelect = document.getElementById('catalogSelect');
-                    const selectedOption = catalogSelect.options[catalogSelect.selectedIndex];
-                    selectedOption.setAttribute('data-catalog-name', catalogName);
+                    // Update the data attribute in the dropdown
+                    const catalogToggle = document.getElementById('catalogDropdownToggle');
+                    catalogToggle.setAttribute('data-catalog-name', catalogName);
+                    
+                    // Update in the dropdown items as well
+                    const itemsContainer = document.getElementById('catalogDropdownItems');
+                    const items = itemsContainer.querySelectorAll('.searchable-dropdown-item');
+                    items.forEach(item => {
+                        if (item.getAttribute('data-value') === catalogId) {
+                            item.setAttribute('data-catalog-name', catalogName);
+                        }
+                    });
+                    
+                    // Update in the global catalogs data
+                    const catalogIndex = catalogsData.findIndex(cat => cat.id == catalogId);
+                    if (catalogIndex !== -1) {
+                        catalogsData[catalogIndex].catalog_name = catalogName;
+                    }
                     
                     const catalogNameField = document.getElementById('catalogName');
                     catalogNameField.readOnly = true;
@@ -2360,8 +2689,10 @@
 
         // Generate PDF
         function generatePDF() {
-            const catalogId = document.getElementById('catalogSelect').value;
-            const lotNumber = document.getElementById('lotSelect').value;
+            const catalogToggle = document.getElementById('catalogDropdownToggle');
+            const catalogId = catalogToggle.getAttribute('data-value');
+            const lotToggle = document.getElementById('lotDropdownToggle');
+            const lotNumber = lotToggle.getAttribute('data-value');
             const catalogName = document.getElementById('catalogName').value.trim();
             
             if (!catalogId) {
@@ -2385,8 +2716,10 @@
 
         // Preview PDF
         function previewPDF() {
-            const catalogId = document.getElementById('catalogSelect').value;
-            const lotNumber = document.getElementById('lotSelect').value;
+            const catalogToggle = document.getElementById('catalogDropdownToggle');
+            const catalogId = catalogToggle.getAttribute('data-value');
+            const lotToggle = document.getElementById('lotDropdownToggle');
+            const lotNumber = lotToggle.getAttribute('data-value');
             const catalogName = document.getElementById('catalogName').value.trim();
             
             if (!catalogId) {
