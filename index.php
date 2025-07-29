@@ -170,6 +170,16 @@
             color: #6c757d;
             font-style: italic;
         }
+        .btn-outline-success {
+            color: #28a745;
+            border-color: #28a745;
+            background-color: transparent;
+        }
+        .btn-outline-success:hover {
+            color: #fff;
+            background-color: #28a745;
+            border-color: #28a745;
+        }
         /* Button group styling */
         .action-buttons {
             display: flex;
@@ -218,9 +228,9 @@
                         </div>
 
                         <!-- Catalog and Lot Selection -->
-                        <div class="row">
+                        <div class="row">   
                             <div class="col-md-4">
-                                <label for="catalogSelect" class="form-label">Catalog Number</label>
+                                <label for="catalogSelect" class="form-label" style="color: red;">Catalog Number</label>
                                 <!-- <small class="text-muted d-block mb-1">Search existing or create new</small> -->
                                 <div class="searchable-dropdown" id="catalogDropdown">
                                     <button type="button" class="searchable-dropdown-toggle" id="catalogDropdownToggle">
@@ -237,11 +247,14 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <label for="catalogName" class="form-label">Catalog Name</label>
+                                <label for="catalogName" class="form-label" style="color:red;">Catalog Name</label>
                                 <input type="text" class="form-control" id="catalogName" placeholder="Select a catalog first" readonly>
+                                <div class="invalid-feedback">
+                                    Catalog name is required
+                                </div>
                             </div>
                             <div class="col-md-4">
-                                <label for="lotSelect" class="form-label">Lot Number</label>
+                                <label for="lotSelect" class="form-label" style="color: green;">Lot Number</label>
                                 <!-- <small class="text-muted d-block mb-1">Search existing or create new</small> -->
                                 <div class="searchable-dropdown" id="lotDropdown">
                                     <button type="button" class="searchable-dropdown-toggle" id="lotDropdownToggle" disabled>
@@ -717,6 +730,38 @@
             });
             
             hasUnsavedChanges = false;
+            
+            // Clear any validation errors
+            document.querySelectorAll('.is-invalid').forEach(element => {
+                element.classList.remove('is-invalid');
+            });
+            document.querySelectorAll('.border-warning').forEach(element => {
+                element.classList.remove('border-warning');
+            });
+            
+            // Reset save button text
+            const saveBtn = document.getElementById('saveAllBtn');
+            if (saveBtn) {
+                saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All';
+            }
+            
+            // Check if any fields are empty - if so, enable save button
+            let hasEmptyFields = false;
+            document.querySelectorAll('.bulk-edit-textarea:not(:disabled)').forEach(textarea => {
+                if (!textarea.value.trim()) {
+                    hasEmptyFields = true;
+                }
+            });
+            
+            if (hasEmptyFields) {
+                hasUnsavedChanges = true; // Allow saving empty fields
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All*';
+                }
+            }
+            
+            // Update button states after loading data
+            updateButtonStates();
         }
 
         // Enable/disable textareas
@@ -763,12 +808,16 @@
             const hasTemplate = !!currentTemplateId;
             const hasCatalog = !!currentCatalogId;
             const hasLot = !!currentLotNumber;
-            const canSave = hasTemplate && hasCatalog && hasLot;
+            const canInteract = hasTemplate && hasCatalog && hasLot;
             
-            document.getElementById('saveAllBtn').disabled = !canSave;
-            document.getElementById('cancelBtn').disabled = !canSave;
-            document.getElementById('previewBtn').disabled = !canSave;
-            document.getElementById('generateBtn').disabled = !canSave;
+            // Save and Cancel buttons need both interaction ability AND unsaved changes
+            const canSaveOrCancel = canInteract && hasUnsavedChanges;
+            document.getElementById('saveAllBtn').disabled = !canSaveOrCancel;
+            document.getElementById('cancelBtn').disabled = !canSaveOrCancel;
+            
+            // Preview and Generate buttons only need interaction ability
+            document.getElementById('previewBtn').disabled = !canInteract;
+            document.getElementById('generateBtn').disabled = !canInteract;
             
             // Lot dropdown state
             const lotToggle = document.getElementById('lotDropdownToggle');
@@ -778,25 +827,46 @@
         }
 
         // Track changes
-        function markFieldAsChanged(textarea) {
-            textarea.classList.add('border-warning');
+        function markFieldAsChanged(element) {
+            element.classList.add('border-warning');
             hasUnsavedChanges = true;
+            
+            // Update save button to show unsaved indicator
+            const saveBtn = document.getElementById('saveAllBtn');
+            if (saveBtn && !saveBtn.innerHTML.includes('*')) {
+                saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All*';
+            }
+            
+            // Update button states
+            updateButtonStates();
         }
 
         // Validate all fields
         function validateAllFields() {
             let isValid = true;
+            let firstInvalidField = null;
             
+            // Check all textareas that are not disabled
             document.querySelectorAll('.bulk-edit-textarea:not(:disabled)').forEach(textarea => {
-                if (!textarea.value.trim()) {
+                const value = textarea.value.trim();
+                if (!value) {
                     textarea.classList.add('is-invalid');
                     const feedback = textarea.nextElementSibling;
                     if (feedback && feedback.classList.contains('invalid-feedback')) {
                         feedback.textContent = 'This field is required';
                     }
                     isValid = false;
+                    
+                    // Track first invalid field
+                    if (!firstInvalidField) {
+                        firstInvalidField = textarea;
+                    }
                 } else {
                     textarea.classList.remove('is-invalid');
+                    const feedback = textarea.nextElementSibling;
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.textContent = '';
+                    }
                 }
             });
             
@@ -805,8 +875,16 @@
             if (!catalogName.value.trim()) {
                 catalogName.classList.add('is-invalid');
                 isValid = false;
+                if (!firstInvalidField) {
+                    firstInvalidField = catalogName;
+                }
             } else {
                 catalogName.classList.remove('is-invalid');
+            }
+            
+            // Focus on first invalid field
+            if (firstInvalidField) {
+                firstInvalidField.focus();
             }
             
             return isValid;
@@ -814,46 +892,226 @@
 
         // Save all data
         function saveAllData() {
+            // Validate all required fields
+            if (!currentTemplateId) {
+                alert('Please select a template first');
+                return;
+            }
+            
+            if (!currentCatalogId || !currentCatalogNumber) {
+                alert('Please select a catalog');
+                return;
+            }
+            
+            if (!currentLotNumber) {
+                alert('Please select a lot number');
+                return;
+            }
+            
+            const catalogName = document.getElementById('catalogName').value.trim();
+            if (!catalogName) {
+                alert('Catalog name cannot be empty');
+                document.getElementById('catalogName').focus();
+                return;
+            }
+            
+            // Validate all textareas have values
             if (!validateAllFields()) {
                 alert('Please fill in all required fields before saving.');
                 return;
             }
             
-            // TODO: Implement bulk save API call
-            console.log('Save all data - To be implemented');
-            alert('Save functionality will be implemented in the next phase');
+            // Check if any modal is open
+            const modalsOpen = document.querySelector('.modal.show');
+            if (modalsOpen) {
+                alert('Please complete the current action before saving');
+                return;
+            }
+            
+            // Show loading state
+            const saveBtn = document.getElementById('saveAllBtn');
+            const originalBtnHtml = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
+            saveBtn.disabled = true;
+            
+            // Collect all key-value pairs
+            const keyValues = [];
+            const sections = [1, 2, 3];
+            
+            sections.forEach(sectionId => {
+                if (templateKeys[sectionId] && templateKeys[sectionId].keys) {
+                    templateKeys[sectionId].keys.forEach(key => {
+                        const keyName = key.key_name;
+                        const keySource = key.key_source;
+                        const textareaId = `textarea_${sectionId}_${keyName.replace(/\s+/g, '_')}`;
+                        const textarea = document.getElementById(textareaId);
+                        
+                        if (textarea) {
+                            const value = textarea.value.trim();
+                            keyValues.push({
+                                key: keyName,
+                                value: value,
+                                source: keySource
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // Prepare payload
+            const payload = {
+                catalog_id: currentCatalogId,
+                catalog_number: currentCatalogNumber,
+                catalog_name: catalogName,
+                lot_number: currentLotNumber,
+                template_id: currentTemplateId,
+                key_values: keyValues
+            };
+            
+            // Call bulk save API
+            fetch('api/save_all_data.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success feedback
+                    saveBtn.innerHTML = '<i class="fas fa-check me-1"></i> Saved!';
+                    saveBtn.classList.remove('btn-success');
+                    saveBtn.classList.add('btn-outline-success');
+                    
+                    // Update catalog name field to reflect saved state
+                    const catalogNameField = document.getElementById('catalogName');
+                    catalogNameField.classList.remove('border-warning');
+                    
+                    // Remove warning borders from all textareas
+                    document.querySelectorAll('.bulk-edit-textarea').forEach(textarea => {
+                        textarea.classList.remove('border-warning');
+                    });
+                    
+                    // Reset hasUnsavedChanges flag
+                    hasUnsavedChanges = false;
+                    
+                    // Update button states
+                    updateButtonStates();
+                    
+                    // Update original data to current values
+                    sections.forEach(sectionId => {
+                        originalData[sectionId] = {};
+                        if (templateKeys[sectionId] && templateKeys[sectionId].keys) {
+                            templateKeys[sectionId].keys.forEach(key => {
+                                const keyName = key.key_name;
+                                const textareaId = `textarea_${sectionId}_${keyName.replace(/\s+/g, '_')}`;
+                                const textarea = document.getElementById(textareaId);
+                                if (textarea) {
+                                    originalData[sectionId][keyName] = textarea.value.trim();
+                                }
+                            });
+                        }
+                    });
+                    
+                    console.log('Save stats:', data.stats);
+                    
+                    // Restore button after 2 seconds
+                    setTimeout(() => {
+                        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All';
+                        saveBtn.classList.add('btn-success');
+                        saveBtn.classList.remove('btn-outline-success');
+                        saveBtn.disabled = false;
+                    }, 2000);
+                } else {
+                    throw new Error(data.message || 'Failed to save data');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving data:', error);
+                alert('Error saving data: ' + error.message);
+                saveBtn.innerHTML = originalBtnHtml;
+                saveBtn.disabled = false;
+            });
         }
 
         // Cancel changes
         function cancelChanges() {
-            if (hasUnsavedChanges) {
-                if (!confirm('Are you sure you want to cancel all changes?')) {
-                    return;
-                }
+            if (!hasUnsavedChanges) {
+                return; // Nothing to cancel
+            }
+            
+            if (!confirm('Are you sure you want to cancel all changes? All unsaved data will be lost.')) {
+                return;
             }
             
             // Restore original values
-            Object.keys(originalData).forEach(sectionId => {
-                Object.keys(originalData[sectionId]).forEach(key => {
-                    const textarea = document.getElementById(`textarea_${sectionId}_${key.replace(/\s+/g, '_')}`);
-                    if (textarea) {
-                        textarea.value = originalData[sectionId][key];
-                        textarea.classList.remove('is-invalid', 'border-warning');
-                    }
-                });
+            const sections = [1, 2, 3];
+            sections.forEach(sectionId => {
+                if (originalData[sectionId]) {
+                    Object.keys(originalData[sectionId]).forEach(key => {
+                        const textareaId = `textarea_${sectionId}_${key.replace(/\s+/g, '_')}`;
+                        const textarea = document.getElementById(textareaId);
+                        if (textarea) {
+                            textarea.value = originalData[sectionId][key];
+                            textarea.classList.remove('is-invalid', 'border-warning');
+                            const feedback = textarea.nextElementSibling;
+                            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                                feedback.textContent = '';
+                            }
+                        }
+                    });
+                }
             });
             
+            // Restore catalog name if it was changed
+            const catalogNameField = document.getElementById('catalogName');
+            if (catalogNameField) {
+                // Reload the original catalog name from the selected catalog
+                const selectedCatalog = catalogsData.find(cat => cat.id == currentCatalogId);
+                if (selectedCatalog) {
+                    catalogNameField.value = selectedCatalog.catalog_name || '';
+                }
+                catalogNameField.classList.remove('is-invalid', 'border-warning');
+            }
+            
             hasUnsavedChanges = false;
+            
+            // Reset save button text
+            const saveBtn = document.getElementById('saveAllBtn');
+            if (saveBtn) {
+                saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All';
+            }
+            
+            // Check if any fields are empty after restore - if so, keep save enabled
+            let hasEmptyFields = false;
+            document.querySelectorAll('.bulk-edit-textarea:not(:disabled)').forEach(textarea => {
+                if (!textarea.value.trim()) {
+                    hasEmptyFields = true;
+                }
+            });
+            
+            if (hasEmptyFields) {
+                hasUnsavedChanges = true;
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All*';
+                }
+            }
+            
+            // Update button states
+            updateButtonStates();
+            
+            console.log('All changes cancelled, data restored to original state');
         }
 
         // Event listeners
         function initializeEventListeners() {
             // Template management button
-            const manageBtn = document.createElement('button');
-            manageBtn.className = 'btn btn-sm btn-outline-secondary ms-3';
-            manageBtn.innerHTML = '<i class="fas fa-cog"></i> Manage Templates';
-            manageBtn.onclick = openTemplateManagement;
-            document.getElementById('templateRadioButtons').parentElement.appendChild(manageBtn);
+            //const manageBtn = document.createElement('button');
+            //manageBtn.className = 'btn btn-sm btn-outline-secondary ms-3';
+            //manageBtn.innerHTML = '<i class="fas fa-cog"></i> Manage Templates';
+            //manageBtn.onclick = openTemplateManagement;
+            //document.getElementById('templateRadioButtons').parentElement.appendChild(manageBtn);
             
             // Action buttons
             document.getElementById('saveAllBtn').addEventListener('click', saveAllData);
@@ -864,12 +1122,31 @@
             // Catalog name change tracking
             document.getElementById('catalogName').addEventListener('input', function() {
                 markFieldAsChanged(this);
+                this.classList.remove('is-invalid'); // Remove error on input
             });
             
             // Track changes in textareas (using event delegation)
             document.addEventListener('input', function(e) {
                 if (e.target.classList.contains('bulk-edit-textarea')) {
                     markFieldAsChanged(e.target);
+                    e.target.classList.remove('is-invalid'); // Remove error on input
+                }
+            });
+            
+            // Prevent Enter key from submitting in textareas
+            document.addEventListener('keypress', function(e) {
+                if (e.target.classList.contains('bulk-edit-textarea') && e.key === 'Enter') {
+                    e.preventDefault();
+                    // Allow Shift+Enter for new lines
+                    if (e.shiftKey) {
+                        const textarea = e.target;
+                        const start = textarea.selectionStart;
+                        const end = textarea.selectionEnd;
+                        const value = textarea.value;
+                        textarea.value = value.substring(0, start) + '\n' + value.substring(end);
+                        textarea.selectionStart = textarea.selectionEnd = start + 1;
+                        markFieldAsChanged(textarea);
+                    }
                 }
             });
             
@@ -893,6 +1170,15 @@
             document.getElementById('newLotNumber').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     createNewLot();
+                }
+            });
+            
+            // Warn about unsaved changes when leaving page
+            window.addEventListener('beforeunload', function(e) {
+                if (hasUnsavedChanges) {
+                    e.preventDefault();
+                    e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                    return e.returnValue;
                 }
             });
         }
@@ -962,7 +1248,7 @@
                 if (searchTerm.trim() && !hasVisibleCatalogItems()) {
                     showCreateCatalogOption(searchTerm.trim());
                 }
-            }, 1100); // Debounce for 1100ms
+            }, 300); // Debounce for 300ms
         }
 
         function handleLotSearch(searchTerm) {
@@ -1671,13 +1957,35 @@
 
         // PDF functions
         function previewPDF() {
-            // TODO: Implement preview
-            alert('Preview PDF functionality to be implemented');
+            if (!currentCatalogId || !currentLotNumber) {
+                alert('Please select both catalog and lot number');
+                return;
+            }
+            
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Preview PDF with current saved data?')) {
+                    return;
+                }
+            }
+            
+            const previewUrl = `api/preview_pdf.php?catalog_id=${currentCatalogId}&lot_number=${encodeURIComponent(currentLotNumber)}`;
+            window.open(previewUrl, '_blank');
         }
 
         function generatePDF() {
-            // TODO: Implement generate
-            alert('Generate PDF functionality to be implemented');
+            if (!currentCatalogId || !currentLotNumber) {
+                alert('Please select both catalog and lot number');
+                return;
+            }
+            
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Generate PDF with current saved data?')) {
+                    return;
+                }
+            }
+            
+            const generateUrl = `api/generate_pdf.php?catalog_id=${currentCatalogId}&lot_number=${encodeURIComponent(currentLotNumber)}`;
+            window.open(generateUrl, '_blank');
         }
     </script>
 </body>
