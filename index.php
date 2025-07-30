@@ -419,8 +419,7 @@
     
     <script>
         // Global variables
-        let currentTemplateCode = null;  // Changed from currentTemplateId
-        // let currentCatalogId = null;
+        let currentTemplateCode = null;
         let currentCatalogNumber = null;
         let currentLotNumber = null;
         let templateKeys = {};
@@ -474,7 +473,7 @@
                         displayTemplateFields();
                         
                         // If catalog is selected, load data
-                        if (currentCatalogId) {
+                        if (currentCatalogNumber) {
                             loadCatalogData();
                         }
                     } else {
@@ -624,7 +623,7 @@
         // Update button states
         function updateButtonStates() {
             const hasTemplate = !!currentTemplateCode;
-            const hasCatalog = !!currentCatalogId;
+            const hasCatalog = !!currentCatalogNumber;
             const hasLot = !!currentLotNumber;
             const canInteract = hasTemplate && hasCatalog && hasLot;
             
@@ -1299,7 +1298,7 @@
                     document.getElementById('lotSearchInput').value = '';
                     
                     // Reload lots
-                    loadLots(currentCatalogId);
+                    loadLots(currentCatalogNumber);
                     
                     // After lots are loaded, select the new one
                     setTimeout(() => {
@@ -1378,7 +1377,7 @@
             closeAllDropdowns();
             
             // Load lot data if template and catalog are selected
-            if (currentTemplateCode && currentCatalogId) {
+            if (currentTemplateCode && currentCatalogNumber) {
                 loadCatalogData();
             }
             

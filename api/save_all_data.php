@@ -19,7 +19,6 @@ try {
     }
     
     // Validate required fields
-    $catalog_id = isset($input['catalog_id']) ? intval($input['catalog_id']) : 0;
     $catalog_number = isset($input['catalog_number']) ? trim($input['catalog_number']) : '';
     $catalog_name = isset($input['catalog_name']) ? trim($input['catalog_name']) : '';
     $lot_number = isset($input['lot_number']) ? trim($input['lot_number']) : '';
@@ -27,10 +26,6 @@ try {
     $key_values = isset($input['key_values']) ? $input['key_values'] : [];
     
     // Validation
-    if ($catalog_id <= 0) {
-        throw new Exception('Valid catalog ID is required');
-    }
-    
     if (empty($catalog_number)) {
         throw new Exception('Catalog number is required');
     }
@@ -56,24 +51,24 @@ try {
     
     try {
         // Update catalog name
-        $update_catalog_sql = "UPDATE catalogs SET catalog_name = ? WHERE id = ?";
+        $update_catalog_sql = "UPDATE catalogs SET catalogName = ? WHERE catalogNumber = ?";
         $update_catalog_stmt = $conn->prepare($update_catalog_sql);
-        $update_catalog_stmt->bind_param("si", $catalog_name, $catalog_id);
+        $update_catalog_stmt->bind_param("ss", $catalog_name, $catalog_number);
         $update_catalog_stmt->execute();
         $update_catalog_stmt->close();
         
         // Check if lot exists, create if not
-        $lot_check_sql = "SELECT id FROM lots WHERE catalog_id = ? AND lot_number = ?";
+        $lot_check_sql = "SELECT id FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
         $lot_check_stmt = $conn->prepare($lot_check_sql);
-        $lot_check_stmt->bind_param("is", $catalog_id, $lot_number);
+        $lot_check_stmt->bind_param("ss", $catalog_number, $lot_number);
         $lot_check_stmt->execute();
         $lot_check_result = $lot_check_stmt->get_result();
         
         if ($lot_check_result->num_rows === 0) {
             // Create lot
-            $create_lot_sql = "INSERT INTO lots (catalog_id, lot_number, template_code) VALUES (?, ?, ?)";
+            $create_lot_sql = "INSERT INTO lots (catalogNumber, lotNumber, templateCode) VALUES (?, ?, ?)";
             $create_lot_stmt = $conn->prepare($create_lot_sql);
-            $create_lot_stmt->bind_param("iss", $catalog_id, $lot_number, $template_code);
+            $create_lot_stmt->bind_param("sss", $catalog_number, $lot_number, $template_code);
             $create_lot_stmt->execute();
             $lot_id = $conn->insert_id;
             $create_lot_stmt->close();
@@ -127,10 +122,10 @@ try {
         
         // Update catalog fields if any
         if (!empty($catalog_fields)) {
-            $catalog_values[] = $catalog_id;
-            $catalog_types .= "i";
+            $catalog_values[] = $catalog_number;
+            $catalog_types .= "s";
             
-            $update_catalog_data_sql = "UPDATE catalogs SET " . implode(", ", $catalog_fields) . " WHERE id = ?";
+            $update_catalog_data_sql = "UPDATE catalogs SET " . implode(", ", $catalog_fields) . " WHERE catalogNumber = ?";
             $update_catalog_data_stmt = $conn->prepare($update_catalog_data_sql);
             $update_catalog_data_stmt->bind_param($catalog_types, ...$catalog_values);
             $update_catalog_data_stmt->execute();
