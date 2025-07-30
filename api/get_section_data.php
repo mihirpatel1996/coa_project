@@ -6,12 +6,14 @@ require_once '../config/database.php';
 require_once '../config/templates_config.php';
 
 try {
-    $catalog_id = isset($_GET['catalog_id']) ? intval($_GET['catalog_id']) : 0;
+    // Changed from catalog_id to catalog_number
+    $catalogNumber = isset($_GET['catalog_number']) ? trim($_GET['catalog_number']) : '';
     $template_code = isset($_GET['template_code']) ? trim($_GET['template_code']) : '';
     $lot_number = isset($_GET['lot_number']) ? trim($_GET['lot_number']) : '';
     
-    if ($catalog_id <= 0) {
-        throw new Exception('Valid catalog ID is required');
+    // Changed validation
+    if (empty($catalogNumber)) {
+        throw new Exception('Catalog number is required');
     }
     
     if (!isset(TEMPLATES[$template_code])) {
@@ -20,10 +22,10 @@ try {
     
     $conn = getDBConnection();
     
-    // Get catalog data
-    $catalog_sql = "SELECT * FROM catalogs WHERE id = ?";
+    // Get catalog data - changed to use catalogNumber
+    $catalog_sql = "SELECT * FROM catalogs WHERE catalogNumber = ?";
     $catalog_stmt = $conn->prepare($catalog_sql);
-    $catalog_stmt->bind_param("i", $catalog_id);
+    $catalog_stmt->bind_param("s", $catalogNumber);  // Changed to string parameter
     $catalog_stmt->execute();
     $catalog_result = $catalog_stmt->get_result();
     
@@ -34,12 +36,12 @@ try {
     $catalog_data = $catalog_result->fetch_assoc();
     $catalog_stmt->close();
     
-    // Get lot data if lot_number provided
+    // Get lot data if lot_number provided - changed to use catalogNumber
     $lot_data = null;
     if ($lot_number) {
-        $lot_sql = "SELECT * FROM lots WHERE catalog_id = ? AND lot_number = ?";
+        $lot_sql = "SELECT * FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
         $lot_stmt = $conn->prepare($lot_sql);
-        $lot_stmt->bind_param("is", $catalog_id, $lot_number);
+        $lot_stmt->bind_param("ss", $catalogNumber, $lot_number);  // Both strings
         $lot_stmt->execute();
         $lot_result = $lot_stmt->get_result();
         
@@ -86,10 +88,10 @@ try {
     echo json_encode([
         'sections_data' => $sections_data,
         'debug_info' => [
-            'catalog_id' => $catalog_id,
+            'catalog_number' => $catalogNumber,  // Changed from catalog_id
             'template_code' => $template_code,
             'lot_number' => $lot_number,
-            'catalog_number' => $catalog_data['catalog_number']
+            'catalog_number_db' => $catalog_data['catalogNumber']  // Using camelCase
         ]
     ]);
     

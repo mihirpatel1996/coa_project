@@ -22,9 +22,9 @@ try {
         while ($row = $result->fetch_assoc()) {
             $catalogs[] = [
                 'id' => $row['id'],
-                'catalog_number' => $row['catalog_number'],
-                'catalog_name' => $row['catalog_name'],
-                'created_at' => $row['created_at']
+                'catalog_number' => $row['catalogNumber'],
+                'catalog_name' => $row['catalogName'],
+                'created_at' => $row['createdAt']
             ];
         }
     }

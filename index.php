@@ -420,7 +420,7 @@
     <script>
         // Global variables
         let currentTemplateCode = null;  // Changed from currentTemplateId
-        let currentCatalogId = null;
+        // let currentCatalogId = null;
         let currentCatalogNumber = null;
         let currentLotNumber = null;
         let templateKeys = {};
@@ -533,11 +533,11 @@
 
         // Load catalog data when catalog is selected
         function loadCatalogData() {
-            if (!currentTemplateCode || !currentCatalogId) return;
+            if (!currentTemplateCode || !currentCatalogNumber) return;
             
             disableAllTextareas();
             
-            fetch(`api/get_section_data.php?catalog_id=${currentCatalogId}&template_code=${currentTemplateCode}&lot_number=${currentLotNumber || ''}`)
+            fetch(`api/get_section_data.php?catalog_number=${currentCatalogNumber}&template_code=${currentTemplateCode}&lot_number=${currentLotNumber || ''}`)
                 .then(response => response.json())
                 .then(data => {
                     if (!data.error) {
@@ -716,7 +716,7 @@
                 return;
             }
             
-            if (!currentCatalogId || !currentCatalogNumber) {
+            if (!currentCatalogNumber) {
                 alert('Please select a catalog');
                 return;
             }
@@ -778,11 +778,10 @@
             
             // Prepare payload
             const payload = {
-                catalog_id: currentCatalogId,
                 catalog_number: currentCatalogNumber,
                 catalog_name: catalogName,
                 lot_number: currentLotNumber,
-                template_code: currentTemplateCode,  // Changed from template_id
+                template_code: currentTemplateCode,
                 key_values: keyValues
             };
             
@@ -1234,7 +1233,14 @@
                     
                     // After catalogs are loaded, select the new one
                     setTimeout(() => {
-                        selectCatalog(data.catalog_id, catalogNumber, catalogName);
+                        // Just need to select by catalog number now
+                        const itemsContainer = document.getElementById('catalogDropdownItems');
+                        const items = itemsContainer.querySelectorAll('.searchable-dropdown-item');
+                        items.forEach(item => {
+                            if (item.textContent === catalogNumber) {
+                                item.click();
+                            }
+                        });
                     }, 500);
                     
                     console.log('Catalog created successfully');
@@ -1267,14 +1273,13 @@
                 }
             }
             
-            if (!currentCatalogId) {
+            if (!currentCatalogNumber) {
                 alert('Please select a catalog first');
                 return;
             }
-            
-            // Create payload
+
             const payload = {
-                catalog_id: currentCatalogId,
+                catalog_number: currentCatalogNumber,
                 lot_number: lotNumber
             };
             
@@ -1339,11 +1344,11 @@
             });
         }
 
-        function selectCatalog(catalogId, catalogNumber, catalogName) {
+        function selectCatalog(catalogNumber, catalogName) {
             const toggle = document.getElementById('catalogDropdownToggle');
             toggle.textContent = catalogNumber;
             
-            currentCatalogId = catalogId;
+            // currentCatalogId = catalogId;
             currentCatalogNumber = catalogNumber;
             
             // Update catalog name field
@@ -1354,7 +1359,7 @@
             closeAllDropdowns();
             
             // Load lots for this catalog
-            loadLots(catalogId);
+            loadLots(catalogNumber);
             
             // Load catalog data if template is selected
             if (currentTemplateCode) {
@@ -1392,7 +1397,6 @@
                     item.className = 'searchable-dropdown-item';
                     item.textContent = catalog.catalog_number;
                     item.onclick = () => selectCatalog(
-                        catalog.id, 
                         catalog.catalog_number, 
                         catalog.catalog_name
                     );
@@ -1480,8 +1484,8 @@
                 });
         }
 
-        function loadLots(catalogId) {
-            fetch(`api/get_lot_data.php?catalog_id=${catalogId}`)
+        function loadLots(catalogNumber) {
+            fetch(`api/get_lot_data.php?catalog_number=${catalogNumber}`)
                 .then(response => response.json())
                 .then(data => {
                     lotsData = Array.isArray(data) ? data : [];
@@ -1500,7 +1504,7 @@
 
         // PDF functions
         function previewPDF() {
-            if (!currentCatalogId || !currentLotNumber) {
+            if (!currentCatalogNumber || !currentLotNumber) {
                 alert('Please select both catalog and lot number');
                 return;
             }
@@ -1511,12 +1515,12 @@
                 }
             }
             
-            const previewUrl = `api/preview_pdf.php?catalog_id=${currentCatalogId}&lot_number=${encodeURIComponent(currentLotNumber)}`;
+            const previewUrl = `api/preview_pdf.php?catalog_number=${currentCatalogNumber}&lot_number=${encodeURIComponent(currentLotNumber)}`;
             window.open(previewUrl, '_blank');
         }
 
         function generatePDF() {
-            if (!currentCatalogId || !currentLotNumber) {
+            if (!currentCatalogNumber || !currentLotNumber) {
                 alert('Please select both catalog and lot number');
                 return;
             }
@@ -1527,7 +1531,7 @@
                 }
             }
             
-            const generateUrl = `api/generate_pdf.php?catalog_id=${currentCatalogId}&lot_number=${encodeURIComponent(currentLotNumber)}`;
+            const generateUrl = `api/generate_pdf.php?catalog_number=${currentCatalogNumber}&lot_number=${encodeURIComponent(currentLotNumber)}`;
             window.open(generateUrl, '_blank');
         }
     </script>

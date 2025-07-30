@@ -10,19 +10,19 @@ require_once '../config/database.php';
 
 try {
     // Get catalog_id from query parameter
-    $catalogNumber = isset($_GET['catalog_number']) ? trim($_GET['catalog_number']) : '';
+    $catalog_number = isset($_GET['catalog_number']) ? trim($_GET['catalog_number']) : '';
     
-    if ($catalog_id <= 0) {
-        throw new Exception('Invalid catalog ID');
+    if (empty($catalog_number)) {
+        throw new Exception('Invalid catalog Number');
     }
     
     // Get database connection
     $conn = getDBConnection();
     
     // Fetch all unique lot numbers for the given catalog
-    $sql = "SELECT DISTINCT lotNumber FROM lots WHERE catalogNumber = ? ORDER BY lot_number";
+    $sql = "SELECT DISTINCT lotNumber FROM lots WHERE catalogNumber = ? ORDER BY lotNumber";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $catalog_id);
+    $stmt->bind_param("i", $catalog_number);
     $stmt->execute();
     $result = $stmt->get_result();
     
@@ -31,7 +31,7 @@ try {
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $lots[] = [
-                'lot_number' => $row['lot_number']
+                'lot_number' => $row['lotNumber']
             ];
         }
     }
