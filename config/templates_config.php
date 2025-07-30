@@ -53,7 +53,7 @@ define('TEMPLATE_FIELDS', [
     'LPD' => [
         1 => [ // Section 1 - Description
             ['field_name' => 'Source', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'source'],
-            ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'predicted_molecular_mass']
+            ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'predictedMolMass']
         ],
         2 => [ // Section 2 - Specifications
             ['field_name' => 'Formulation', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'formulation']
@@ -61,7 +61,7 @@ define('TEMPLATE_FIELDS', [
         3 => [ // Section 3 - Preparation and Storage
             ['field_name' => 'Concentration', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'concentration'],
             ['field_name' => 'Shipping', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'shipping'],
-            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability_storage']
+            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability']
         ]
     ],
     
@@ -77,7 +77,7 @@ define('TEMPLATE_FIELDS', [
         3 => [ // Preparation and Storage
             ['field_name' => 'Concentration', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'concentration'],
             ['field_name' => 'Shipping', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'shipping'],
-            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability_storage']
+            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability']
         ]
     ],
     
@@ -85,7 +85,7 @@ define('TEMPLATE_FIELDS', [
     'LYO' => [
         1 => [
             ['field_name' => 'Source', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'source'],
-            ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'predicted_molecular_mass']
+            ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'predictedMolMass']
         ],
         2 => [
             ['field_name' => 'Purity', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'purity'],
@@ -94,7 +94,7 @@ define('TEMPLATE_FIELDS', [
         3 => [
             ['field_name' => 'Reconstitution', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'reconstitution'],
             ['field_name' => 'Shipping', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'shipping'],
-            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability_storage']
+            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability']
         ]
     ],
     
@@ -102,9 +102,9 @@ define('TEMPLATE_FIELDS', [
     'SUB' => [
         1 => [
             ['field_name' => 'Source', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'source'],
-            ['field_name' => 'Predicted N terminal', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'predicted_n_terminal'],
-            ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'predicted_molecular_mass'],
-            ['field_name' => 'Observed Molecular Mass', 'field_source' => 'catalog', 'field_order' => 4, 'db_field' => 'observed_molecular_mass']
+            ['field_name' => 'Predicted N terminal', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'predictedNTerminal'],
+            ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'predictedMolMass'],
+            ['field_name' => 'Observed Molecular Mass', 'field_source' => 'catalog', 'field_order' => 4, 'db_field' => 'observedMolMass']
         ],
         2 => [
             ['field_name' => 'Concentration', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'concentration'],
@@ -113,7 +113,7 @@ define('TEMPLATE_FIELDS', [
         3 => [
             ['field_name' => 'Purity', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'purity'],
             ['field_name' => 'Shipping', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'shipping'],
-            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability_storage']
+            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability']
         ]
     ],
     
@@ -121,9 +121,9 @@ define('TEMPLATE_FIELDS', [
     'ACT' => [
         1 => [
             ['field_name' => 'Source', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'source'],
-            ['field_name' => 'Predicted N terminal', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'predicted_n_terminal'],
-            ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'predicted_molecular_mass'],
-            ['field_name' => 'Observed Molecular Mass', 'field_source' => 'catalog', 'field_order' => 4, 'db_field' => 'observed_molecular_mass']
+            ['field_name' => 'Predicted N terminal', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'predictedNTerminal'],
+            ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'predictedMolMass'],
+            ['field_name' => 'Observed Molecular Mass', 'field_source' => 'catalog', 'field_order' => 4, 'db_field' => 'observedMolMass']
         ],
         2 => [
             ['field_name' => 'Activity', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'activity'],
@@ -133,7 +133,7 @@ define('TEMPLATE_FIELDS', [
         3 => [
             ['field_name' => 'Concentration', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'concentration'],
             ['field_name' => 'Shipping', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'shipping'],
-            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability_storage']
+            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability']
         ]
     ],
     
@@ -148,7 +148,7 @@ define('TEMPLATE_FIELDS', [
         3 => [
             ['field_name' => 'Reconstitution', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'reconstitution'],
             ['field_name' => 'Shipping', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'shipping'],
-            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability_storage']
+            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability']
         ]
     ],
     
@@ -156,8 +156,8 @@ define('TEMPLATE_FIELDS', [
     'CPD' => [
         1 => [
             ['field_name' => 'CAS', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'cas'],
-            ['field_name' => 'Molecular Formula', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'molecular_formula'],
-            ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'predicted_molecular_mass']
+            ['field_name' => 'Molecular Formula', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'molFormula'],
+            ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'predictedMolMass']
         ],
         2 => [
             ['field_name' => 'Purity', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'purity'],
@@ -166,7 +166,7 @@ define('TEMPLATE_FIELDS', [
         3 => [
             ['field_name' => 'Reconstitution', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'reconstitution'],
             ['field_name' => 'Shipping', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'shipping'],
-            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability_storage']
+            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability']
         ]
     ]
 ]);

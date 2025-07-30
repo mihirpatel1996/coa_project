@@ -13,7 +13,7 @@ try {
     $conn = getDBConnection();
     
     // Fetch all catalogs
-    $sql = "SELECT id, catalog_number, catalog_name, created_at FROM catalogs ORDER BY catalog_number";
+    $sql = "SELECT id, catalogNumber, catalogName, createdAt FROM catalogs ORDER BY catalogNumber";
     $result = $conn->query($sql);
     
     $catalogs = [];

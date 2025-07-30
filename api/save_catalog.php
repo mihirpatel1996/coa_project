@@ -37,7 +37,7 @@ try {
     $conn = getDBConnection();
     
     // Check if catalog already exists
-    $check_sql = "SELECT id FROM catalogs WHERE catalog_number = ?";
+    $check_sql = "SELECT id FROM catalogs WHERE catalogNumber = ?";
     $check_stmt = $conn->prepare($check_sql);
     $check_stmt->bind_param("s", $catalog_number);
     $check_stmt->execute();
@@ -53,7 +53,7 @@ try {
         ]);
     } else {
         // Create new catalog
-        $insert_sql = "INSERT INTO catalogs (catalog_name, catalog_number, template_code) VALUES (?, ?, ?)";
+        $insert_sql = "INSERT INTO catalogs (catalogName, catalogNumber, templateCode) VALUES (?, ?, ?)";
         $insert_stmt = $conn->prepare($insert_sql);
         $insert_stmt->bind_param("sss", $catalog_name, $catalog_number, $template_code);
         
