@@ -231,7 +231,6 @@
                         <div class="row">   
                             <div class="col-md-4">
                                 <label for="catalogSelect" class="form-label" style="color: red;">Catalog Number</label>
-                                <!-- <small class="text-muted d-block mb-1">Search existing or create new</small> -->
                                 <div class="searchable-dropdown" id="catalogDropdown">
                                     <button type="button" class="searchable-dropdown-toggle" id="catalogDropdownToggle">
                                         Select Catalog...
@@ -255,7 +254,6 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="lotSelect" class="form-label" style="color: green;">Lot Number</label>
-                                <!-- <small class="text-muted d-block mb-1">Search existing or create new</small> -->
                                 <div class="searchable-dropdown" id="lotDropdown">
                                     <button type="button" class="searchable-dropdown-toggle" id="lotDropdownToggle" disabled>
                                         Select Lot...
@@ -417,162 +415,11 @@
         </div>
     </div>
 
-    <!-- Template Management Modal -->
-    <div class="modal fade" id="templateManagementModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-file-alt me-2"></i>
-                        Template Management
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Add New Template Section -->
-                    <div class="card mb-4">
-                        <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0">
-                                <i class="fas fa-plus me-2"></i>
-                                Add New Template
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">  
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="newTemplateName" class="form-label">Template Name</label>
-                                        <input type="text" class="form-control" id="newTemplateName" 
-                                               placeholder="Enter template name">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="newTemplateDescription" class="form-label">Description</label>
-                                        <input type="text" class="form-control" id="newTemplateDescription" 
-                                               placeholder="Brief description">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="setAsDefault">
-                                        <label class="form-check-label" for="setAsDefault">
-                                            Set as default template
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 text-end">
-                                    <button type="button" class="btn btn-success" id="createTemplateBtn">
-                                        <i class="fas fa-plus me-1"></i>
-                                        Create Template
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Existing Templates Section -->
-                    <div class="card">
-                        <div class="card-header bg-secondary text-white">
-                            <h6 class="mb-0">
-                                <i class="fas fa-list me-2"></i>
-                                Existing Templates
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div id="templatesListContainer">
-                                <div class="text-center py-3">
-                                    <i class="fas fa-spinner fa-spin me-2"></i>
-                                    Loading templates...
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Template Configuration Modal -->
-    <div class="modal fade" id="templateConfigModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="templateConfigModalTitle">
-                        <i class="fas fa-cogs me-2"></i>
-                        Configure Template Keys
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Add keys to each section. Specify whether each key comes from catalog data or lot-specific data.
-                    </div>
-                    
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h6 class="card-title" id="configTemplateInfo">Loading template...</h6>
-                        </div>
-                    </div>
-                    
-                    <div id="templateConfigSections">
-                        <div class="text-center py-4">
-                            <i class="fas fa-spinner fa-spin fa-2x"></i>
-                            <p class="mt-2">Loading template configuration...</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Template Key Modal -->
-    <div class="modal fade" id="addTemplateKeyModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add Template Key</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="templateKeyName" class="form-label">Key Name</label>
-                        <input type="text" class="form-control" id="templateKeyName" 
-                               placeholder="Enter key name">
-                    </div>
-                    <div class="mb-3">
-                        <label for="templateKeySource" class="form-label">Key Type</label>
-                        <select class="form-select" id="templateKeySource">
-                            <option value="catalog">Catalog Data</option>
-                            <option value="lot">Lot Data</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveTemplateKeyBtn">
-                        <i class="fas fa-plus me-1"></i>
-                        Add Key
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
         // Global variables
-        let currentTemplateId = null;
+        let currentTemplateCode = null;  // Changed from currentTemplateId
         let currentCatalogId = null;
         let currentCatalogNumber = null;
         let currentLotNumber = null;
@@ -582,41 +429,38 @@
         let hasUnsavedChanges = false;
         let catalogsData = [];
         let lotsData = [];
-        let currentSectionIdForKey = null;
         let searchTimeout = null;
 
         // Initialize on DOM load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Initializing workflow with smart add functionality...');
+            console.log('Initializing CoA Generator with static templates...');
             initializeSearchableDropdowns();
             loadTemplates();
             loadCatalogs();
             initializeEventListeners();
-            initializeTemplateManagementHandlers();
-            initializeTemplateConfigHandlers();
         });
 
         // Template radio button handler
         function handleTemplateRadioChange(event) {
-            const newTemplateId = event.target.value;
+            const newTemplateCode = event.target.value;  // Now 'ACT', 'SUB', etc.
             
             // Check for unsaved changes
-            if (hasUnsavedChanges && currentTemplateId !== newTemplateId) {
+            if (hasUnsavedChanges && currentTemplateCode !== newTemplateCode) {
                 if (!confirm('You have unsaved changes. Do you want to switch templates and lose your changes?')) {
                     // Revert radio selection
-                    const oldRadio = document.getElementById(`template_${currentTemplateId}`);
+                    const oldRadio = document.getElementById(`template_${currentTemplateCode}`);
                     if (oldRadio) oldRadio.checked = true;
                     return;
                 }
             }
             
-            currentTemplateId = newTemplateId;
-            loadTemplateStructure(newTemplateId);
+            currentTemplateCode = newTemplateCode;
+            loadTemplateStructure(newTemplateCode);
         }
 
         // Load template structure and display fields
-        function loadTemplateStructure(templateId) {
-            fetch(`api/get_template_keys.php?template_id=${templateId}`)
+        function loadTemplateStructure(templateCode) {
+            fetch(`api/get_template_keys.php?template_code=${templateCode}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -689,11 +533,11 @@
 
         // Load catalog data when catalog is selected
         function loadCatalogData() {
-            if (!currentTemplateId || !currentCatalogId) return;
+            if (!currentTemplateCode || !currentCatalogId) return;
             
             disableAllTextareas();
             
-            fetch(`api/get_section_data.php?catalog_id=${currentCatalogId}&template_id=${currentTemplateId}&lot_number=${currentLotNumber || ''}`)
+            fetch(`api/get_section_data.php?catalog_id=${currentCatalogId}&template_code=${currentTemplateCode}&lot_number=${currentLotNumber || ''}`)
                 .then(response => response.json())
                 .then(data => {
                     if (!data.error) {
@@ -777,35 +621,9 @@
             });
         }
 
-        // Clear lot-specific fields
-        function clearLotFields() {
-            const sections = [1, 2, 3];
-            sections.forEach(sectionId => {
-                if (templateKeys[sectionId]) {
-                    templateKeys[sectionId].keys.forEach(key => {
-                        if (key.key_source === 'lot') {
-                            const textarea = document.getElementById(`textarea_${sectionId}_${key.key_name.replace(/\s+/g, '_')}`);
-                            if (textarea) {
-                                textarea.value = '';
-                            }
-                        }
-                    });
-                }
-            });
-        }
-
-        // Clear all fields
-        function clearAllFields() {
-            document.querySelectorAll('.bulk-edit-textarea').forEach(textarea => {
-                textarea.value = '';
-                textarea.classList.remove('is-invalid', 'border-warning');
-            });
-            hasUnsavedChanges = false;
-        }
-
         // Update button states
         function updateButtonStates() {
-            const hasTemplate = !!currentTemplateId;
+            const hasTemplate = !!currentTemplateCode;
             const hasCatalog = !!currentCatalogId;
             const hasLot = !!currentLotNumber;
             const canInteract = hasTemplate && hasCatalog && hasLot;
@@ -893,7 +711,7 @@
         // Save all data
         function saveAllData() {
             // Validate all required fields
-            if (!currentTemplateId) {
+            if (!currentTemplateCode) {
                 alert('Please select a template first');
                 return;
             }
@@ -964,7 +782,7 @@
                 catalog_number: currentCatalogNumber,
                 catalog_name: catalogName,
                 lot_number: currentLotNumber,
-                template_id: currentTemplateId,
+                template_code: currentTemplateCode,  // Changed from template_id
                 key_values: keyValues
             };
             
@@ -1106,13 +924,6 @@
 
         // Event listeners
         function initializeEventListeners() {
-            // Template management button
-            //const manageBtn = document.createElement('button');
-            //manageBtn.className = 'btn btn-sm btn-outline-secondary ms-3';
-            //manageBtn.innerHTML = '<i class="fas fa-cog"></i> Manage Templates';
-            //manageBtn.onclick = openTemplateManagement;
-            //document.getElementById('templateRadioButtons').parentElement.appendChild(manageBtn);
-            
             // Action buttons
             document.getElementById('saveAllBtn').addEventListener('click', saveAllData);
             document.getElementById('cancelBtn').addEventListener('click', cancelChanges);
@@ -1390,8 +1201,8 @@
             
             if (!isValid) return;
             
-            // Get current template ID
-            if (!currentTemplateId) {
+            // Get current template code
+            if (!currentTemplateCode) {
                 alert('Please select a template first');
                 return;
             }
@@ -1400,7 +1211,7 @@
             const payload = {
                 catalog_number: catalogNumber,
                 catalog_name: catalogName,
-                template_id: parseInt(currentTemplateId)
+                template_code: currentTemplateCode  // Changed from template_id
             };
             
             // Call API to create catalog
@@ -1538,7 +1349,7 @@
             // Update catalog name field
             const catalogNameField = document.getElementById('catalogName');
             catalogNameField.value = catalogName || '';
-            catalogNameField.readOnly = true;
+            catalogNameField.readOnly = false; // Allow editing catalog name
             
             closeAllDropdowns();
             
@@ -1546,7 +1357,7 @@
             loadLots(catalogId);
             
             // Load catalog data if template is selected
-            if (currentTemplateId) {
+            if (currentTemplateCode) {
                 loadCatalogData();
             }
             
@@ -1562,7 +1373,7 @@
             closeAllDropdowns();
             
             // Load lot data if template and catalog are selected
-            if (currentTemplateId && currentCatalogId) {
+            if (currentTemplateCode && currentCatalogId) {
                 loadCatalogData();
             }
             
@@ -1607,18 +1418,6 @@
             }
         }
 
-        function clearDropdown(type) {
-            const toggle = document.getElementById(`${type}DropdownToggle`);
-            if (toggle) {
-                toggle.textContent = type === 'catalog' ? 'Select Catalog...' : 'Select Lot...';
-            }
-            
-            const container = document.getElementById(`${type}DropdownItems`);
-            if (container) {
-                container.innerHTML = `<div class="searchable-dropdown-no-results">No items available</div>`;
-            }
-        }
-
         // Load functions
         function loadTemplates() {
             fetch('api/get_templates.php')
@@ -1631,26 +1430,27 @@
                         const radioGroup = document.createElement('div');
                         radioGroup.className = 'template-radio-group';
                         
-                        data.templates.forEach(template => {
+                        data.templates.forEach((template, index) => {
                             const radioDiv = document.createElement('div');
                             radioDiv.className = 'template-radio';
                             
                             const radioInput = document.createElement('input');
                             radioInput.type = 'radio';
                             radioInput.name = 'templateRadio';
-                            radioInput.id = `template_${template.id}`;
-                            radioInput.value = template.id;
+                            radioInput.id = `template_${template.template_code}`;
+                            radioInput.value = template.template_code;
                             radioInput.className = 'form-check-input';
                             radioInput.addEventListener('change', handleTemplateRadioChange);
                             
                             const radioLabel = document.createElement('label');
-                            radioLabel.htmlFor = `template_${template.id}`;
+                            radioLabel.htmlFor = `template_${template.template_code}`;
                             radioLabel.textContent = template.template_name;
-                            if (template.is_default) {
-                                radioLabel.textContent += ' (Default)';
+                            
+                            // First template is default
+                            if (index === 0) {
                                 radioInput.checked = true;
-                                currentTemplateId = template.id;
-                                loadTemplateStructure(template.id);
+                                currentTemplateCode = template.template_code;
+                                loadTemplateStructure(template.template_code);
                             }
                             
                             radioDiv.appendChild(radioInput);
@@ -1696,263 +1496,6 @@
                 .catch(error => {
                     console.error('Error loading lots:', error);
                 });
-        }
-
-        // Template management functions
-        function openTemplateManagement() {
-            loadTemplatesList();
-            new bootstrap.Modal(document.getElementById('templateManagementModal')).show();
-        }
-
-        function loadTemplatesList() {
-            const container = document.getElementById('templatesListContainer');
-            container.innerHTML = '<div class="text-center py-3"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
-            
-            fetch('api/get_templates.php')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.templates.length > 0) {
-                        let html = '';
-                        data.templates.forEach(template => {
-                            const defaultBadge = template.is_default ? '<span class="badge bg-primary ms-2">Default</span>' : '';
-                            html += `
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-6">
-                                                <h6 class="mb-1">${template.template_name}${defaultBadge}</h6>
-                                                <small class="text-muted">${template.description || 'No description'}</small>
-                                            </div>
-                                            <div class="col-md-6 text-end">
-                                                <button class="btn btn-sm btn-outline-secondary" 
-                                                        onclick="configureTemplateKeys(${template.id}, '${template.template_name}')">
-                                                    <i class="fas fa-cogs"></i> Configure
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-danger" 
-                                                        onclick="deleteTemplate(${template.id}, '${template.template_name}')">
-                                                    <i class="fas fa-trash"></i> Delete
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        container.innerHTML = html;
-                    } else {
-                        container.innerHTML = '<div class="text-center text-muted">No templates found</div>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading templates list:', error);
-                    container.innerHTML = '<div class="alert alert-danger">Error loading templates</div>';
-                });
-        }
-
-        function initializeTemplateManagementHandlers() {
-            document.getElementById('createTemplateBtn').addEventListener('click', createNewTemplate);
-        }
-
-        function initializeTemplateConfigHandlers() {
-            document.getElementById('saveTemplateKeyBtn').addEventListener('click', saveTemplateKey);
-        }
-
-        function createNewTemplate() {
-            const name = document.getElementById('newTemplateName').value.trim();
-            const description = document.getElementById('newTemplateDescription').value.trim();
-            const isDefault = document.getElementById('setAsDefault').checked;
-            
-            if (!name) {
-                alert('Please enter a template name');
-                return;
-            }
-            
-            fetch('api/create_template.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    template_name: name,
-                    description: description,
-                    is_default: isDefault
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('newTemplateName').value = '';
-                    document.getElementById('newTemplateDescription').value = '';
-                    document.getElementById('setAsDefault').checked = false;
-                    loadTemplatesList();
-                    loadTemplates();
-                    alert('Template created successfully!');
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error creating template:', error);
-                alert('Error creating template');
-            });
-        }
-
-        function deleteTemplate(templateId, templateName) {
-            if (!confirm(`Delete template "${templateName}"?`)) return;
-            
-            fetch('api/delete_template.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ template_id: templateId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadTemplatesList();
-                    loadTemplates();
-                    alert('Template deleted successfully!');
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error deleting template:', error);
-                alert('Error deleting template');
-            });
-        }
-
-        function configureTemplateKeys(templateId, templateName) {
-            currentTemplateId = templateId;
-            document.getElementById('templateConfigModalTitle').innerHTML = 
-                `<i class="fas fa-cogs me-2"></i> Configure: ${templateName}`;
-            loadTemplateConfiguration(templateId);
-            new bootstrap.Modal(document.getElementById('templateConfigModal')).show();
-        }
-
-        function loadTemplateConfiguration(templateId) {
-            const container = document.getElementById('templateConfigSections');
-            container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
-            
-            fetch(`api/get_template_keys.php?template_id=${templateId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById('configTemplateInfo').textContent = 
-                            data.template_info.template_name + 
-                            (data.template_info.description ? ` - ${data.template_info.description}` : '');
-                        
-                        let html = '';
-                        data.sections.forEach(section => {
-                            html += `
-                                <div class="card mb-4">
-                                    <div class="card-header bg-light">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0">${section.section_name}</h6>
-                                            <button class="btn btn-sm btn-primary" 
-                                                    onclick="addKeyToSection(${section.section_id}, '${section.section_name}')">
-                                                <i class="fas fa-plus me-1"></i> Add Key
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        ${section.keys.length === 0 ? 
-                                            '<div class="text-muted text-center py-3">No keys defined</div>' : 
-                                            section.keys.map(key => createKeyRowHtml(key)).join('')}
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        container.innerHTML = html;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading template configuration:', error);
-                    container.innerHTML = '<div class="alert alert-danger">Error loading configuration</div>';
-                });
-        }
-
-        function createKeyRowHtml(key) {
-            const sourceColor = key.key_source === 'catalog' ? 'bg-danger' : 'bg-success';
-            return `
-                <div class="border rounded p-3 mb-2">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <strong>${key.key_name}</strong>
-                        </div>
-                        <div class="col-md-4">
-                            <span class="badge ${sourceColor}">${key.key_source}</span>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <button class="btn btn-sm btn-outline-danger" 
-                                    onclick="deleteTemplateKey(${key.id})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function addKeyToSection(sectionId, sectionName) {
-            currentSectionIdForKey = sectionId;
-            document.querySelector('#addTemplateKeyModal .modal-title').textContent = `Add Key to ${sectionName}`;
-            document.getElementById('templateKeyName').value = '';
-            document.getElementById('templateKeySource').value = 'catalog';
-            new bootstrap.Modal(document.getElementById('addTemplateKeyModal')).show();
-        }
-
-        function saveTemplateKey() {
-            const keyName = document.getElementById('templateKeyName').value.trim();
-            const keySource = document.getElementById('templateKeySource').value;
-            
-            if (!keyName) {
-                alert('Please enter a key name');
-                return;
-            }
-            
-            fetch('api/add_template_key.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    template_id: currentTemplateId,
-                    section_id: currentSectionIdForKey,
-                    key_name: keyName,
-                    key_source: keySource
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('addTemplateKeyModal')).hide();
-                    loadTemplateConfiguration(currentTemplateId);
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error adding template key:', error);
-                alert('Error adding key');
-            });
-        }
-
-        function deleteTemplateKey(keyId) {
-            if (!confirm('Delete this key?')) return;
-            
-            fetch('api/delete_template_key.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key_id: keyId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    loadTemplateConfiguration(currentTemplateId);
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error deleting template key:', error);
-                alert('Error deleting key');
-            });
         }
 
         // PDF functions

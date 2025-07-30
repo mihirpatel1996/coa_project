@@ -1,29 +1,27 @@
 <?php
-// api/get_section_data.php (UPDATED WITHOUT section_id)
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET');
-header('Access-Control-Allow-Headers: Content-Type');
 
 require_once '../config/database.php';
+require_once '../config/templates_config.php';
 
 try {
     $catalog_id = isset($_GET['catalog_id']) ? intval($_GET['catalog_id']) : 0;
-    $template_id = isset($_GET['template_id']) ? intval($_GET['template_id']) : 0;
+    $template_code = isset($_GET['template_code']) ? trim($_GET['template_code']) : '';
     $lot_number = isset($_GET['lot_number']) ? trim($_GET['lot_number']) : '';
     
     if ($catalog_id <= 0) {
         throw new Exception('Valid catalog ID is required');
     }
     
-    if ($template_id <= 0) {
-        throw new Exception('Valid template ID is required');
+    if (!isset(TEMPLATES[$template_code])) {
+        throw new Exception('Valid template code is required');
     }
     
     $conn = getDBConnection();
     
-    // Get catalog information
-    $catalog_sql = "SELECT catalog_number FROM catalogs WHERE id = ?";
+    // Get catalog data
+    $catalog_sql = "SELECT * FROM catalogs WHERE id = ?";
     $catalog_stmt = $conn->prepare($catalog_sql);
     $catalog_stmt->bind_param("i", $catalog_id);
     $catalog_stmt->execute();
@@ -33,65 +31,54 @@ try {
         throw new Exception('Catalog not found');
     }
     
-    $catalog_info = $catalog_result->fetch_assoc();
-    $catalog_number = $catalog_info['catalog_number'];
+    $catalog_data = $catalog_result->fetch_assoc();
     $catalog_stmt->close();
     
-    $sections_data = [];
-    
-    // Get all sections
-    $sections_sql = "SELECT id, section_name FROM sections ORDER BY default_order";
-    $sections_result = $conn->query($sections_sql);
-    
-    while ($section = $sections_result->fetch_assoc()) {
-        $section_id = $section['id'];
-        $section_name = $section['section_name'];
+    // Get lot data if lot_number provided
+    $lot_data = null;
+    if ($lot_number) {
+        $lot_sql = "SELECT * FROM lots WHERE catalog_id = ? AND lot_number = ?";
+        $lot_stmt = $conn->prepare($lot_sql);
+        $lot_stmt->bind_param("is", $catalog_id, $lot_number);
+        $lot_stmt->execute();
+        $lot_result = $lot_stmt->get_result();
         
+        if ($lot_result->num_rows > 0) {
+            $lot_data = $lot_result->fetch_assoc();
+        }
+        $lot_stmt->close();
+    }
+    
+    // Build response using static template structure
+    $sections_data = [];
+    foreach (SECTIONS as $section_id => $section) {
         $key_values = [];
         
-        // Get template keys for this section with their values
-        $template_keys_sql = "
-            SELECT 
-                tk.key_name, 
-                tk.key_source, 
-                tk.key_order,
-                CASE 
-                    WHEN tk.key_source = 'catalog' THEN cd.value
-                    WHEN tk.key_source = 'lot' THEN ld.value
-                    ELSE ''
-                END as value
-            FROM template_keys tk
-            LEFT JOIN catalog_details cd ON 
-                cd.catalog_number = ? AND 
-                cd.template_id = tk.template_id AND 
-                cd.key = tk.key_name AND
-                tk.key_source = 'catalog'
-            LEFT JOIN lot_details ld ON 
-                ld.lot_number = ? AND 
-                ld.template_id = tk.template_id AND 
-                ld.key = tk.key_name AND
-                tk.key_source = 'lot'
-            WHERE tk.template_id = ? AND tk.section_id = ?
-            ORDER BY tk.key_order";
-            
-        $keys_stmt = $conn->prepare($template_keys_sql);
-        $keys_stmt->bind_param("ssii", $catalog_number, $lot_number, $template_id, $section_id);
-        $keys_stmt->execute();
-        $keys_result = $keys_stmt->get_result();
-        
-        while ($key_data = $keys_result->fetch_assoc()) {
-            $key_values[] = [
-                'key' => $key_data['key_name'],
-                'value' => $key_data['value'] ?? '',
-                'source' => $key_data['key_source'],
-                'order' => $key_data['key_order']
-            ];
+        if (isset(TEMPLATE_FIELDS[$template_code][$section_id])) {
+            foreach (TEMPLATE_FIELDS[$template_code][$section_id] as $field_config) {
+                $value = '';
+                
+                // Get value from appropriate table based on field_source
+                if ($field_config['field_source'] === 'catalog' && $catalog_data) {
+                    $db_field = $field_config['db_field'];
+                    $value = $catalog_data[$db_field] ?? '';
+                } elseif ($field_config['field_source'] === 'lot' && $lot_data) {
+                    $db_field = $field_config['db_field'];
+                    $value = $lot_data[$db_field] ?? '';
+                }
+                
+                $key_values[] = [
+                    'key' => $field_config['field_name'],
+                    'value' => $value,
+                    'source' => $field_config['field_source'],
+                    'order' => $field_config['field_order']
+                ];
+            }
         }
-        $keys_stmt->close();
         
         $sections_data[] = [
             'section_id' => $section_id,
-            'section_name' => $section_name,
+            'section_name' => $section['section_name'],
             'key_values' => $key_values
         ];
     }
@@ -100,21 +87,21 @@ try {
         'sections_data' => $sections_data,
         'debug_info' => [
             'catalog_id' => $catalog_id,
-            'catalog_number' => $catalog_number,
-            'template_id' => $template_id,
+            'template_code' => $template_code,
             'lot_number' => $lot_number,
-            'total_sections' => count($sections_data)
+            'catalog_number' => $catalog_data['catalog_number']
         ]
     ]);
     
 } catch (Exception $e) {
-    http_response_code(500);
+    http_response_code(400);
     echo json_encode([
         'error' => true,
-        'message' => 'Error fetching section data: ' . $e->getMessage()
+        'message' => $e->getMessage()
     ]);
 } finally {
     if (isset($conn)) {
         $conn->close();
     }
 }
+?>

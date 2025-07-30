@@ -3,45 +3,31 @@
 define('TEMPLATES', [
     'LPD' => [
         'template_code' => 'LPD',
-        'template_name' => 'Lipid Substrate',
-        'description' => null,
-        'is_default' => true
+        'template_name' => 'Lipid Substrate'
     ],
     'LSB' => [
         'template_code' => 'LSB',
-        'template_name' => 'Liquid Substrate',
-        'description' => null,
-        'is_default' => false
+        'template_name' => 'Liquid Substrate'
     ],
     'LYO' => [
         'template_code' => 'LYO',
-        'template_name' => 'Lyophilized Peptide',
-        'description' => null,
-        'is_default' => false
+        'template_name' => 'Lyophilized Peptide'
     ],
     'SUB' => [
         'template_code' => 'SUB',
-        'template_name' => 'Protein',
-        'description' => null,
-        'is_default' => false
+        'template_name' => 'Protein'
     ],
     'ACT' => [
         'template_code' => 'ACT',
-        'template_name' => 'Active Enzyme',
-        'description' => null,
-        'is_default' => false
+        'template_name' => 'Active Enzyme'
     ],
     'RGT' => [
         'template_code' => 'RGT',
-        'template_name' => 'Buffer Reagent',
-        'description' => null,
-        'is_default' => false
+        'template_name' => 'Buffer Reagent'
     ],
     'CPD' => [
         'template_code' => 'CPD',
-        'template_name' => 'Compound',
-        'description' => null,
-        'is_default' => false
+        'template_name' => 'Compound'
     ]
 ]);
 
@@ -49,21 +35,15 @@ define('TEMPLATES', [
 define('SECTIONS', [
     1 => [
         'id' => 1,
-        'section_name' => 'Description',
-        'description' => 'Product description and source information',
-        'default_order' => 1
+        'section_name' => 'Description'
     ],
     2 => [
         'id' => 2,
-        'section_name' => 'Specifications',
-        'description' => 'Product specifications including purity and formulation',
-        'default_order' => 2
+        'section_name' => 'Specifications'
     ],
     3 => [
         'id' => 3,
-        'section_name' => 'Preparation and Storage',
-        'description' => 'Shipping, stability and storage instructions',
-        'default_order' => 3
+        'section_name' => 'Preparation and Storage'
     ]
 ]);
 
