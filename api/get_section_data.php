@@ -23,9 +23,9 @@ try {
     $conn = getDBConnection();
     
     // Get catalog data - changed to use catalogNumber
-    $catalog_sql = "SELECT * FROM catalogs WHERE catalogNumber = ?";
+    $catalog_sql = "SELECT * FROM catalogs WHERE catalogNumber = ? AND templateCode = ?";
     $catalog_stmt = $conn->prepare($catalog_sql);
-    $catalog_stmt->bind_param("s", $catalogNumber);  // Changed to string parameter
+    $catalog_stmt->bind_param("ss", $catalogNumber, $template_code);  // Changed to string parameter
     $catalog_stmt->execute();
     $catalog_result = $catalog_stmt->get_result();
     
@@ -39,9 +39,9 @@ try {
     // Get lot data if lot_number provided - changed to use catalogNumber
     $lot_data = null;
     if ($lot_number) {
-        $lot_sql = "SELECT * FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
+        $lot_sql = "SELECT * FROM lots WHERE catalogNumber = ? AND lotNumber = ? AND templateCode = ?";
         $lot_stmt = $conn->prepare($lot_sql);
-        $lot_stmt->bind_param("ss", $catalogNumber, $lot_number);  // Both strings
+        $lot_stmt->bind_param("sss", $catalogNumber, $lot_number, $template_code);  // Both strings
         $lot_stmt->execute();
         $lot_result = $lot_stmt->get_result();
         
@@ -88,7 +88,7 @@ try {
     echo json_encode([
         'sections_data' => $sections_data,
         'debug_info' => [
-            'catalog_number' => $catalogNumber,  // Changed from catalog_id
+            'catalog_number' => $catalogNumber,
             'template_code' => $template_code,
             'lot_number' => $lot_number,
             'catalog_number_db' => $catalog_data['catalogNumber']  // Using camelCase
