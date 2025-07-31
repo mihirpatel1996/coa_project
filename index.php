@@ -429,6 +429,8 @@
         let catalogsData = [];
         let lotsData = [];
         let searchTimeout = null;
+        let originalTemplateCode = null;
+        let isChangingTemplate = false;
 
         // Initialize on DOM load
         document.addEventListener('DOMContentLoaded', function() {
@@ -441,12 +443,27 @@
 
         // Template radio button handler
         function handleTemplateRadioChange(event) {
-            const newTemplateCode = event.target.value;  // Now 'ACT', 'SUB', etc.
+            const newTemplateCode = event.target.value;
+            
+            // Check if changing from original saved template
+            if (currentCatalogNumber && originalTemplateCode && originalTemplateCode !== newTemplateCode) {
+                const newTemplateName = event.target.nextElementSibling.textContent.trim();
+                const originalTemplateName = document.querySelector(`label[for="template_${originalTemplateCode}"]`)?.textContent.trim() || originalTemplateCode;
+                
+                if (!confirm(`Warning: This catalog is currently using template "${originalTemplateName}".\n\nSwitching to template "${newTemplateName}" will:\n- Create new empty fields\n- DELETE all existing data when you save\n- Update ALL lots to use the new template\n\nAre you sure you want to continue?`)) {
+                    // Revert selection
+                    const oldRadio = document.getElementById(`template_${originalTemplateCode}`);
+                    if (oldRadio) oldRadio.checked = true;
+                    return;
+                }
+                
+                // User confirmed template change
+                isChangingTemplate = true;
+            }
             
             // Check for unsaved changes
             if (hasUnsavedChanges && currentTemplateCode !== newTemplateCode) {
                 if (!confirm('You have unsaved changes. Do you want to switch templates and lose your changes?')) {
-                    // Revert radio selection
                     const oldRadio = document.getElementById(`template_${currentTemplateCode}`);
                     if (oldRadio) oldRadio.checked = true;
                     return;
@@ -472,9 +489,13 @@
                         });
                         displayTemplateFields();
                         
-                        // If catalog is selected, load data
-                        if (currentCatalogNumber) {
+                        // If catalog is selected and not changing template, load data
+                        if (currentCatalogNumber && !isChangingTemplate) {
                             loadCatalogData();
+                        } else if (isChangingTemplate) {
+                            // Show empty fields for template change
+                            displayEmptyTemplateData();
+                            isChangingTemplate = false; // Reset flag
                         }
                     } else {
                         console.error('Failed to load template structure:', data.message);
@@ -483,6 +504,31 @@
                 .catch(error => {
                     console.error('Error loading template structure:', error);
                 });
+        }
+
+        // Display empty template data when switching templates
+        function displayEmptyTemplateData() {
+            // Enable all textareas
+            enableAllTextareas();
+            
+            // Clear all field values
+            document.querySelectorAll('.bulk-edit-textarea').forEach(textarea => {
+                textarea.value = '';
+            });
+            
+            // Reset data tracking
+            currentData = {};
+            originalData = {};
+            hasUnsavedChanges = true; // Mark as having changes since fields are empty
+            
+            // Update buttons
+            updateButtonStates();
+            
+            // Update save button to indicate unsaved changes
+            const saveBtn = document.getElementById('saveAllBtn');
+            if (saveBtn) {
+                saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All*';
+            }
         }
 
         // Display template fields with disabled textareas
@@ -1347,7 +1393,6 @@
             const toggle = document.getElementById('catalogDropdownToggle');
             toggle.textContent = catalogNumber;
             
-            // currentCatalogId = catalogId;
             currentCatalogNumber = catalogNumber;
             
             // Update catalog name field
@@ -1357,13 +1402,35 @@
             
             closeAllDropdowns();
             
-            // Load lots for this catalog
-            loadLots(catalogNumber);
-            
-            // Load catalog data if template is selected
-            if (currentTemplateCode) {
-                loadCatalogData();
-            }
+            // Check if catalog has existing template/data
+            fetch(`api/get_catalog_template.php?catalog_number=${catalogNumber}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.template_code) {
+                        // Auto-select the catalog's template
+                        const templateRadio = document.getElementById(`template_${data.template_code}`);
+                        if (templateRadio) {
+                            templateRadio.checked = true;
+                            currentTemplateCode = data.template_code;
+                            originalTemplateCode = data.template_code; // Store original
+                            
+                            // Load template structure first
+                            return loadTemplateStructure(data.template_code);
+                        }
+                    } else {
+                        // No existing data, keep current template selection
+                        originalTemplateCode = null;
+                    }
+                })
+                .then(() => {
+                    // Load lots after template is set
+                    loadLots(catalogNumber);
+                })
+                .catch(error => {
+                    console.error('Error checking catalog template:', error);
+                    originalTemplateCode = null;
+                    loadLots(catalogNumber);
+                });
             
             updateButtonStates();
         }

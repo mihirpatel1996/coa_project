@@ -22,10 +22,10 @@ try {
     
     $conn = getDBConnection();
     
-    // Get catalog data - changed to use catalogNumber
-    $catalog_sql = "SELECT * FROM catalogs WHERE catalogNumber = ? AND templateCode = ?";
+    // Get catalog data - first check WITHOUT templateCode to see if catalog exists
+    $catalog_sql = "SELECT * FROM catalogs WHERE catalogNumber = ?";
     $catalog_stmt = $conn->prepare($catalog_sql);
-    $catalog_stmt->bind_param("ss", $catalogNumber, $template_code);  // Changed to string parameter
+    $catalog_stmt->bind_param("s", $catalogNumber);
     $catalog_stmt->execute();
     $catalog_result = $catalog_stmt->get_result();
     
@@ -36,12 +36,51 @@ try {
     $catalog_data = $catalog_result->fetch_assoc();
     $catalog_stmt->close();
     
-    // Get lot data if lot_number provided - changed to use catalogNumber
+    // Check if template matches
+    if ($catalog_data['templateCode'] !== $template_code) {
+        // Template mismatch - return empty structure
+        $sections_data = [];
+        foreach (SECTIONS as $section_id => $section) {
+            $key_values = [];
+            
+            if (isset(TEMPLATE_FIELDS[$template_code][$section_id])) {
+                foreach (TEMPLATE_FIELDS[$template_code][$section_id] as $field_config) {
+                    $key_values[] = [
+                        'key' => $field_config['field_name'],
+                        'value' => '', // Empty value for template change
+                        'source' => $field_config['field_source'],
+                        'order' => $field_config['field_order']
+                    ];
+                }
+            }
+            
+            $sections_data[] = [
+                'section_id' => $section_id,
+                'section_name' => $section['section_name'],
+                'key_values' => $key_values
+            ];
+        }
+        
+        echo json_encode([
+            'sections_data' => $sections_data,
+            'template_mismatch' => true,
+            'debug_info' => [
+                'catalog_number' => $catalogNumber,
+                'requested_template' => $template_code,
+                'catalog_template' => $catalog_data['templateCode'],
+                'lot_number' => $lot_number
+            ]
+        ]);
+        exit;
+    }
+    
+    // Templates match - continue with normal flow
+    // Get lot data if lot_number provided
     $lot_data = null;
     if ($lot_number) {
         $lot_sql = "SELECT * FROM lots WHERE catalogNumber = ? AND lotNumber = ? AND templateCode = ?";
         $lot_stmt = $conn->prepare($lot_sql);
-        $lot_stmt->bind_param("sss", $catalogNumber, $lot_number, $template_code);  // Both strings
+        $lot_stmt->bind_param("sss", $catalogNumber, $lot_number, $template_code);
         $lot_stmt->execute();
         $lot_result = $lot_stmt->get_result();
         
@@ -91,7 +130,7 @@ try {
             'catalog_number' => $catalogNumber,
             'template_code' => $template_code,
             'lot_number' => $lot_number,
-            'catalog_number_db' => $catalog_data['catalogNumber']  // Using camelCase
+            'catalog_number_db' => $catalog_data['catalogNumber']
         ]
     ]);
     

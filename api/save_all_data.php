@@ -50,6 +50,51 @@ try {
     $conn->autocommit(false);
     
     try {
+        // ADD TEMPLATE CHANGE DETECTION HERE
+        // Check if template has changed
+        $is_template_changed = false;
+        $template_check_sql = "SELECT templateCode FROM catalogs WHERE catalogNumber = ?";
+        $template_check_stmt = $conn->prepare($template_check_sql);
+        $template_check_stmt->bind_param("s", $catalog_number);
+        $template_check_stmt->execute();
+        $template_result = $template_check_stmt->get_result();
+
+        if ($template_result->num_rows > 0) {
+            $existing = $template_result->fetch_assoc();
+            $old_template_code = $existing['templateCode'];
+            $is_template_changed = ($old_template_code !== $template_code);
+        }
+        $template_check_stmt->close();
+
+        // If template changed, clear all existing data first
+        if ($is_template_changed) {
+            // Clear all field data from catalogs (keep only catalogNumber, catalogName, templateCode)
+            $clear_catalog_sql = "UPDATE catalogs SET 
+                source = NULL, predictedNTerminal = NULL, predictedMolMass = NULL, 
+                observedMolMass = NULL, activity = NULL, shipping = NULL, 
+                stability = NULL, detail = NULL, formulation = NULL, 
+                reconstitution = NULL, cas = NULL, molFormula = NULL,
+                templateCode = ?,
+                updatedAt = CURRENT_TIMESTAMP
+                WHERE catalogNumber = ?";
+            $clear_catalog_stmt = $conn->prepare($clear_catalog_sql);
+            $clear_catalog_stmt->bind_param("ss", $template_code, $catalog_number);
+            $clear_catalog_stmt->execute();
+            $clear_catalog_stmt->close();
+            
+            // Update all lots to new template and clear their field data
+            $clear_lots_sql = "UPDATE lots SET 
+                activity = NULL, concentration = NULL, 
+                purity = NULL, formulation = NULL,
+                templateCode = ?,
+                updatedAt = CURRENT_TIMESTAMP
+                WHERE catalogNumber = ?";
+            $clear_lots_stmt = $conn->prepare($clear_lots_sql);
+            $clear_lots_stmt->bind_param("ss", $template_code, $catalog_number);
+            $clear_lots_stmt->execute();
+            $clear_lots_stmt->close();
+        }
+
         // Update catalog name
         $update_catalog_sql = "UPDATE catalogs SET catalogName = ? WHERE catalogNumber = ?";
         $update_catalog_stmt = $conn->prepare($update_catalog_sql);
