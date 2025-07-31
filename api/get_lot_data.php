@@ -22,7 +22,7 @@ try {
     // Fetch all unique lot numbers for the given catalog
     $sql = "SELECT DISTINCT lotNumber FROM lots WHERE catalogNumber = ? ORDER BY lotNumber";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $catalog_number);
+    $stmt->bind_param("s", $catalog_number);
     $stmt->execute();
     $result = $stmt->get_result();
     

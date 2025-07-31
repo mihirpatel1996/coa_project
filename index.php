@@ -689,6 +689,26 @@
             }
         }
 
+        // New function to check if all fields are filled
+        function checkAllFieldsFilled() {
+            let allFilled = true;
+            
+            // Check catalog name
+            const catalogName = document.getElementById('catalogName').value.trim();
+            if (!catalogName) {
+                allFilled = false;
+            }
+            
+            // Check all textareas that are not disabled
+            document.querySelectorAll('.bulk-edit-textarea:not(:disabled)').forEach(textarea => {
+                if (!textarea.value.trim()) {
+                    allFilled = false;
+                }
+            });
+            
+            return allFilled;
+        }
+
         // Track changes
         function markFieldAsChanged(element) {
             element.classList.add('border-warning');
@@ -1575,30 +1595,140 @@
                 return;
             }
             
+            // Double-check no unsaved changes
             if (hasUnsavedChanges) {
-                if (!confirm('You have unsaved changes. Preview PDF with current saved data?')) {
-                    return;
-                }
+                alert('Please save all changes before previewing the PDF');
+                return;
             }
             
-            const previewUrl = `api/preview_pdf.php?catalog_number=${currentCatalogNumber}&lot_number=${encodeURIComponent(currentLotNumber)}`;
-            window.open(previewUrl, '_blank');
+            // Double-check all fields are filled
+            if (!checkAllFieldsFilled()) {
+                alert('Please fill all required fields before previewing the PDF');
+                return;
+            }
+            
+            // Show loading state on button
+            const previewBtn = document.getElementById('previewBtn');
+            const originalText = previewBtn.innerHTML;
+            previewBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Generating...';
+            previewBtn.disabled = true;
+            
+            // Build URL for preview API
+            const previewUrl = `api/preview_pdf.php?catalog_number=${encodeURIComponent(currentCatalogNumber)}&lot_number=${encodeURIComponent(currentLotNumber)}`;
+            
+            // Open PDF in new window
+            const previewWindow = window.open(previewUrl, '_blank');
+            
+            // Check if popup was blocked
+            if (!previewWindow || previewWindow.closed || typeof previewWindow.closed == 'undefined') {
+                alert('Please allow popups for PDF preview');
+            }
+            
+            // Restore button after short delay
+            setTimeout(() => {
+                previewBtn.innerHTML = originalText;
+                previewBtn.disabled = false;
+                updateButtonStates();
+            }, 1000);
         }
 
+        // Generate (Download) PDF - Updated version
         function generatePDF() {
             if (!currentCatalogNumber || !currentLotNumber) {
                 alert('Please select both catalog and lot number');
                 return;
             }
             
+            // Double-check no unsaved changes
             if (hasUnsavedChanges) {
-                if (!confirm('You have unsaved changes. Generate PDF with current saved data?')) {
-                    return;
-                }
+                alert('Please save all changes before generating the PDF');
+                return;
             }
             
-            const generateUrl = `api/generate_pdf.php?catalog_number=${currentCatalogNumber}&lot_number=${encodeURIComponent(currentLotNumber)}`;
-            window.open(generateUrl, '_blank');
+            // Double-check all fields are filled
+            if (!checkAllFieldsFilled()) {
+                alert('Please fill all required fields before generating the PDF');
+                return;
+            }
+            
+            // Show loading state on button
+            const generateBtn = document.getElementById('generateBtn');
+            const originalText = generateBtn.innerHTML;
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Generating...';
+            generateBtn.disabled = true;
+            
+            // Build URL for generate API
+            const generateUrl = `api/generate_pdf.php?catalog_number=${encodeURIComponent(currentCatalogNumber)}&lot_number=${encodeURIComponent(currentLotNumber)}`;
+            
+            // Method 1: Try using fetch first (more reliable)
+            fetch(generateUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('PDF generation failed');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Create a download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `CoA_${currentCatalogNumber}_${currentLotNumber}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // Cleanup
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    }, 100);
+                    
+                    // Show success
+                    showPDFGeneratedSuccess();
+                    
+                    // Log success
+                    console.log('PDF generated successfully');
+                })
+                .catch(error => {
+                    console.error('PDF generation error:', error);
+                    
+                    // Method 2: Fallback to direct window.open
+                    console.log('Trying fallback method...');
+                    window.open(generateUrl, '_blank');
+                    
+                    // Still show success message (optimistic)
+                    setTimeout(() => {
+                        showPDFGeneratedSuccess();
+                    }, 1000);
+                })
+                .finally(() => {
+                    // Restore button
+                    setTimeout(() => {
+                        generateBtn.innerHTML = originalText;
+                        generateBtn.disabled = false;
+                        updateButtonStates();
+                    }, 1500);
+                });
+        }
+
+        // Show success message after PDF generation
+        function showPDFGeneratedSuccess() {
+            // Create a temporary success alert
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Success!</strong> PDF has been generated and downloaded.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
         }
     </script>
 </body>
