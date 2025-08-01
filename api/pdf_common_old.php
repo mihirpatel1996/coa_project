@@ -1,6 +1,6 @@
 <?php
 // api/generate_pdf.php
-// Generate and download PDF - FIXED VERSION WITHOUT DUPLICATE FUNCTION
+// Generate and download PDF - FIXED VERSION
 
 header('Access-Control-Allow-Origin: *');
 
@@ -34,11 +34,31 @@ try {
     // Generate filename
     $filename = generateFilename($catalog_number, $lot_number);
     
+    // Optional: Log PDF generation (disabled to avoid connection issues)
+    // logPDFGeneration($catalog_number, $lot_number, $template_code);
+    
     // Output PDF for download
+    // 'D' = force download
+    // 'I' = inline in browser
     $pdf->Output($filename, 'I');
     
 } catch (Exception $e) {
     // Display error page
     displayError($e->getMessage());
+}
+
+/**
+ * Log PDF generation to database (optional)
+ * Currently disabled to avoid database connection conflicts
+ */
+function logPDFGeneration($catalog_number, $lot_number, $template_code) {
+    try {
+        // Would need to create a fresh database connection here
+        // Disabled for now to keep things simple
+        return;
+    } catch (Exception $e) {
+        // Silent fail
+        error_log("PDF log failed: " . $e->getMessage());
+    }
 }
 ?>

@@ -1856,7 +1856,7 @@
             
             // Build URL for generate API
             const generateUrl = `api/generate_pdf.php?catalog_number=${encodeURIComponent(currentCatalogNumber)}&lot_number=${encodeURIComponent(currentLotNumber)}`;
-            
+            window.open(generateUrl, '_blank');
             // Method 1: Try using fetch first (more reliable)
             fetch(generateUrl)
                 .then(response => {

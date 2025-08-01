@@ -1,10 +1,13 @@
 <?php
-// api/pdf_common.php
-// Shared functions for PDF generation
+// api/pdf_common_clean.php
+// This is how pdf_common.php should be structured
 
+// Required files - ONLY at the top
 require_once '../vendor/autoload.php';
 require_once '../config/database.php';
 require_once '../config/templates_config.php';
+
+// NO CODE HERE - Only function definitions below
 
 /**
  * Validate all required fields based on template
@@ -145,7 +148,6 @@ function generateHTMLContent($catalog_data, $lot_data, $template_code) {
     $html .= '<p style="margin: 0; text-align: left; padding-top: 0px;">
         <strong>Lot Number:</strong> ' . htmlspecialchars($lot_data['lotNumber']) . '
     </p>';
-    // $html .= '<hr>';
     $html .= '<br/>';
     $html .= '<h1 style="text-align: center; color: #333; border-top: 1px solid #ccc; padding: 10px;">Certificate of Analysis</h1>';
     $html .= '<br/>';
@@ -303,4 +305,6 @@ function displayError($message) {
     </html>';
     exit;
 }
+
+// NO CODE HERE - This file should end with the last function
 ?>
