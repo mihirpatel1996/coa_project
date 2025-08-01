@@ -1731,10 +1731,10 @@
                             
                             const radioLabel = document.createElement('label');
                             radioLabel.htmlFor = `template_${template.template_code}`;
-                            radioLabel.textContent = template.template_name;
+                            radioLabel.textContent = template.template_name + ` (${template.template_code})`;
                             
-                            // First template is default
-                            if (index === 0) {
+                            // Active Enzymes template is default
+                            if (radioInput.value === 'ACT') {
                                 radioInput.checked = true;
                                 currentTemplateCode = template.template_code;
                                 loadTemplateStructure(template.template_code);
@@ -1988,7 +1988,7 @@
 
         // Download template
         function downloadTemplate() {
-            const filename = currentUploadType === 'catalog' ? 'Catalogs_template.csv' : 'lots_template.csv';
+            const filename = currentUploadType === 'catalog' ? 'catalogs_template.csv' : 'lots_template.csv';
             
             // Create a temporary link to download the template
             const link = document.createElement('a');
@@ -2055,6 +2055,10 @@
             })
             .then(response => response.json())
             .then(data => {
+                // Show debug info if available
+                if (data.debug) {
+                    console.log('Debug messages:', data.debug);
+                }
                 displayUploadResults(data);
             })
             .catch(error => {

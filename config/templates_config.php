@@ -52,7 +52,7 @@ define('TEMPLATE_FIELDS', [
     // Template LPD - Lipid Substrate
     'LPD' => [
         1 => [ // Section 1 - Description
-            ['field_name' => 'Source', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'source'],
+            ['field_name' => 'Detail', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'detail'],
             ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'predictedMolMass']
         ],
         2 => [ // Section 2 - Specifications
@@ -156,7 +156,7 @@ define('TEMPLATE_FIELDS', [
     'CPD' => [
         1 => [
             ['field_name' => 'CAS', 'field_source' => 'catalog', 'field_order' => 1, 'db_field' => 'cas'],
-            ['field_name' => 'Molecular Formula', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'molFormula'],
+            // ['field_name' => 'Molecular Formula', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'molFormula'], // asked to be removed by Donna
             ['field_name' => 'Predicted Molecular Mass', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'predictedMolMass']
         ],
         2 => [

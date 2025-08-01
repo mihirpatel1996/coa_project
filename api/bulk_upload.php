@@ -13,8 +13,8 @@ define('MAX_ROWS', 5000);
 
 // Expected headers for each upload type
 define('CATALOG_HEADERS', [
-    'templateCode', 'catalogNumber', 'catalogName', 'activity', 'cas', 
-    'detail', 'formulation', 'molFormula', 'observedMolMass', 
+    'templateCode', 'catalogNumber', 'catalogName', 'cas', 
+    'detail', 'formulation', 'observedMolMass', 
     'predictedMolMass', 'predictedNTerminal', 'reconstitution', 
     'shipping', 'source', 'stability'
 ]);
@@ -105,6 +105,7 @@ try {
         
         // Commit transaction
         $conn->commit();
+        $conn->autocommit(true);
         
         // Generate skipped report if needed
         $skippedReportPath = null;
@@ -112,7 +113,7 @@ try {
             $skippedReportPath = generateSkippedReport($results['skippedRecords'], $uploadType);
         }
         
-        // Log upload
+        // Log upload - ensure autocommit is on
         $summary = [
             'uploadType' => $uploadType,
             'fileName' => $fileName,
@@ -127,11 +128,19 @@ try {
         logUpload($conn, $status, $summary, null);
         
         // Return success response
-        echo json_encode([
+        $response = [
             'success' => true,
             'status' => $status,
             'summary' => $summary
-        ]);
+        ];
+        
+        // Add debug info if available
+        global $debugMessages;
+        if (isset($debugMessages) && !empty($debugMessages)) {
+            $response['debug'] = $debugMessages;
+        }
+        
+        echo json_encode($response);
         
     } catch (Exception $e) {
         // Rollback transaction
@@ -463,12 +472,52 @@ function generateSkippedReport($skippedRecords, $uploadType) {
  * Log upload to database
  */
 function logUpload($conn, $status, $summary, $errorMessage) {
-    $sql = "INSERT INTO uploadLogs (status, summary, errorMessage) VALUES (?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    
-    $summaryJson = json_encode($summary);
-    $stmt->bind_param("sss", $status, $summaryJson, $errorMessage);
-    $stmt->execute();
-    $stmt->close();
+    try {
+        // Ensure autocommit is on for logging
+        $conn->autocommit(true);
+        
+        $sql = "INSERT INTO uploadLogs (status, summary, errorMessage, uploadedAt) VALUES (?, ?, ?, NOW())";
+        $stmt = $conn->prepare($sql);
+        
+        if (!$stmt) {
+            throw new Exception("Failed to prepare statement: " . $conn->error);
+        }
+        
+        $summaryJson = json_encode($summary);
+        
+        // For debugging, let's also try with NULL for errorMessage if it's empty
+        if ($errorMessage === null || $errorMessage === '') {
+            $errorMessage = null;
+        }
+        
+        $stmt->bind_param("sss", $status, $summaryJson, $errorMessage);
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to execute: " . $stmt->error);
+        }
+        
+        $insertId = $conn->insert_id;
+        $stmt->close();
+        
+        // Verify the insert worked
+        $verify = $conn->query("SELECT * FROM uploadLogs WHERE id = $insertId");
+        if (!$verify || $verify->num_rows === 0) {
+            throw new Exception("Insert verification failed - record not found");
+        }
+        
+        // Log successful (this will help us debug)
+        error_log("Upload logged successfully with ID: $insertId, Status: $status");
+        
+    } catch (Exception $e) {
+        // Log the error and also add it to the response for debugging
+        $errorMsg = "Log Upload Error: " . $e->getMessage();
+        error_log($errorMsg);
+        
+        // Don't throw the exception - we don't want logging failure to break the upload response
+        // But add a debug flag to the response
+        global $debugMessages;
+        if (!isset($debugMessages)) $debugMessages = [];
+        $debugMessages[] = $errorMsg;
+    }
 }
 ?>

@@ -4,8 +4,6 @@ ini_set('error_reporting', E_ALL);
 ini_set('display_errors', 0); // 0 for Off, 1 for On
 
 
-echo "Starting PDF generation process...<br/>";
-exit();
 // api/generate_pdf.php
 // Save PDF to server and redirect to it
 
@@ -47,9 +45,11 @@ try {
     
     // Calculate paths
     $current_script_dir = dirname(__FILE__); // This gives us /api
+    echo "current_script_dir: $current_script_dir<br/>";
+    exit();
     $project_root = dirname($current_script_dir); // This gives us project root
     $pdf_dir = $project_root . DIRECTORY_SEPARATOR . 'pdf' . DIRECTORY_SEPARATOR;
-    
+    $pdf_dir = '/var/www/html/COA_pdf_generator/pdf/'; // Use absolute path for server
     // Create pdf directory if it doesn't exist
     if (!file_exists($pdf_dir)) {
         if (!@mkdir($pdf_dir, 0755, true)) {

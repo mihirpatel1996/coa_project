@@ -130,7 +130,7 @@ function generateHTMLContent($catalog_data, $lot_data, $template_code) {
     $html .= '<table cellpadding="0" cellspacing="0" border="0" width="100%">
         <tr>
             <td width="50%">
-                <img src="' . __DIR__ . '/images/placeholder_logo.png" height="60" />
+                <img src="' . __DIR__ . '/images/signalchem_sino_logo.png" height="80" />
             </td>
         </tr>
     </table>';
@@ -176,7 +176,7 @@ function generateHTMLContent($catalog_data, $lot_data, $template_code) {
         <table cellpadding="0" cellspacing="0" border="0">
             <tr>
                 <td>
-                    <img src="' . __DIR__ . '/images/placeholder_signature.png" height="40" /><br/>
+                    <img src="' . __DIR__ . '/images/signature.jpg" height="40" /><br/>
                     <strong>Donna Morrison, PhD</strong><br/>
                     Quality Assurance, SignalChem Biotech / Sino Biological
                 </td>
