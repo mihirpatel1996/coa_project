@@ -193,6 +193,78 @@
             background-color: #dee2e6;
             margin: 0 10px;
         }
+
+        /* Add these styles to your existing <style> section in index.php */
+        /* Bulk Upload Modal Styles */
+        #bulkUploadModal .card {
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        #bulkUploadModal .card-title {
+            color: #333;
+            font-weight: 600;
+        }
+
+        #bulkUploadModal .form-check-label {
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+
+        #bulkUploadModal .form-check-label:hover {
+            background-color: #f0f0f0;
+        }
+
+        #bulkUploadModal .form-check-input:checked + .form-check-label {
+            background-color: #e7f3ff;
+            font-weight: 500;
+        }
+
+        #uploadProgress .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        .btn-info {
+            color: #fff;
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+        }
+
+        .btn-info:hover {
+            color: #fff;
+            background-color: #138496;
+            border-color: #117a8b;
+        }
+
+        /* File input styling */
+        #csvFileInput {
+            cursor: pointer;
+        }
+
+        #csvFileInput:hover {
+            border-color: #86b7fe;
+        }
+
+        /* Alert styling */
+        #uploadResults .alert {
+            border-radius: 8px;
+            border-width: 1px;
+        }
+
+        #successAlert {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        #errorAlert {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
@@ -343,6 +415,11 @@
                         <i class="fas fa-file-pdf me-1"></i>
                         Generate PDF
                     </button>
+                    <div class="button-divider"></div>
+                    <button class="btn btn-info" id="bulkUploadBtn">
+                        <i class="fas fa-upload me-1"></i>
+                        Bulk Upload
+                    </button>
                 </div>
             </div>
         </div>
@@ -415,6 +492,124 @@
         </div>
     </div>
 
+    <!-- Bulk Upload Modal -->
+    <div class="modal fade" id="bulkUploadModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-upload me-2"></i>
+                        Bulk Upload - Catalogs & Lots
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Upload Type Selection -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">Step 1: Select Upload Type</h6>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="uploadType" id="uploadCatalogs" value="catalog" checked>
+                                <label class="form-check-label" for="uploadCatalogs">
+                                    <i class="fas fa-book me-1"></i>
+                                    Upload Catalogs
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="uploadType" id="uploadLots" value="lot">
+                                <label class="form-check-label" for="uploadLots">
+                                    <i class="fas fa-tag me-1"></i>
+                                    Upload Lots
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Download Template -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">Step 2: Download Template</h6>
+                            <p class="text-muted">Download the appropriate template, fill it with your data, and upload it back.</p>
+                            <button class="btn btn-outline-primary" id="downloadTemplateBtn">
+                                <i class="fas fa-download me-2"></i>
+                                Download <span id="templateTypeText">Catalog</span> Template
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- File Upload -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">Step 3: Upload CSV File</h6>
+                            <div class="mb-3">
+                                <input type="file" class="form-control" id="csvFileInput" accept=".csv">
+                                <div class="form-text">
+                                    Maximum file size: 10MB. Maximum rows: 5,000.
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" id="uploadBtn" disabled>
+                                <i class="fas fa-upload me-2"></i>
+                                Upload & Process
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Section -->
+                    <div id="uploadProgress" class="card mb-4" style="display: none;">
+                        <div class="card-body">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary mb-3" role="status">
+                                    <span class="visually-hidden">Processing...</span>
+                                </div>
+                                <p class="mb-0">Processing your file, please wait...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Results Section -->
+                    <div id="uploadResults" class="card" style="display: none;">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">Upload Results</h6>
+                            
+                            <!-- Success Alert -->
+                            <div id="successAlert" class="alert alert-success" style="display: none;">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Success!</strong> <span id="successMessage"></span>
+                            </div>
+                            
+                            <!-- Error Alert -->
+                            <div id="errorAlert" class="alert alert-danger" style="display: none;">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <strong>Error!</strong> <span id="errorMessage"></span>
+                            </div>
+                            
+                            <!-- Summary -->
+                            <div id="summaryContainer" style="display: none; background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
+                                <h6 style="margin-bottom: 10px;">Upload Summary</h6>
+                                <div id="summaryText"></div>
+                                
+                                <!-- Download Skipped Report -->
+                                <div id="skippedReportSection" class="mt-3" style="display: none;">
+                                    <button class="btn btn-warning btn-sm" id="downloadSkippedBtn">
+                                        <i class="fas fa-download me-2"></i>
+                                        Download Skipped Records Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="newUploadBtn" style="display: none;">
+                        <i class="fas fa-redo me-2"></i>
+                        New Upload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
@@ -439,6 +634,8 @@
             loadTemplates();
             loadCatalogs();
             initializeEventListeners();
+            // Initialize bulk upload
+            initializeBulkUpload();
         });
 
         // Template radio button handler
@@ -1730,6 +1927,266 @@
                 alertDiv.remove();
             }, 5000);
         }
+
+        // Bulk Upload functionality
+        let uploadResults = null;
+        let currentUploadType = 'catalog';
+
+        // Initialize bulk upload event listeners
+        function initializeBulkUpload() {
+            // Open modal button
+            document.getElementById('bulkUploadBtn').addEventListener('click', function() {
+                openBulkUploadModal();
+            });
+            
+            // Upload type radio buttons
+            document.querySelectorAll('input[name="uploadType"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    currentUploadType = this.value;
+                    updateTemplateType();
+                });
+            });
+            
+            // Download template button
+            document.getElementById('downloadTemplateBtn').addEventListener('click', function() {
+                downloadTemplate();
+            });
+            
+            // File input change
+            document.getElementById('csvFileInput').addEventListener('change', function() {
+                handleFileSelect(this);
+            });
+            
+            // Upload button
+            document.getElementById('uploadBtn').addEventListener('click', function() {
+                uploadFile();
+            });
+            
+            // New upload button
+            document.getElementById('newUploadBtn').addEventListener('click', function() {
+                resetUploadModal();
+            });
+            
+            // Download skipped report button
+            document.getElementById('downloadSkippedBtn').addEventListener('click', function() {
+                downloadSkippedReport();
+            });
+        }
+
+        // Open bulk upload modal
+        function openBulkUploadModal() {
+            resetUploadModal();
+            const modal = new bootstrap.Modal(document.getElementById('bulkUploadModal'));
+            modal.show();
+        }
+
+        // Update template type text
+        function updateTemplateType() {
+            const typeText = currentUploadType === 'catalog' ? 'Catalog' : 'Lot';
+            document.getElementById('templateTypeText').textContent = typeText;
+        }
+
+        // Download template
+        function downloadTemplate() {
+            const filename = currentUploadType === 'catalog' ? 'Catalogs_template.csv' : 'lots_template.csv';
+            
+            // Create a temporary link to download the template
+            const link = document.createElement('a');
+            link.href = 'upload_templates/' + filename; // Templates are in the upload_templates directory
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Handle file selection
+        function handleFileSelect(input) {
+            const file = input.files[0];
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (file) {
+                // Validate file type
+                if (!file.name.toLowerCase().endsWith('.csv')) {
+                    alert('Please select a CSV file');
+                    input.value = '';
+                    uploadBtn.disabled = true;
+                    return;
+                }
+                
+                // Validate file size (10MB max)
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                if (file.size > maxSize) {
+                    alert('File size exceeds 10MB limit');
+                    input.value = '';
+                    uploadBtn.disabled = true;
+                    return;
+                }
+                
+                uploadBtn.disabled = false;
+            } else {
+                uploadBtn.disabled = true;
+            }
+        }
+
+        // Upload file
+        function uploadFile() {
+            const fileInput = document.getElementById('csvFileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file to upload');
+                return;
+            }
+            
+            // Show progress, hide other sections
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('uploadResults').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = true;
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('uploadType', currentUploadType);
+            
+            // Make API call
+            fetch('api/bulk_upload.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayUploadResults(data);
+            })
+            .catch(error => {
+                console.error('Upload error:', error);
+                displayUploadError('An unexpected error occurred during upload. Please try again.');
+            })
+            .finally(() => {
+                document.getElementById('uploadProgress').style.display = 'none';
+            });
+        }
+
+        // Display upload results
+        function displayUploadResults(data) {
+            uploadResults = data;
+            
+            const resultsSection = document.getElementById('uploadResults');
+            resultsSection.style.display = 'block';
+            
+            if (data.success) {
+                // Show success message
+                const successAlert = document.getElementById('successAlert');
+                const successMessage = document.getElementById('successMessage');
+                
+                if (data.status === 'success') {
+                    successMessage.textContent = `All ${data.summary.totalRows} records were processed successfully.`;
+                } else if (data.status === 'partial') {
+                    successMessage.textContent = `Processing completed with some records skipped.`;
+                }
+                
+                successAlert.style.display = 'block';
+                document.getElementById('errorAlert').style.display = 'none';
+                
+                // Show summary
+                displaySummary(data.summary);
+                
+                // Show new upload button
+                document.getElementById('newUploadBtn').style.display = 'inline-block';
+                
+                // Reload the appropriate data
+                if (currentUploadType === 'catalog') {
+                    loadCatalogs();
+                } else {
+                    // If lots were uploaded and a catalog is selected, reload lots
+                    if (currentCatalogNumber) {
+                        loadLots(currentCatalogNumber);
+                    }
+                }
+                
+            } else {
+                // Show error message
+                displayUploadError(data.errorMessage || 'Upload failed. Please check your file and try again.');
+            }
+        }
+
+        // Display upload error
+        function displayUploadError(message) {
+            const resultsSection = document.getElementById('uploadResults');
+            resultsSection.style.display = 'block';
+            
+            const errorAlert = document.getElementById('errorAlert');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            errorMessage.textContent = message;
+            errorAlert.style.display = 'block';
+            document.getElementById('successAlert').style.display = 'none';
+            document.getElementById('summaryContainer').style.display = 'none';
+            
+            // Show new upload button
+            document.getElementById('newUploadBtn').style.display = 'inline-block';
+        }
+
+        // Display summary
+        function displaySummary(summary) {
+            const summaryContainer = document.getElementById('summaryContainer');
+            const summaryText = document.getElementById('summaryText');
+            
+            // Build summary text with colored lines
+            let text = `<div style="color: #0066cc;">Total rows: ${summary.totalRows || 0}</div>`;
+            text += `<div style="color: #28a745;">Successfully Added: ${summary.successCount || 0}</div>`;
+            text += `<div style="color: #ff9900;">Skipped (Duplicates): ${summary.skippedCount || 0}</div>`;
+            
+            summaryText.innerHTML = text;
+            summaryContainer.style.display = 'block';
+            
+            // Show download button if there are skipped records
+            if (summary.skippedCount > 0 && summary.skippedReportPath) {
+                document.getElementById('skippedReportSection').style.display = 'block';
+            } else {
+                document.getElementById('skippedReportSection').style.display = 'none';
+            }
+        }
+
+        // Download skipped report
+        function downloadSkippedReport() {
+            if (!uploadResults || !uploadResults.summary || !uploadResults.summary.skippedReportPath) {
+                alert('No skipped records report available');
+                return;
+            }
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = 'api/download_report.php?file=' + encodeURIComponent(uploadResults.summary.skippedReportPath);
+            link.download = 'skipped_records_report.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Reset upload modal
+        function resetUploadModal() {
+            // Reset to catalog upload
+            document.getElementById('uploadCatalogs').checked = true;
+            currentUploadType = 'catalog';
+            updateTemplateType();
+            
+            // Clear file input
+            document.getElementById('csvFileInput').value = '';
+            document.getElementById('uploadBtn').disabled = true;
+            
+            // Hide all results
+            document.getElementById('uploadProgress').style.display = 'none';
+            document.getElementById('uploadResults').style.display = 'none';
+            document.getElementById('successAlert').style.display = 'none';
+            document.getElementById('errorAlert').style.display = 'none';
+            document.getElementById('summaryContainer').style.display = 'none';
+            document.getElementById('skippedReportSection').style.display = 'none';
+            document.getElementById('newUploadBtn').style.display = 'none';
+            
+            // Clear results
+            uploadResults = null;
+        }
+
     </script>
 </body>
 </html>
