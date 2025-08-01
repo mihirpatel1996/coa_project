@@ -1,199 +1,185 @@
 <?php
-// api/test_pdf_fixed.php
-// Fixed test script that properly saves PDFs to the pdf folder
+// api/check_pdf.php
+// Clean PDF system check without connection issues
 
-require_once '../vendor/autoload.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-echo "<h1>PDF Generation Test (Fixed)</h1>";
+echo "<h1>PDF Generation System Check</h1>";
 
-// Check TCPDF
-echo "<h3>1. Checking TCPDF Installation:</h3>";
-if (class_exists('TCPDF')) {
-    echo "<p style='color: green;'>✓ TCPDF is installed</p>";
-} else {
-    echo "<p style='color: red;'>✗ TCPDF is not installed</p>";
-    exit;
-}
+// Store results
+$all_good = true;
 
-// Check pdf directory - FIXED PATH
-echo "<h3>2. Checking PDF Directory:</h3>";
-// We are in /api/test_pdf_fixed.php, so go up one level to project root
-$current_script_dir = dirname(__FILE__); // This gives us /api
-$project_root = dirname($current_script_dir); // This gives us project root
-$pdf_dir = $project_root . DIRECTORY_SEPARATOR . 'pdf' . DIRECTORY_SEPARATOR;
-
-echo "<p>Current script directory: " . $current_script_dir . "</p>";
-echo "<p>Project root: " . $project_root . "</p>";
-echo "<p>PDF directory path: " . $pdf_dir . "</p>";
-
-// Create directory if it doesn't exist
-if (!file_exists($pdf_dir)) {
-    echo "<p style='color: orange;'>! PDF directory does not exist, creating it...</p>";
-    if (@mkdir($pdf_dir, 0755, true)) {
-        echo "<p style='color: green;'>✓ PDF directory created successfully</p>";
+// 1. Check TCPDF
+echo "<h2>1. TCPDF Check</h2>";
+if (file_exists('../vendor/autoload.php')) {
+    require_once '../vendor/autoload.php';
+    if (class_exists('TCPDF')) {
+        echo "<p style='color: green;'>✓ TCPDF is installed</p>";
     } else {
-        echo "<p style='color: red;'>✗ Failed to create PDF directory</p>";
-        echo "<p>Please manually create this folder: " . $pdf_dir . "</p>";
-        exit;
-    }
-}
-
-// Check if writable
-if (is_writable($pdf_dir)) {
-    echo "<p style='color: green;'>✓ PDF directory is writable</p>";
-} else {
-    echo "<p style='color: red;'>✗ PDF directory is not writable</p>";
-    echo "<p>Please check permissions on: " . $pdf_dir . "</p>";
-}
-
-// Test simple PDF generation
-echo "<h3>3. Testing PDF Generation:</h3>";
-try {
-    // Create new PDF
-    $pdf = new TCPDF();
-    
-    // Remove default header/footer
-    $pdf->setPrintHeader(false);
-    $pdf->setPrintFooter(false);
-    
-    // Add a page
-    $pdf->AddPage();
-    
-    // Set font
-    $pdf->SetFont('helvetica', 'B', 16);
-    
-    // Add title
-    $pdf->Cell(0, 10, 'TCPDF Test Document', 0, 1, 'C');
-    
-    $pdf->Ln(10);
-    
-    $pdf->SetFont('helvetica', '', 12);
-    $pdf->Write(0, 'This is a test PDF generated on: ' . date('Y-m-d H:i:s'));
-    $pdf->Ln(10);
-    $pdf->Write(0, 'If you can read this, PDF generation is working correctly!');
-    $pdf->Ln(10);
-    $pdf->Write(0, 'Project Root: ' . $project_root);
-    $pdf->Ln(5);
-    $pdf->Write(0, 'PDF Directory: ' . $pdf_dir);
-    
-    // Generate filename
-    $test_filename = 'test_' . date('YmdHis') . '.pdf';
-    $full_path = $pdf_dir . $test_filename;
-    
-    echo "<p>Attempting to save PDF to: " . $full_path . "</p>";
-    
-    // Method 1: Try direct output to file
-    try {
-        $pdf->Output($full_path, 'F');
-        
-        if (file_exists($full_path)) {
-            echo "<p style='color: green;'>✓ Method 1 (Output F): PDF created successfully!</p>";
-        } else {
-            throw new Exception("File not created with method 1");
-        }
-    } catch (Exception $e1) {
-        echo "<p style='color: orange;'>! Method 1 failed: " . $e1->getMessage() . "</p>";
-        
-        // Method 2: Try getting content as string and saving with file_put_contents
-        echo "<p>Trying alternative method...</p>";
-        try {
-            $pdf_content = $pdf->Output('', 'S');
-            $bytes_written = file_put_contents($full_path, $pdf_content);
-            
-            if ($bytes_written !== false) {
-                echo "<p style='color: green;'>✓ Method 2 (file_put_contents): PDF created successfully!</p>";
-                echo "<p>Bytes written: " . $bytes_written . "</p>";
-            } else {
-                throw new Exception("file_put_contents failed");
-            }
-        } catch (Exception $e2) {
-            echo "<p style='color: red;'>✗ Method 2 failed: " . $e2->getMessage() . "</p>";
-        }
-    }
-    
-    // Check if file exists
-    if (file_exists($full_path)) {
-        $file_size = filesize($full_path);
-        echo "<p style='color: green;'>✓ PDF file exists!</p>";
-        echo "<p>File size: " . number_format($file_size) . " bytes</p>";
-        echo "<p>Filename: " . $test_filename . "</p>";
-        
-        // Create download link
-        $pdf_url = '../pdf/' . $test_filename;
-        echo "<p><a href='" . $pdf_url . "' target='_blank' class='btn btn-primary'>📄 View Test PDF</a></p>";
-        
-        // Also create direct download link
-        echo "<p><a href='" . $pdf_url . "' download='" . $test_filename . "'>⬇️ Download Test PDF</a></p>";
-    } else {
-        echo "<p style='color: red;'>✗ PDF file was not created</p>";
-    }
-    
-} catch (Exception $e) {
-    echo "<p style='color: red;'>✗ Error: " . $e->getMessage() . "</p>";
-    echo "<pre>" . $e->getTraceAsString() . "</pre>";
-}
-
-// List existing PDFs in the directory
-echo "<h3>4. Existing PDFs in directory:</h3>";
-if (file_exists($pdf_dir) && is_dir($pdf_dir)) {
-    $files = scandir($pdf_dir);
-    $pdf_files = array_filter($files, function($file) {
-        return pathinfo($file, PATHINFO_EXTENSION) === 'pdf';
-    });
-    
-    if (count($pdf_files) > 0) {
-        echo "<ul>";
-        foreach ($pdf_files as $file) {
-            $file_path = $pdf_dir . $file;
-            $file_size = filesize($file_path);
-            $file_date = date("Y-m-d H:i:s", filemtime($file_path));
-            echo "<li>";
-            echo $file . " (" . number_format($file_size) . " bytes, " . $file_date . ")";
-            echo " - <a href='../pdf/" . $file . "' target='_blank'>View</a>";
-            echo " | <a href='../pdf/" . $file . "' download='" . $file . "'>Download</a>";
-            echo "</li>";
-        }
-        echo "</ul>";
-    } else {
-        echo "<p>No PDF files found in directory</p>";
+        echo "<p style='color: red;'>✗ TCPDF not found</p>";
+        $all_good = false;
     }
 } else {
-    echo "<p style='color: red;'>PDF directory not accessible</p>";
+    echo "<p style='color: red;'>✗ Vendor autoload missing - run: composer install</p>";
+    $all_good = false;
 }
 
-// Database test (separate connection)
-echo "<h3>5. Database Connection Test:</h3>";
+// 2. Check images
+echo "<h2>2. Required Images</h2>";
+$images = [
+    'images/signalchem_sino_logo.png' => 'Logo',
+    'images/signature.jpg' => 'Signature'
+];
+
+foreach ($images as $path => $name) {
+    if (file_exists(__DIR__ . '/' . $path)) {
+        echo "<p style='color: green;'>✓ $name found</p>";
+    } else {
+        echo "<p style='color: red;'>✗ $name missing</p>";
+        echo "<p>→ Run: <a href='images/create_images.php'>Create Images</a></p>";
+        $all_good = false;
+    }
+}
+
+// 3. Test with sample data
+echo "<h2>3. Sample Data Test</h2>";
 try {
     require_once '../config/database.php';
-    $conn = getDBConnection();
-    echo "<p style='color: green;'>✓ Database connection successful</p>";
+    require_once '../config/templates_config.php';
+    require_once 'pdf_common.php';
     
-    // Check if log table exists
-    $result = $conn->query("SHOW TABLES LIKE 'pdf_generation_log'");
+    $conn = getDBConnection();
+    
+    // Get sample data
+    $sql = "SELECT c.catalogNumber, c.catalogName, l.lotNumber 
+            FROM catalogs c 
+            JOIN lots l ON c.catalogNumber = l.catalogNumber 
+            WHERE c.catalogName IS NOT NULL AND c.catalogName != ''
+            LIMIT 3";
+    
+    $result = $conn->query($sql);
+    
     if ($result && $result->num_rows > 0) {
-        echo "<p style='color: green;'>✓ PDF generation log table exists</p>";
+        echo "<p style='color: green;'>✓ Found test data:</p>";
+        echo "<table border='1' cellpadding='5' style='margin: 10px 0;'>";
+        echo "<tr><th>Catalog Number</th><th>Catalog Name</th><th>Lot Number</th><th>Actions</th></tr>";
         
-        // Show recent logs
-        $log_result = $conn->query("SELECT * FROM pdf_generation_log ORDER BY generated_at DESC LIMIT 5");
-        if ($log_result && $log_result->num_rows > 0) {
-            echo "<h4>Recent PDF Generation Logs:</h4>";
-            echo "<ul>";
-            while ($log = $log_result->fetch_assoc()) {
-                echo "<li>" . $log['catalog_number'] . " / " . $log['lot_number'] . 
-                     " - " . $log['generated_at'] . "</li>";
-            }
-            echo "</ul>";
+        while ($row = $result->fetch_assoc()) {
+            echo "<tr>";
+            echo "<td>" . htmlspecialchars($row['catalogNumber']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['catalogName']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['lotNumber']) . "</td>";
+            echo "<td>";
+            echo "<a href='preview_pdf.php?catalog_number=" . urlencode($row['catalogNumber']) . 
+                 "&lot_number=" . urlencode($row['lotNumber']) . "' target='_blank'>Preview</a> | ";
+            echo "<a href='generate_pdf.php?catalog_number=" . urlencode($row['catalogNumber']) . 
+                 "&lot_number=" . urlencode($row['lotNumber']) . "'>Download</a>";
+            echo "</td>";
+            echo "</tr>";
         }
+        echo "</table>";
+        
+        // Test PDF generation with first record
+        $result->data_seek(0);
+        $test_row = $result->fetch_assoc();
+        
+        echo "<p>Testing PDF generation with: " . $test_row['catalogNumber'] . " / " . $test_row['lotNumber'] . "</p>";
+        
+        try {
+            $data = getCoAData($test_row['catalogNumber'], $test_row['lotNumber']);
+            $errors = validateAllFields($data['catalog'], $data['lot'], $data['template_code']);
+            
+            if (empty($errors)) {
+                echo "<p style='color: green;'>✓ Data validation passed</p>";
+                
+                // Try to generate PDF
+                $pdf = generatePDF($data['catalog'], $data['lot'], $data['template_code']);
+                $pdf_content = $pdf->Output('', 'S');
+                
+                if (strlen($pdf_content) > 10000) {
+                    echo "<p style='color: green;'>✓ PDF generation successful (" . number_format(strlen($pdf_content)) . " bytes)</p>";
+                } else {
+                    echo "<p style='color: orange;'>⚠ PDF seems too small</p>";
+                }
+            } else {
+                echo "<p style='color: orange;'>⚠ Missing fields: " . implode(', ', $errors) . "</p>";
+                $all_good = false;
+            }
+        } catch (Exception $e) {
+            echo "<p style='color: red;'>✗ Generation error: " . $e->getMessage() . "</p>";
+            $all_good = false;
+        }
+        
     } else {
-        echo "<p style='color: orange;'>! PDF generation log table does not exist</p>";
+        echo "<p style='color: red;'>✗ No test data found</p>";
+        $all_good = false;
     }
     
     $conn->close();
+    
 } catch (Exception $e) {
-    echo "<p style='color: red;'>✗ Database error: " . $e->getMessage() . "</p>";
+    echo "<p style='color: red;'>✗ Error: " . $e->getMessage() . "</p>";
+    $all_good = false;
 }
 
+// Summary
 echo "<hr>";
-echo "<p><a href='test_pdf_simple.php'>Test Simple PDF Output</a> | ";
-echo "<a href='../'>Back to Main Application</a></p>";
+echo "<h2>Summary</h2>";
+if ($all_good) {
+    echo "<p style='color: green; font-size: 1.2em;'>✓ All systems operational! PDF generation should work.</p>";
+    echo "<p>Try the test links above or go back to the <a href='../'>main application</a>.</p>";
+} else {
+    echo "<p style='color: red; font-size: 1.2em;'>✗ Some issues found. Please fix the red items above.</p>";
+}
+
+// Quick fix for current generate_pdf.php
+echo "<hr>";
+echo "<h2>Quick Fix</h2>";
+echo "<p>Your current generate_pdf.php has debug code that breaks PDF generation.</p>";
+echo "<p>To fix it quickly, create a file called <strong>generate_pdf_clean.php</strong> with the clean code:</p>";
+echo "<pre style='background: #f0f0f0; padding: 10px; overflow-x: auto;'>";
+echo htmlspecialchars('<?php
+// api/generate_pdf_clean.php
+header(\'Access-Control-Allow-Origin: *\');
+require_once \'pdf_common.php\';
+
+try {
+    $catalog_number = $_GET[\'catalog_number\'] ?? \'\';
+    $lot_number = $_GET[\'lot_number\'] ?? \'\';
+    
+    if (empty($catalog_number) || empty($lot_number)) {
+        throw new Exception(\'Catalog and lot numbers required\');
+    }
+    
+    $data = getCoAData($catalog_number, $lot_number);
+    $errors = validateAllFields($data[\'catalog\'], $data[\'lot\'], $data[\'template_code\']);
+    
+    if (!empty($errors)) {
+        throw new Exception(\'Missing fields: \' . implode(\', \', $errors));
+    }
+    
+    $pdf = generatePDF($data[\'catalog\'], $data[\'lot\'], $data[\'template_code\']);
+    $filename = generateFilename($catalog_number, $lot_number);
+    
+    // Log generation
+    try {
+        $conn = getDBConnection();
+        $stmt = $conn->prepare("INSERT INTO pdf_generation_log (catalogNumber, lotNumber, templateCode) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $catalog_number, $lot_number, $data[\'template_code\']);
+        $stmt->execute();
+        $stmt->close();
+        $conn->close();
+    } catch (Exception $e) {
+        // Silent fail
+    }
+    
+    $pdf->Output($filename, \'D\');
+    
+} catch (Exception $e) {
+    displayError($e->getMessage());
+}
+?>');
+echo "</pre>";
+echo "<p>Then update your index.php to use generate_pdf_clean.php instead of generate_pdf.php</p>";
 ?>
