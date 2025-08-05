@@ -1,6 +1,6 @@
 <?php
 // api/generate_pdf.php
-// Generate and download PDF - FIXED VERSION WITHOUT DUPLICATE FUNCTION
+// Generate PDF - Save to server AND provide for download with logging
 
 header('Access-Control-Allow-Origin: *');
 
@@ -34,8 +34,44 @@ try {
     // Generate filename
     $filename = generateFilename($catalog_number, $lot_number);
     
-    // Output PDF for download
-    $pdf->Output($filename, 'I');
+    // Create directory for PDFs if it doesn't exist
+    // $pdf_dir =  dirname(__FILE__) .'/generated_pdfs';
+        $pdf_dir =  dirname(__FILE__) .'\\..\\generated_pdfs\\';
+    if (!file_exists($pdf_dir)) {
+        mkdir($pdf_dir, 0755, true);
+    }
+    
+    // Full path for saving
+    // $filepath = $pdf_dir . '/' . $filename;
+    $filepath = $pdf_dir . $filename;
+    // echo "saving to $filepath\n";
+    // exit();
+    // return;
+    
+    // Save PDF to server AND send to browser
+    // 'FI' = save to File and send Inline to browser
+    //$pdf->Output($filepath, 'FI');
+    
+    // Log PDF generation to database
+    try {
+        $conn = getDBConnection();
+        $log_sql = "INSERT INTO pdf_generation_log (catalogNumber, lotNumber, templateCode, generatedAt) 
+                    VALUES (?, ?, ?, NOW())";
+        $log_stmt = $conn->prepare($log_sql);
+        $log_stmt->bind_param("sss", $catalog_number, $lot_number, $template_code);
+        $log_stmt->execute();
+        $log_stmt->close();
+        $conn->close();
+
+        echo "Logged PDF generation for $catalog_number, $lot_number, $template_code\n";
+        exit();
+        return;
+        
+        // error_log("PDF generated and logged: $filename");
+    } catch (Exception $e) {
+        // Log error but don't fail the PDF generation
+        error_log("Failed to log PDF generation: " . $e->getMessage());
+    }
     
 } catch (Exception $e) {
     // Display error page

@@ -1829,7 +1829,7 @@
             }, 1000);
         }
 
-        // Generate (Download) PDF - Updated version
+        // Replace the generatePDF() function in index.php with this:
         function generatePDF() {
             if (!currentCatalogNumber || !currentLotNumber) {
                 alert('Please select both catalog and lot number');
@@ -1856,56 +1856,28 @@
             
             // Build URL for generate API
             const generateUrl = `api/generate_pdf.php?catalog_number=${encodeURIComponent(currentCatalogNumber)}&lot_number=${encodeURIComponent(currentLotNumber)}`;
-            window.open(generateUrl, '_blank');
-            // Method 1: Try using fetch first (more reliable)
-            fetch(generateUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('PDF generation failed');
-                    }
-                    return response.blob();
-                })
-                .then(blob => {
-                    // Create a download link
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `CoA_${currentCatalogNumber}_${currentLotNumber}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    
-                    // Cleanup
-                    setTimeout(() => {
-                        document.body.removeChild(a);
-                        window.URL.revokeObjectURL(url);
-                    }, 100);
-                    
-                    // Show success
-                    showPDFGeneratedSuccess();
-                    
-                    // Log success
-                    console.log('PDF generated successfully');
-                })
-                .catch(error => {
-                    console.error('PDF generation error:', error);
-                    
-                    // Method 2: Fallback to direct window.open
-                    console.log('Trying fallback method...');
-                    window.open(generateUrl, '_blank');
-                    
-                    // Still show success message (optimistic)
-                    setTimeout(() => {
-                        showPDFGeneratedSuccess();
-                    }, 1000);
-                })
-                .finally(() => {
-                    // Restore button
-                    setTimeout(() => {
-                        generateBtn.innerHTML = originalText;
-                        generateBtn.disabled = false;
-                        updateButtonStates();
-                    }, 1500);
-                });
+            
+            // Open in new window/tab - this will display the PDF and save it on server
+            const pdfWindow = window.open(generateUrl, '_blank');
+            
+            // Check if popup was blocked
+            if (!pdfWindow || pdfWindow.closed || typeof pdfWindow.closed == 'undefined') {
+                alert('Please allow popups for PDF generation');
+                generateBtn.innerHTML = originalText;
+                generateBtn.disabled = false;
+                updateButtonStates();
+                return;
+            }
+            
+            // Show success message after a delay
+            setTimeout(() => {
+                showPDFGeneratedSuccess();
+                
+                // Restore button
+                generateBtn.innerHTML = originalText;
+                generateBtn.disabled = false;
+                updateButtonStates();
+            }, 2000);
         }
 
         // Show success message after PDF generation
