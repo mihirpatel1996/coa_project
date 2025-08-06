@@ -1672,10 +1672,33 @@ function updateButtonStates() {
             
             currentCatalogNumber = catalogNumber;
             
+            // Reset lot selection when catalog changes
+            currentLotNumber = null;
+            const lotToggle = document.getElementById('lotDropdownToggle');
+            
+            // Check if current template needs lots
+            let requiresLot = true;
+            if (templateKeys) {
+                requiresLot = Object.values(templateKeys).some(section => 
+                    section.keys && section.keys.some(key => key.key_source === 'lot')
+                );
+            }
+            
+            if (!requiresLot) {
+                lotToggle.textContent = 'Not Required';
+                currentLotNumber = '';
+            } else {
+                lotToggle.textContent = 'Select Lot...';
+            }
+            
+            // Clear lot dropdown items
+            const lotItemsContainer = document.getElementById('lotDropdownItems');
+            lotItemsContainer.innerHTML = '<div class="searchable-dropdown-no-results">Loading lots...</div>';
+            
             // Update catalog name field
             const catalogNameField = document.getElementById('catalogName');
             catalogNameField.value = catalogName || '';
-            catalogNameField.readOnly = false; // Allow editing catalog name
+            catalogNameField.readOnly = false;
             
             closeAllDropdowns();
             
@@ -1689,7 +1712,7 @@ function updateButtonStates() {
                         if (templateRadio) {
                             templateRadio.checked = true;
                             currentTemplateCode = data.template_code;
-                            originalTemplateCode = data.template_code; // Store original
+                            originalTemplateCode = data.template_code;
                             
                             // Load template structure first
                             return loadTemplateStructure(data.template_code);
@@ -1834,16 +1857,33 @@ function updateButtonStates() {
                     lotsData = Array.isArray(data) ? data : [];
                     populateLotDropdown(lotsData);
                     
-                    // Enable lot dropdown
+                    // Enable lot dropdown only if template needs lots
                     const lotToggle = document.getElementById('lotDropdownToggle');
                     if (lotToggle) {
-                        lotToggle.disabled = false;
+                        let requiresLot = true;
+                        if (templateKeys) {
+                            requiresLot = Object.values(templateKeys).some(section => 
+                                section.keys && section.keys.some(key => key.key_source === 'lot')
+                            );
+                        }
+                        
+                        if (requiresLot) {
+                            lotToggle.disabled = false;
+                            // Make sure it shows "Select Lot..." if no lot is selected
+                            if (!currentLotNumber) {
+                                lotToggle.textContent = 'Select Lot...';
+                            }
+                        } else {
+                            lotToggle.disabled = true;
+                            lotToggle.textContent = 'Not Required';
+                        }
                     }
                 })
                 .catch(error => {
                     console.error('Error loading lots:', error);
                 });
         }
+
 
         // PDF functions
         function previewPDF() {
