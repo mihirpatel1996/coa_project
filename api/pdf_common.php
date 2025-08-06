@@ -1,13 +1,92 @@
 <?php
-// api/pdf_common_clean.php
-// This is how pdf_common.php should be structured
+// api/pdf_common.php - Template-based version
 
-// Required files - ONLY at the top
+// Required files
 require_once '../vendor/autoload.php';
 require_once '../config/database.php';
 require_once '../config/templates_config.php';
 
-// NO CODE HERE - Only function definitions below
+/**
+ * Load HTML template from file
+ */
+function loadHTMLTemplate($templateFile = 'coa_template_new.html') {
+    $templatePath = __DIR__ . '/coa_templates/' . $templateFile;
+    
+    if (!file_exists($templatePath)) {
+        throw new Exception("Template file not found: $templateFile");
+    }
+    
+    return file_get_contents($templatePath);
+}
+
+/**
+ * Generate HTML content for a section
+ */
+function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) {
+    $html = '';
+    
+    if (!isset(TEMPLATE_FIELDS[$templateCode][$sectionId])) {
+        return '<p>No data available for this section.</p>';
+    }
+    
+    foreach (TEMPLATE_FIELDS[$templateCode][$sectionId] as $field_config) {
+        $field_name = $field_config['field_name'];
+        $db_field = $field_config['db_field'];
+        $source = $field_config['field_source'];
+        
+        // Get value from appropriate source
+        $value = '';
+        if ($source === 'catalog' && isset($catalogData[$db_field])) {
+            $value = $catalogData[$db_field];
+        } elseif ($source === 'lot' && isset($lotData[$db_field])) {
+            $value = $lotData[$db_field];
+        }
+        
+        // Skip empty values
+        if (empty($value)) {
+            continue;
+        }
+        
+        // Format special fields
+        $value = formatFieldValue($field_name, $value);
+        
+        // Add field to HTML
+        $html .= '<p><strong>' . htmlspecialchars($field_name) . ':</strong> ' . $value . '</p>' . "\n";
+    }
+    
+    return $html ?: '<p>No data available for this section.</p>';
+}
+
+/**
+ * Replace placeholders in template
+ */
+function replacePlaceholders($html, $catalogData, $lotData, $templateCode) {
+    // Basic replacements
+    $replacements = [
+        '[CATALOG_NAME]' => htmlspecialchars($catalogData['catalogName'] ?? ''),
+        '[CATALOG_NUMBER]' => htmlspecialchars($catalogData['catalogNumber'] ?? ''),
+        '[LOT_NUMBER]' => htmlspecialchars($lotData['lotNumber'] ?? ''),
+    ];
+    
+    // Replace basic placeholders
+    foreach ($replacements as $placeholder => $value) {
+        $html = str_replace($placeholder, $value, $html);
+    }
+    
+    // Generate and replace section content
+    $html = str_replace('[DESCRIPTION]', generateSectionHTML(1, $catalogData, $lotData, $templateCode), $html);
+    $html = str_replace('[SPECIFICATIONS]', generateSectionHTML(2, $catalogData, $lotData, $templateCode), $html);
+    $html = str_replace('[PREPARATION_AND_STORAGE]', generateSectionHTML(3, $catalogData, $lotData, $templateCode), $html);
+    
+    // Handle conditional lot number display
+    if (empty($lotData['lotNumber'])) {
+        // Remove the entire lot number line if no lot
+        $html = preg_replace('/<strong>Lot Number:<\/strong>.*?<br>/s', '', $html);
+        $html = preg_replace('/Lot Number: <strong>\[LOT_NUMBER\]<\/strong><br>/s', '', $html);
+    }
+    
+    return $html;
+}
 
 /**
  * Validate all required fields based on template
@@ -79,6 +158,7 @@ function getCoAData($catalog_number, $lot_number) {
         $lot_stmt->close();
     }
     
+    // Don't close connection here - let the calling script handle it
     // $conn->close();
     
     return [
@@ -89,9 +169,15 @@ function getCoAData($catalog_number, $lot_number) {
 }
 
 /**
- * Generate PDF object
+ * Generate PDF object using template
  */
 function generatePDF($catalog_data, $lot_data, $template_code) {
+    // Load HTML template
+    $html = loadHTMLTemplate('coa_template_new.html');
+    
+    // Replace placeholders with data
+    $html = replacePlaceholders($html, $catalog_data, $lot_data, $template_code);
+    
     // Create new PDF document
     $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
     
@@ -109,124 +195,16 @@ function generatePDF($catalog_data, $lot_data, $template_code) {
     $pdf->SetMargins(20, 15, 20);
     $pdf->SetAutoPageBreak(TRUE, 20);
     
-    // Set font for the entire document
+    // Set font
     $pdf->SetFont('helvetica', '', 10);
     
     // Add a page
     $pdf->AddPage();
     
-    // Get HTML content
-    $html = generateHTMLContent($catalog_data, $lot_data, $template_code);
-    
     // Write HTML to PDF
     $pdf->writeHTML($html, true, false, true, false, '');
     
     return $pdf;
-}
-
-/**
- * Generate HTML content for PDF
- */
-function generateHTMLContent($catalog_data, $lot_data, $template_code) {
-    $html = '';
-    
-    // Header with logo
-    $html .= '<table cellpadding="0" cellspacing="0" border="0" width="100%">
-        <tr>
-            <td width="50%">
-                <img src="' . __DIR__ . '/images/signalchem_sino_logo.png" height="80" />
-            </td>
-        </tr>
-    </table>';
-    
-    $html .= '<br/><br/>';
-    
-    // Product header
-    $html .= '<h2 style="color: #000; margin-bottom: 5px;">' . htmlspecialchars($catalog_data['catalogName']) . '</h2>';
-    $html .= '<p style="margin: 0; text-align: left; padding-bottom: 0px;">
-        <strong>Catalog Number:</strong> ' . htmlspecialchars($catalog_data['catalogNumber']) . '
-    </p>';
-    if (!empty($lot_data) && !empty($lot_data['lotNumber'])) {
-        $html .= '<p style="margin: 0; text-align: left; padding-top: 0px;">
-            <strong>Lot Number:</strong> ' . htmlspecialchars($lot_data['lotNumber']) . '
-        </p>';
-    }
-    $html .= '<br/>';
-    $html .= '<h1 style="text-align: center; color: #333; border-top: 1px solid #ccc; padding: 10px;">Certificate of Analysis</h1>';
-    $html .= '<br/>';
-    
-    // Description Section
-    $html .= '<h3 style="background-color: #f0f0f0; padding: 5px;">Description</h3>';
-    $html .= generateSectionContent(1, $catalog_data, $lot_data, $template_code);
-    $html .= '<br/>';
-    
-    // Specifications Section
-    $html .= '<h3 style="background-color: #f0f0f0; padding: 5px;">Specifications</h3>';
-    $html .= generateSectionContent(2, $catalog_data, $lot_data, $template_code);
-    $html .= '<br/>';
-    
-    // Preparation and Storage Section
-    $html .= '<h3 style="background-color: #f0f0f0; padding: 5px;">Preparation and Storage</h3>';
-    $html .= generateSectionContent(3, $catalog_data, $lot_data, $template_code);
-    $html .= '<br/><br/>';
-    
-    // Footer disclaimer
-    $html .= '<div style="border-top: 1px solid #ccc; padding-top: 20px; font-size: 9pt;">
-        <p>The products are not to be used in humans. In the absence of any express written agreement to the contrary, 
-        products sold by SINO BIOLOGICAL, INC. are for research-use-only (RUO).</p>
-        
-        <p>If you have any further questions, please contact Technical Services at <strong>support@sinobiological.com</strong></p>
-        
-        <br/>
-        <table cellpadding="0" cellspacing="0" border="0">
-            <tr>
-                <td>
-                    <img src="' . __DIR__ . '/images/signature.jpg" height="40" /><br/>
-                    <strong>Donna Morrison, PhD</strong><br/>
-                    Quality Assurance, SignalChem Biotech / Sino Biological
-                </td>
-            </tr>
-        </table>
-        
-        <p style="font-size: 8pt; color: #666; margin-top: 20px;">
-            Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)<br/>
-            Website: www.sinobiological.com
-        </p>
-    </div>';
-    
-    return $html;
-}
-
-/**
- * Generate content for a specific section
- */
-function generateSectionContent($section_id, $catalog_data, $lot_data, $template_code) {
-    $html = '<div style="padding-left: 10px;">';
-    
-    if (isset(TEMPLATE_FIELDS[$template_code][$section_id])) {
-        foreach (TEMPLATE_FIELDS[$template_code][$section_id] as $field_config) {
-            $field_name = $field_config['field_name'];
-            $db_field = $field_config['db_field'];
-            $source = $field_config['field_source'];
-            
-            $value = '';
-            if ($source === 'catalog') {
-                $value = $catalog_data[$db_field] ?? '';
-            } else {
-                $value = $lot_data[$db_field] ?? '';
-            }
-            
-            // Format special fields
-            $value = formatFieldValue($field_name, $value);
-            
-            if (!empty($value)) {
-                $html .= '<p style="margin: 5px 0;"><strong>' . htmlspecialchars($field_name) . ':</strong> ' . $value . '</p>';
-            }
-        }
-    }
-    
-    $html .= '</div>';
-    return $html;
 }
 
 /**
@@ -252,29 +230,44 @@ function formatFieldValue($field_name, $value) {
         case 'Shipping':
         case 'Stability & Storage':
             // Fix temperature notation
-            $value = str_replace(array('-20C', '-80C', '-70C', '4C'), 
-                               array('-20°C', '-80°C', '-70°C', '4°C'), 
-                               $value);
+            $value = str_replace(
+                ['-20C', '-80C', '-70C', '4C', '-20oC', '-80oC', '-70oC', '4oC'], 
+                ['-20°C', '-80°C', '-70°C', '4°C', '-20°C', '-80°C', '-70°C', '4°C'], 
+                $value
+            );
+            break;
+            
+        case 'Activity':
+            // Convert \n to <br> for multiline activity descriptions
+            $value = nl2br($value);
             break;
     }
     
-    // Handle line breaks
+    // Handle line breaks for all fields
     $value = nl2br($value);
     
-    // Ensure UTF-8 encoding
-    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    // Ensure proper encoding
+    return $value; // Already escaped in generateSectionHTML
 }
 
 /**
  * Generate filename for PDF
  */
 function generateFilename($catalog_number, $lot_number) {
-    return sprintf(
-        'CoA_%s_%s_%s.pdf',
-        $catalog_number,
-        $lot_number,
-        date('Ymd')
-    );
+    if (!empty($lot_number)) {
+        return sprintf(
+            'CoA_%s_%s_%s.pdf',
+            $catalog_number,
+            $lot_number,
+            date('Ymd')
+        );
+    } else {
+        return sprintf(
+            'CoA_%s_%s.pdf',
+            $catalog_number,
+            date('Ymd')
+        );
+    }
 }
 
 /**
@@ -308,6 +301,4 @@ function displayError($message) {
     </html>';
     exit;
 }
-
-// NO CODE HERE - This file should end with the last function
 ?>
