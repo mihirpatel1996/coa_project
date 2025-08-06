@@ -12,8 +12,8 @@ try {
     $lot_number = isset($_GET['lot_number']) ? trim($_GET['lot_number']) : '';
     
     // Validate required parameters
-    if (empty($catalog_number) || empty($lot_number)) {
-        throw new Exception('Catalog number and lot number are required');
+    if (empty($catalog_number)) {
+        throw new Exception('Catalog number is required');
     }
     
     // Get data from database
@@ -50,7 +50,7 @@ try {
     
     // Save PDF to server AND send to browser
     // 'FI' = save to File and send Inline to browser
-    //$pdf->Output($filepath, 'FI');
+    $pdf->Output($filepath, 'FI');
     
     // Log PDF generation to database
     try {
@@ -62,10 +62,6 @@ try {
         $log_stmt->execute();
         $log_stmt->close();
         $conn->close();
-
-        echo "Logged PDF generation for $catalog_number, $lot_number, $template_code\n";
-        exit();
-        return;
         
         // error_log("PDF generated and logged: $filename");
     } catch (Exception $e) {

@@ -34,9 +34,9 @@ try {
         throw new Exception('Catalog name is required');
     }
     
-    if (empty($lot_number)) {
-        throw new Exception('Lot number is required');
-    }
+    // if (empty($lot_number)) {
+    //     throw new Exception('Lot number is required');
+    // }
     
     if (!isset(TEMPLATES[$template_code])) {
         throw new Exception('Invalid template code');
@@ -101,27 +101,32 @@ try {
         $update_catalog_stmt->bind_param("ss", $catalog_name, $catalog_number);
         $update_catalog_stmt->execute();
         $update_catalog_stmt->close();
-        
-        // Check if lot exists, create if not
-        $lot_check_sql = "SELECT id FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
-        $lot_check_stmt = $conn->prepare($lot_check_sql);
-        $lot_check_stmt->bind_param("ss", $catalog_number, $lot_number);
-        $lot_check_stmt->execute();
-        $lot_check_result = $lot_check_stmt->get_result();
-        
-        if ($lot_check_result->num_rows === 0) {
-            // Create lot
-            $create_lot_sql = "INSERT INTO lots (catalogNumber, lotNumber, templateCode) VALUES (?, ?, ?)";
-            $create_lot_stmt = $conn->prepare($create_lot_sql);
-            $create_lot_stmt->bind_param("sss", $catalog_number, $lot_number, $template_code);
-            $create_lot_stmt->execute();
-            $lot_id = $conn->insert_id;
-            $create_lot_stmt->close();
-        } else {
-            $lot_row = $lot_check_result->fetch_assoc();
-            $lot_id = $lot_row['id'];
+
+        $lot_id = null;
+
+        // Only process lot if lot_number is provided
+        if (!empty($lot_number)) {
+            // Check if lot exists, create if not
+            $lot_check_sql = "SELECT id FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
+            $lot_check_stmt = $conn->prepare($lot_check_sql);
+            $lot_check_stmt->bind_param("ss", $catalog_number, $lot_number);
+            $lot_check_stmt->execute();
+            $lot_check_result = $lot_check_stmt->get_result();
+            
+            if ($lot_check_result->num_rows === 0) {
+                // Create lot
+                $create_lot_sql = "INSERT INTO lots (catalogNumber, lotNumber, templateCode) VALUES (?, ?, ?)";
+                $create_lot_stmt = $conn->prepare($create_lot_sql);
+                $create_lot_stmt->bind_param("sss", $catalog_number, $lot_number, $template_code);
+                $create_lot_stmt->execute();
+                $lot_id = $conn->insert_id;
+                $create_lot_stmt->close();
+            } else {
+                $lot_row = $lot_check_result->fetch_assoc();
+                $lot_id = $lot_row['id'];
+            }
+            $lot_check_stmt->close();
         }
-        $lot_check_stmt->close();
         
         // Build dynamic updates for catalog fields
         $catalog_fields = [];
@@ -178,7 +183,7 @@ try {
         }
         
         // Update lot fields if any
-        if (!empty($lot_fields)) {
+        if (!empty($lot_fields) && $lot_id !== null) {
             $lot_values[] = $lot_id;
             $lot_types .= "i";
             

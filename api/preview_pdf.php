@@ -12,8 +12,8 @@ try {
     $lot_number = isset($_GET['lot_number']) ? trim($_GET['lot_number']) : '';
     
     // Validate required parameters
-    if (empty($catalog_number) || empty($lot_number)) {
-        throw new Exception('Catalog number and lot number are required');
+    if (empty($catalog_number)) {
+        throw new Exception('Catalog number is required');
     }
     
     // Get data

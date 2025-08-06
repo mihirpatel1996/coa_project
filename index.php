@@ -672,36 +672,62 @@
         }
 
         // Load template structure and display fields
-        function loadTemplateStructure(templateCode) {
-            fetch(`api/get_template_keys.php?template_code=${templateCode}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        templateKeys = {};
-                        data.sections.forEach(section => {
-                            templateKeys[section.section_id] = {
-                                section_name: section.section_name,
-                                keys: section.keys.sort((a, b) => a.key_order - b.key_order)
-                            };
-                        });
-                        displayTemplateFields();
-                        
-                        // If catalog is selected and not changing template, load data
-                        if (currentCatalogNumber && !isChangingTemplate) {
-                            loadCatalogData();
-                        } else if (isChangingTemplate) {
-                            // Show empty fields for template change
-                            displayEmptyTemplateData();
-                            isChangingTemplate = false; // Reset flag
-                        }
-                    } else {
-                        console.error('Failed to load template structure:', data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading template structure:', error);
+function loadTemplateStructure(templateCode) {
+    fetch(`api/get_template_keys.php?template_code=${templateCode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                templateKeys = {};
+                data.sections.forEach(section => {
+                    templateKeys[section.section_id] = {
+                        section_name: section.section_name,
+                        keys: section.keys.sort((a, b) => a.key_order - b.key_order)
+                    };
                 });
-        }
+                displayTemplateFields();
+                
+                // Check if this template needs lots based on the actual fields
+                let needsLot = false;
+                Object.values(templateKeys).forEach(section => {
+                    if (section.keys.some(key => key.key_source === 'lot')) {
+                        needsLot = true;
+                    }
+                });
+                
+                // Update lot dropdown UI
+                const lotToggle = document.getElementById('lotDropdownToggle');
+                if (!needsLot) {
+                    // Clear lot for templates that don't need it
+                    currentLotNumber = ''; // Empty string, not null
+                    lotToggle.textContent = 'Not Required';
+                    lotToggle.disabled = true;
+                    lotToggle.style.opacity = '0.6';
+                } else {
+                    lotToggle.style.opacity = '1';
+                    lotToggle.disabled = !currentCatalogNumber;
+                    if (!currentLotNumber) {
+                        lotToggle.textContent = 'Select Lot...';
+                    }
+                }
+                
+                // Update button states after template structure is loaded
+                updateButtonStates();
+                
+                // If catalog is selected and not changing template, load data
+                if (currentCatalogNumber && !isChangingTemplate) {
+                    loadCatalogData();
+                } else if (isChangingTemplate) {
+                    displayEmptyTemplateData();
+                    isChangingTemplate = false;
+                }
+            } else {
+                console.error('Failed to load template structure:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading template structure:', error);
+        });
+}
 
         // Display empty template data when switching templates
         function displayEmptyTemplateData() {
@@ -774,81 +800,102 @@
         }
 
         // Load catalog data when catalog is selected
-        function loadCatalogData() {
-            if (!currentTemplateCode || !currentCatalogNumber) return;
-            
-            disableAllTextareas();
-            
-            fetch(`api/get_section_data.php?catalog_number=${currentCatalogNumber}&template_code=${currentTemplateCode}&lot_number=${currentLotNumber || ''}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.error) {
-                        populateFieldsWithData(data.sections_data);
-                        enableAllTextareas();
-                        updateButtonStates();
-                    } else {
-                        console.error('Error loading data:', data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading catalog data:', error);
-                });
-        }
+function loadCatalogData() {
+    if (!currentTemplateCode || !currentCatalogNumber) return;
+    
+    // Check if template needs lot
+    let requiresLot = true;
+    if (templateKeys) {
+        requiresLot = Object.values(templateKeys).some(section => 
+            section.keys && section.keys.some(key => key.key_source === 'lot')
+        );
+    }
+    
+    // For templates without lots, ensure lot is empty string
+    if (!requiresLot) {
+        currentLotNumber = '';
+    }
+    
+    disableAllTextareas();
+    
+    const apiUrl = `api/get_section_data.php?catalog_number=${currentCatalogNumber}&template_code=${currentTemplateCode}&lot_number=${currentLotNumber || ''}`;
+    
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.error) {
+                populateFieldsWithData(data.sections_data);
+                enableAllTextareas();
+                updateButtonStates();
+            } else {
+                console.error('Error loading data:', data.message);
+                enableAllTextareas();
+                updateButtonStates();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading catalog data:', error);
+            enableAllTextareas();
+            updateButtonStates();
+        });
+}
+
 
         // Populate fields with loaded data
-        function populateFieldsWithData(sectionsData) {
-            currentData = {};
-            originalData = {};
-            
-            sectionsData.forEach(section => {
-                const sectionId = section.section_id;
-                currentData[sectionId] = {};
-                originalData[sectionId] = {};
-                
-                section.key_values.forEach(kv => {
-                    const textarea = document.getElementById(`textarea_${sectionId}_${kv.key.replace(/\s+/g, '_')}`);
-                    if (textarea) {
-                        textarea.value = kv.value || '';
-                        currentData[sectionId][kv.key] = kv.value || '';
-                        originalData[sectionId][kv.key] = kv.value || '';
-                    }
-                });
-            });
-            
-            hasUnsavedChanges = false;
-            
-            // Clear any validation errors
-            document.querySelectorAll('.is-invalid').forEach(element => {
-                element.classList.remove('is-invalid');
-            });
-            document.querySelectorAll('.border-warning').forEach(element => {
-                element.classList.remove('border-warning');
-            });
-            
-            // Reset save button text
-            const saveBtn = document.getElementById('saveAllBtn');
-            if (saveBtn) {
-                saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All';
+function populateFieldsWithData(sectionsData) {
+    currentData = {};
+    originalData = {};
+    
+    sectionsData.forEach(section => {
+        const sectionId = section.section_id;
+        currentData[sectionId] = {};
+        originalData[sectionId] = {};
+        
+        section.key_values.forEach(kv => {
+            const textarea = document.getElementById(`textarea_${sectionId}_${kv.key.replace(/\s+/g, '_')}`);
+            if (textarea) {
+                textarea.value = kv.value || '';
+                currentData[sectionId][kv.key] = kv.value || '';
+                originalData[sectionId][kv.key] = kv.value || '';
             }
-            
-            // Check if any fields are empty - if so, enable save button
-            let hasEmptyFields = false;
-            document.querySelectorAll('.bulk-edit-textarea:not(:disabled)').forEach(textarea => {
-                if (!textarea.value.trim()) {
-                    hasEmptyFields = true;
-                }
-            });
-            
-            if (hasEmptyFields) {
-                hasUnsavedChanges = true; // Allow saving empty fields
-                if (saveBtn) {
-                    saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All*';
-                }
-            }
-            
-            // Update button states after loading data
-            updateButtonStates();
+        });
+    });
+    
+    // Clear any validation errors
+    document.querySelectorAll('.is-invalid').forEach(element => {
+        element.classList.remove('is-invalid');
+    });
+    document.querySelectorAll('.border-warning').forEach(element => {
+        element.classList.remove('border-warning');
+    });
+    
+    // Check if any fields are empty - if so, mark as having changes
+    let hasEmptyFields = false;
+    document.querySelectorAll('.bulk-edit-textarea:not(:disabled)').forEach(textarea => {
+        if (!textarea.value.trim()) {
+            hasEmptyFields = true;
+            textarea.classList.add('border-warning'); // Visual indicator
         }
+    });
+    
+    // If there are empty fields, enable save button
+    if (hasEmptyFields) {
+        hasUnsavedChanges = true;
+        const saveBtn = document.getElementById('saveAllBtn');
+        if (saveBtn) {
+            saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All*';
+        }
+    } else {
+        hasUnsavedChanges = false;
+        const saveBtn = document.getElementById('saveAllBtn');
+        if (saveBtn) {
+            saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All';
+        }
+    }
+    
+    // Update button states after loading data
+    updateButtonStates();
+}
 
         // Enable/disable textareas
         function enableAllTextareas() {
@@ -864,27 +911,31 @@
         }
 
         // Update button states
-        function updateButtonStates() {
-            const hasTemplate = !!currentTemplateCode;
-            const hasCatalog = !!currentCatalogNumber;
-            const hasLot = !!currentLotNumber;
-            const canInteract = hasTemplate && hasCatalog && hasLot;
-            
-            // Save and Cancel buttons need both interaction ability AND unsaved changes
-            const canSaveOrCancel = canInteract && hasUnsavedChanges;
-            document.getElementById('saveAllBtn').disabled = !canSaveOrCancel;
-            document.getElementById('cancelBtn').disabled = !canSaveOrCancel;
-            
-            // Preview and Generate buttons only need interaction ability
-            document.getElementById('previewBtn').disabled = !canInteract;
-            document.getElementById('generateBtn').disabled = !canInteract;
-            
-            // Lot dropdown state
-            const lotToggle = document.getElementById('lotDropdownToggle');
-            if (lotToggle) {
-                lotToggle.disabled = !hasCatalog;
-            }
-        }
+function updateButtonStates() {
+    const hasTemplate = !!currentTemplateCode;
+    const hasCatalog = !!currentCatalogNumber;
+    const hasLot = currentLotNumber !== null && currentLotNumber !== undefined;
+    
+    // Check if current template has any lot fields
+    let requiresLot = true;
+    if (templateKeys) {
+        requiresLot = Object.values(templateKeys).some(section => 
+            section.keys && section.keys.some(key => key.key_source === 'lot')
+        );
+    }
+    
+    // For templates without lot fields, we don't need a lot
+    const canInteract = hasTemplate && hasCatalog && (!requiresLot || hasLot);
+    
+    // Save and Cancel buttons need interaction ability AND unsaved changes
+    const canSaveOrCancel = canInteract && hasUnsavedChanges;
+    document.getElementById('saveAllBtn').disabled = !canSaveOrCancel;
+    document.getElementById('cancelBtn').disabled = !canSaveOrCancel;
+    
+    // Preview and Generate buttons only need interaction ability
+    document.getElementById('previewBtn').disabled = !canInteract;
+    document.getElementById('generateBtn').disabled = !canInteract;
+}
 
         // New function to check if all fields are filled
         function checkAllFieldsFilled() {
@@ -983,7 +1034,16 @@
                 return;
             }
             
-            if (!currentLotNumber) {
+            // Check if template requires lot
+            let requiresLot = true;
+            if (templateKeys) {
+                requiresLot = Object.values(templateKeys).some(section => 
+                    section.keys && section.keys.some(key => key.key_source === 'lot')
+                );
+            }
+            
+            // Only require lot if template has lot fields
+            if (requiresLot && !currentLotNumber) {
                 alert('Please select a lot number');
                 return;
             }
@@ -1038,11 +1098,11 @@
                 }
             });
             
-            // Prepare payload
+            // Prepare payload - lot_number can be empty string for lot-less templates
             const payload = {
                 catalog_number: currentCatalogNumber,
                 catalog_name: catalogName,
-                lot_number: currentLotNumber,
+                lot_number: currentLotNumber || '', // Send empty string if no lot
                 template_code: currentTemplateCode,
                 key_values: keyValues
             };
@@ -1787,8 +1847,21 @@
 
         // PDF functions
         function previewPDF() {
-            if (!currentCatalogNumber || !currentLotNumber) {
-                alert('Please select both catalog and lot number');
+            if (!currentCatalogNumber) {
+                alert('Please select a catalog');
+                return;
+            }
+            
+            // Check if template requires lot
+            let requiresLot = true;
+            if (templateKeys) {
+                requiresLot = Object.values(templateKeys).some(section => 
+                    section.keys && section.keys.some(key => key.key_source === 'lot')
+                );
+            }
+            
+            if (requiresLot && !currentLotNumber) {
+                alert('Please select a lot number');
                 return;
             }
             
@@ -1811,7 +1884,8 @@
             previewBtn.disabled = true;
             
             // Build URL for preview API
-            const previewUrl = `api/preview_pdf.php?catalog_number=${encodeURIComponent(currentCatalogNumber)}&lot_number=${encodeURIComponent(currentLotNumber)}`;
+            let previewUrl = `api/preview_pdf.php?catalog_number=${encodeURIComponent(currentCatalogNumber)}`;
+            previewUrl += `&lot_number=${encodeURIComponent(currentLotNumber || '')}`; // Empty string if no lot
             
             // Open PDF in new window
             const previewWindow = window.open(previewUrl, '_blank');
@@ -1831,8 +1905,21 @@
 
         // Replace the generatePDF() function in index.php with this:
         function generatePDF() {
-            if (!currentCatalogNumber || !currentLotNumber) {
-                alert('Please select both catalog and lot number');
+            if (!currentCatalogNumber) {
+                alert('Please select a catalog');
+                return;
+            }
+            
+            // Check if template requires lot
+            let requiresLot = true;
+            if (templateKeys) {
+                requiresLot = Object.values(templateKeys).some(section => 
+                    section.keys && section.keys.some(key => key.key_source === 'lot')
+                );
+            }
+            
+            if (requiresLot && !currentLotNumber) {
+                alert('Please select a lot number');
                 return;
             }
             
@@ -1855,9 +1942,10 @@
             generateBtn.disabled = true;
             
             // Build URL for generate API
-            const generateUrl = `api/generate_pdf.php?catalog_number=${encodeURIComponent(currentCatalogNumber)}&lot_number=${encodeURIComponent(currentLotNumber)}`;
+            let generateUrl = `api/generate_pdf.php?catalog_number=${encodeURIComponent(currentCatalogNumber)}`;
+            generateUrl += `&lot_number=${encodeURIComponent(currentLotNumber || '')}`; // Empty string if no lot
             
-            // Open in new window/tab - this will display the PDF and save it on server
+            // Open in new window/tab
             const pdfWindow = window.open(generateUrl, '_blank');
             
             // Check if popup was blocked

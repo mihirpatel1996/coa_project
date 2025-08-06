@@ -65,20 +65,21 @@ function getCoAData($catalog_number, $lot_number) {
     $catalog_stmt->close();
     
     // Get lot data
-    $lot_sql = "SELECT * FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
-    $lot_stmt = $conn->prepare($lot_sql);
-    $lot_stmt->bind_param("ss", $catalog_number, $lot_number);
-    $lot_stmt->execute();
-    $lot_result = $lot_stmt->get_result();
-    
-    if ($lot_result->num_rows === 0) {
-        throw new Exception('Lot not found');
+    $lot_data = [];
+    if (!empty($lot_number)) {
+        $lot_sql = "SELECT * FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
+        $lot_stmt = $conn->prepare($lot_sql);
+        $lot_stmt->bind_param("ss", $catalog_number, $lot_number);
+        $lot_stmt->execute();
+        $lot_result = $lot_stmt->get_result();
+        
+        if ($lot_result->num_rows > 0) {
+            $lot_data = $lot_result->fetch_assoc();
+        }
+        $lot_stmt->close();
     }
     
-    $lot_data = $lot_result->fetch_assoc();
-    $lot_stmt->close();
-    
-    $conn->close();
+    // $conn->close();
     
     return [
         'catalog' => $catalog_data,
@@ -145,9 +146,11 @@ function generateHTMLContent($catalog_data, $lot_data, $template_code) {
     $html .= '<p style="margin: 0; text-align: left; padding-bottom: 0px;">
         <strong>Catalog Number:</strong> ' . htmlspecialchars($catalog_data['catalogNumber']) . '
     </p>';
-    $html .= '<p style="margin: 0; text-align: left; padding-top: 0px;">
-        <strong>Lot Number:</strong> ' . htmlspecialchars($lot_data['lotNumber']) . '
-    </p>';
+    if (!empty($lot_data) && !empty($lot_data['lotNumber'])) {
+        $html .= '<p style="margin: 0; text-align: left; padding-top: 0px;">
+            <strong>Lot Number:</strong> ' . htmlspecialchars($lot_data['lotNumber']) . '
+        </p>';
+    }
     $html .= '<br/>';
     $html .= '<h1 style="text-align: center; color: #333; border-top: 1px solid #ccc; padding: 10px;">Certificate of Analysis</h1>';
     $html .= '<br/>';
