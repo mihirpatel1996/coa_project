@@ -1,61 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
 <style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
   body {
     font-family: Helvetica, Arial, sans-serif;
     font-size: 10pt;
-    color: #333;
-    line-height: 1.4;
+    color: #000000;
+    line-height: 1.1;
+    background: white;
   }
-  .title {
+  
+  .header-logos {
+    margin-bottom: 15px;
+  }
+  
+  .header-logos img {
+    height: 50px;
+  }
+  
+  .product-title {
     font-size: 16pt;
     font-weight: bold;
-    margin-bottom: 20px;
+    color: #000000;
+    margin-bottom: 5px;
+    line-height: 1.1;
   }
+  
+  .catalog-info {
+    font-size: 10pt;
+    margin-bottom: 2px;
+    line-height: 1.1;
+  }
+  
+  .certificate-title {
+    font-size: 14pt;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #cccccc;
+    line-height: 1.1;
+  }
+  
+  .section {
+    margin-bottom: 2px;
+    page-break-inside: avoid;
+  }
+  
   .section-title {
     font-size: 12pt;
     font-weight: bold;
-    margin-top: 20px;
-    margin-bottom: 5px;
+    color: #000000;
+    /* margin-bottom: 3px; */
+    background-color: #f0f0f0;
+    padding: 5px 10px;
+    line-height: 1.1;
   }
+  
   .section-content {
-    margin-bottom: 15px;
+    /* padding: 0 8px; */
+    margin-bottom: 1px;
+  }
+  
+  .section-content p {
+    /* margin-bottom: 2px; */
+    line-height: 1.2;
+    font-size: 10pt;
+  }
+  
+  .section-content strong {
+    font-weight: bold;
+  }
+  
+  /* Remove extra spacing between field name and value */
+  .section-content p strong:after {
+    content: " ";
+  }
+  
+  .footer-disclaimer {
+    margin-top: 20px;
+    padding-top: 10px;
+    font-size: 9pt;
+    line-height: 1.2;
+    color: #000000;
+  }
+  
+  .contact-info {
+    margin-top: 8px;
+    font-size: 9pt;
+    color: #000000;
+    line-height: 1.2;
+  }
+  
+  .signature-section {
+    margin-top: 15px;
+    margin-bottom: 10px;
+  }
+  
+  .signature-image {
+    height: 35px;
+    margin-bottom: 2px;
+  }
+  
+  .signature-name {
+    font-weight: bold;
+    font-size: 10pt;
+    margin-bottom: 1px;
+    line-height: 1.1;
+  }
+  
+  .signature-title {
+    font-size: 9pt;
+    color: #000000;
+    line-height: 1.1;
+  }
+  
+  .footer-contact {
+    margin-top: 15px;
+    font-size: 8pt;
+    color: #333333;
+    line-height: 1.2;
+  }
+  
+  .footer-contact a {
+    color: #0066cc;
+    text-decoration: none;
+  }
+  
+  /* TCPDF specific - minimize spacing */
+  br {
+    line-height: 0.8;
+  }
+  
+  /* Handle special formatting */
+  sub {
+    font-size: 0.7em;
+    vertical-align: sub;
+  }
+  
+  /* Minimize paragraph spacing for TCPDF */
+  p {
+    margin: 0;
+    padding: 0;
+  }
+
+  /*  */
+  /* Compact field display */
+  .field-item {
+      margin: 0;
+      padding: 2px 0;
+      line-height: 1.2;
   }
 </style>
+</head>
+<body>
 
-<div>
-  <img src="_common/images/logo.jpg" width="272" height="74" alt="Logo">
+<div class="header-logos">
+  <img src="images/signalchem_sino_logo.png" alt="SinoBiological SignalChem Logo" />
 </div>
 
-<div class="title">Certificate of Analysis</div>
+<div class="product-title">[CATALOG_NAME]</div>
 
-<div>
-  <strong>[CATALOG_NAME]</strong><br>
-  Catalog Number: <strong>[CATALOG_NUMBER]</strong><br>
-  Lot Number: <strong>[LOT_NUMBER]</strong>
+<div class="catalog-info">
+  <strong>Catalog Number:</strong> [CATALOG_NUMBER]
+</div>
+<div class="catalog-info">
+  <strong>Lot Number:</strong> [LOT_NUMBER]
 </div>
 
-<div class="section-title">Description</div>
-<div class="section-content">[DESCRIPTION]</div>
+<div class="certificate-title">Certificate of Analysis</div>
 
-<div class="section-title">Specifications</div>
-<div class="section-content">[SPECIFICATIONS]</div>
+<div class="section">
+  <div class="section-title">Description</div>
+  <div class="section-content">
+    [DESCRIPTION]
+  </div>
+</div>
 
-<div class="section-title">Preparation and Storage</div>
-<div class="section-content">[PREPARATION_AND_STORAGE]</div>
+<div class="section">
+  <div class="section-title">Specifications</div>
+  <div class="section-content">
+    [SPECIFICATIONS]
+  </div>
+</div>
 
-<div class="section-content" style="margin-top: 30px;">
+<div class="section">
+  <div class="section-title">Preparation and Storage</div>
+  <div class="section-content">
+    [PREPARATION_AND_STORAGE]
+  </div>
+</div>
+
+<div class="footer-disclaimer">
   The products are not to be used in humans. In the absence of any express written agreement to the contrary, products sold by SINO BIOLOGICAL, INC. are for research-use-only (RUO).
 </div>
 
-<div class="section-content" style="margin-top: 30px;">
+<div class="contact-info">
   If you have any further questions, please contact Technical Services at <strong>support@sinobiological.com</strong>
 </div>
 
-<div class="section-content" style="margin-top: 40px;">
-  <strong>Donna Morrison, PhD</strong><br>
-  Quality Assurance, SignalChem Biotech / Sino Biological
+<div class="signature-section">
+  <img src="images/signature.jpg" alt="Signature" class="signature-image" />
+  <div class="signature-name">Donna Morrison, PhD</div>
+  <div class="signature-title">Quality Assurance, SignalChem Biotech / Sino Biological</div>
 </div>
 
-<div style="font-size: 9pt; margin-top: 20px;">
-  Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe) <br>
+<div class="footer-contact">
+  Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)<br>
   Website: <a href="http://www.sinobiological.com">www.sinobiological.com</a>
 </div>
+
+</body>
+</html>

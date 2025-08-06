@@ -51,7 +51,9 @@ function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) 
         $value = formatFieldValue($field_name, $value);
         
         // Add field to HTML
-        $html .= '<p><strong>' . htmlspecialchars($field_name) . ':</strong> ' . $value . '</p>' . "\n";
+        //$html .= '<p><strong>' . htmlspecialchars($field_name) . ':</strong> ' . $value . '</p>' . "\n";
+        // Use div with class instead of p tags
+        $html .= '<div class="field-item"><strong>' . htmlspecialchars($field_name) . ':</strong> ' . $value . '</div>' . "\n";
     }
     
     return $html ?: '<p>No data available for this section.</p>';
@@ -192,7 +194,8 @@ function generatePDF($catalog_data, $lot_data, $template_code) {
     $pdf->setPrintFooter(false);
     
     // Set margins (left, top, right)
-    $pdf->SetMargins(20, 15, 20);
+    // $pdf->SetMargins(20, 15, 20);
+    $pdf->SetMargins(15, 10, 15);
     $pdf->SetAutoPageBreak(TRUE, 20);
     
     // Set font
