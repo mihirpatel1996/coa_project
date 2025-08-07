@@ -686,28 +686,12 @@ function loadTemplateStructure(templateCode) {
                 });
                 displayTemplateFields();
                 
-                // Check if this template needs lots based on the actual fields
-                let needsLot = false;
-                Object.values(templateKeys).forEach(section => {
-                    if (section.keys.some(key => key.key_source === 'lot')) {
-                        needsLot = true;
-                    }
-                });
-                
-                // Update lot dropdown UI
+                // All templates require lot tracking
                 const lotToggle = document.getElementById('lotDropdownToggle');
-                if (!needsLot) {
-                    // Clear lot for templates that don't need it
-                    currentLotNumber = ''; // Empty string, not null
-                    lotToggle.textContent = 'Not Required';
-                    lotToggle.disabled = true;
-                    lotToggle.style.opacity = '0.6';
-                } else {
-                    lotToggle.style.opacity = '1';
-                    lotToggle.disabled = !currentCatalogNumber;
-                    if (!currentLotNumber) {
-                        lotToggle.textContent = 'Select Lot...';
-                    }
+                lotToggle.style.opacity = '1';
+                lotToggle.disabled = !currentCatalogNumber;
+                if (!currentLotNumber) {
+                    lotToggle.textContent = 'Select Lot...';
                 }
                 
                 // Update button states after template structure is loaded
@@ -803,18 +787,7 @@ function loadTemplateStructure(templateCode) {
 function loadCatalogData() {
     if (!currentTemplateCode || !currentCatalogNumber) return;
     
-    // Check if template needs lot
-    let requiresLot = true;
-    if (templateKeys) {
-        requiresLot = Object.values(templateKeys).some(section => 
-            section.keys && section.keys.some(key => key.key_source === 'lot')
-        );
-    }
-    
-    // For templates without lots, ensure lot is empty string
-    if (!requiresLot) {
-        currentLotNumber = '';
-    }
+    // All templates require lots - no special handling needed
     
     disableAllTextareas();
     
@@ -916,16 +889,8 @@ function updateButtonStates() {
     const hasCatalog = !!currentCatalogNumber;
     const hasLot = currentLotNumber !== null && currentLotNumber !== undefined;
     
-    // Check if current template has any lot fields
-    let requiresLot = true;
-    if (templateKeys) {
-        requiresLot = Object.values(templateKeys).some(section => 
-            section.keys && section.keys.some(key => key.key_source === 'lot')
-        );
-    }
-    
-    // For templates without lot fields, we don't need a lot
-    const canInteract = hasTemplate && hasCatalog && (!requiresLot || hasLot);
+    // All templates require lots
+    const canInteract = hasTemplate && hasCatalog && hasLot;
     
     // Save and Cancel buttons need interaction ability AND unsaved changes
     const canSaveOrCancel = canInteract && hasUnsavedChanges;
@@ -1034,16 +999,8 @@ function updateButtonStates() {
                 return;
             }
             
-            // Check if template requires lot
-            let requiresLot = true;
-            if (templateKeys) {
-                requiresLot = Object.values(templateKeys).some(section => 
-                    section.keys && section.keys.some(key => key.key_source === 'lot')
-                );
-            }
-            
-            // Only require lot if template has lot fields
-            if (requiresLot && !currentLotNumber) {
+            // All templates require lots
+            if (!currentLotNumber) {
                 alert('Please select a lot number');
                 return;
             }
@@ -1676,20 +1633,8 @@ function updateButtonStates() {
             currentLotNumber = null;
             const lotToggle = document.getElementById('lotDropdownToggle');
             
-            // Check if current template needs lots
-            let requiresLot = true;
-            if (templateKeys) {
-                requiresLot = Object.values(templateKeys).some(section => 
-                    section.keys && section.keys.some(key => key.key_source === 'lot')
-                );
-            }
-            
-            if (!requiresLot) {
-                lotToggle.textContent = 'Not Required';
-                currentLotNumber = '';
-            } else {
-                lotToggle.textContent = 'Select Lot...';
-            }
+            // All templates require lots
+            lotToggle.textContent = 'Select Lot...';
             
             // Clear lot dropdown items
             const lotItemsContainer = document.getElementById('lotDropdownItems');
@@ -1857,25 +1802,12 @@ function updateButtonStates() {
                     lotsData = Array.isArray(data) ? data : [];
                     populateLotDropdown(lotsData);
                     
-                    // Enable lot dropdown only if template needs lots
+                    // Enable lot dropdown (all templates require lots)
                     const lotToggle = document.getElementById('lotDropdownToggle');
                     if (lotToggle) {
-                        let requiresLot = true;
-                        if (templateKeys) {
-                            requiresLot = Object.values(templateKeys).some(section => 
-                                section.keys && section.keys.some(key => key.key_source === 'lot')
-                            );
-                        }
-                        
-                        if (requiresLot) {
-                            lotToggle.disabled = false;
-                            // Make sure it shows "Select Lot..." if no lot is selected
-                            if (!currentLotNumber) {
-                                lotToggle.textContent = 'Select Lot...';
-                            }
-                        } else {
-                            lotToggle.disabled = true;
-                            lotToggle.textContent = 'Not Required';
+                        lotToggle.disabled = false;
+                        if (!currentLotNumber) {
+                            lotToggle.textContent = 'Select Lot...';
                         }
                     }
                 })
@@ -1892,15 +1824,8 @@ function updateButtonStates() {
                 return;
             }
             
-            // Check if template requires lot
-            let requiresLot = true;
-            if (templateKeys) {
-                requiresLot = Object.values(templateKeys).some(section => 
-                    section.keys && section.keys.some(key => key.key_source === 'lot')
-                );
-            }
-            
-            if (requiresLot && !currentLotNumber) {
+            // All templates require lots
+            if (!currentLotNumber) {
                 alert('Please select a lot number');
                 return;
             }
@@ -1950,15 +1875,8 @@ function updateButtonStates() {
                 return;
             }
             
-            // Check if template requires lot
-            let requiresLot = true;
-            if (templateKeys) {
-                requiresLot = Object.values(templateKeys).some(section => 
-                    section.keys && section.keys.some(key => key.key_source === 'lot')
-                );
-            }
-            
-            if (requiresLot && !currentLotNumber) {
+            // All templates require lots
+            if (!currentLotNumber) {
                 alert('Please select a lot number');
                 return;
             }
