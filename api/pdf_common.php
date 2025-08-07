@@ -55,7 +55,7 @@ function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) 
         // Use div with class instead of p tags
         $html .= '<div class="field-item"><strong>' . htmlspecialchars($field_name) . ':</strong> ' . $value . '</div>' . "\n";
     }
-    
+
     return $html ?: '<p>No data available for this section.</p>';
 }
 
@@ -79,14 +79,14 @@ function replacePlaceholders($html, $catalogData, $lotData, $templateCode) {
     $html = str_replace('[DESCRIPTION]', generateSectionHTML(1, $catalogData, $lotData, $templateCode), $html);
     $html = str_replace('[SPECIFICATIONS]', generateSectionHTML(2, $catalogData, $lotData, $templateCode), $html);
     $html = str_replace('[PREPARATION_AND_STORAGE]', generateSectionHTML(3, $catalogData, $lotData, $templateCode), $html);
-    
+
     // Handle conditional lot number display
-    if (empty($lotData['lotNumber'])) {
-        // Remove the entire lot number line if no lot
-        $html = preg_replace('/<strong>Lot Number:<\/strong>.*?<br>/s', '', $html);
-        $html = preg_replace('/Lot Number: <strong>\[LOT_NUMBER\]<\/strong><br>/s', '', $html);
-    }
-    
+    // if (empty($lotData['lotNumber'])) {
+    //     // Remove the entire lot number line if no lot
+    //     $html = preg_replace('/<strong>Lot Number:<\/strong>.*?<br>/s', '', $html);
+    //     $html = preg_replace('/Lot Number: <strong>\[LOT_NUMBER\]<\/strong><br>/s', '', $html);
+    // }
+
     return $html;
 }
 
