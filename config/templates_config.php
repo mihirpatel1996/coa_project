@@ -60,8 +60,9 @@ define('TEMPLATE_FIELDS', [
         ],
         3 => [ // Section 3 - Preparation and Storage
             ['field_name' => 'Concentration', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'concentration'],
-            ['field_name' => 'Shipping', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'shipping'],
-            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability']
+            ['field_name' => 'Reconstitution', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'reconstitution'],
+            ['field_name' => 'Shipping', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'shipping'],
+            ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 4, 'db_field' => 'stability']
         ]
     ],
     

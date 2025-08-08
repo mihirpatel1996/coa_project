@@ -194,7 +194,6 @@
             margin: 0 10px;
         }
 
-        /* Add these styles to your existing <style> section in index.php */
         /* Bulk Upload Modal Styles */
         #bulkUploadModal .card {
             border: 1px solid #e0e0e0;
@@ -264,6 +263,32 @@
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
+        }
+
+        /* Smaller alert styles for bulk upload */
+        .alert-sm {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .alert-sm small {
+            font-size: 0.875rem;
+        }
+
+        /* Card header styles */
+        .card-header.bg-primary {
+            background-color: #0d6efd !important;
+        }
+
+        .card-header.bg-success {
+            background-color: #198754 !important;
+        }
+
+        /* Spinner styles */
+        .spinner-border-sm {
+            width: 1.5rem;
+            height: 1.5rem;
         }
     </style>
 </head>
@@ -496,115 +521,158 @@
     <div class="modal fade" id="bulkUploadModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header d-flex align-items-center">
                     <h5 class="modal-title">
                         <i class="fas fa-upload me-2"></i>
                         Bulk Upload - Catalogs & Lots
                     </h5>
+                    <button class="btn btn-outline-primary ms-3" id="downloadTemplatesBtn">
+                        <i class="fas fa-download me-2"></i>
+                        Download Templates
+                    </button>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Upload Type Selection -->
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h6 class="card-title mb-3">Step 1: Select Upload Type</h6>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="uploadType" id="uploadCatalogs" value="catalog" checked>
-                                <label class="form-check-label" for="uploadCatalogs">
-                                    <i class="fas fa-book me-1"></i>
-                                    Upload Catalogs
-                                </label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="uploadType" id="uploadLots" value="lot">
-                                <label class="form-check-label" for="uploadLots">
-                                    <i class="fas fa-tag me-1"></i>
-                                    Upload Lots
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Download Template -->
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h6 class="card-title mb-3">Step 2: Download Template</h6>
-                            <p class="text-muted">Download the appropriate template, fill it with your data, and upload it back.</p>
-                            <button class="btn btn-outline-primary" id="downloadTemplateBtn">
-                                <i class="fas fa-download me-2"></i>
-                                Download <span id="templateTypeText">Catalog</span> Template
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- File Upload -->
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h6 class="card-title mb-3">Step 3: Upload CSV File</h6>
-                            <div class="mb-3">
-                                <input type="file" class="form-control" id="csvFileInput" accept=".csv">
-                                <div class="form-text">
-                                    Maximum file size: 10MB. Maximum rows: 5,000.
+                    <!-- <div class="row"> -->
+                        <!-- Catalog Upload Section -->
+                        <div class="card mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-book me-2"></i>
+                                        Catalog Upload
+                                    </h6>
                                 </div>
-                            </div>
-                            <button class="btn btn-primary" id="uploadBtn" disabled>
-                                <i class="fas fa-upload me-2"></i>
-                                Upload & Process
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Progress Section -->
-                    <div id="uploadProgress" class="card mb-4" style="display: none;">
-                        <div class="card-body">
-                            <div class="text-center">
-                                <div class="spinner-border text-primary mb-3" role="status">
-                                    <span class="visually-hidden">Processing...</span>
-                                </div>
-                                <p class="mb-0">Processing your file, please wait...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Results Section -->
-                    <div id="uploadResults" class="card" style="display: none;">
-                        <div class="card-body">
-                            <h6 class="card-title mb-3">Upload Results</h6>
-                            
-                            <!-- Success Alert -->
-                            <div id="successAlert" class="alert alert-success" style="display: none;">
-                                <i class="fas fa-check-circle me-2"></i>
-                                <strong>Success!</strong> <span id="successMessage"></span>
-                            </div>
-                            
-                            <!-- Error Alert -->
-                            <div id="errorAlert" class="alert alert-danger" style="display: none;">
-                                <i class="fas fa-exclamation-circle me-2"></i>
-                                <strong>Error!</strong> <span id="errorMessage"></span>
-                            </div>
-                            
-                            <!-- Summary -->
-                            <div id="summaryContainer" style="display: none; background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
-                                <h6 style="margin-bottom: 10px;">Upload Summary</h6>
-                                <div id="summaryText"></div>
-                                
-                                <!-- Download Skipped Report -->
-                                <div id="skippedReportSection" class="mt-3" style="display: none;">
-                                    <button class="btn btn-warning btn-sm" id="downloadSkippedBtn">
-                                        <i class="fas fa-download me-2"></i>
-                                        Download Skipped Records Report
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Upload Catalog CSV</label>
+                                        <input type="file" class="form-control catalog-file-input" id="catalogCsvInput" accept=".csv">
+                                        <div class="form-text">
+                                            Maximum file size: 10MB. Maximum rows: 5,000.
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary" id="uploadCatalogBtn" disabled>
+                                        <i class="fas fa-upload me-2"></i>
+                                        Upload Catalogs
                                     </button>
+                                    
+                                    <!-- Catalog Progress -->
+                                    <div id="catalogUploadProgress" class="mt-3" style="display: none;">
+                                        <div class="text-center">
+                                            <div class="spinner-border spinner-border-sm text-primary mb-2" role="status">
+                                                <span class="visually-hidden">Processing...</span>
+                                            </div>
+                                            <p class="mb-0 text-muted">Processing catalogs...</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Catalog Results -->
+                                    <div id="catalogResults" class="mt-3" style="display: none;">
+                                        <!-- Catalog Success Alert -->
+                                        <div id="catalogSuccessAlert" class="alert alert-success alert-sm" style="display: none;">
+                                            <small>
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                <span id="catalogSuccessMessage"></span>
+                                            </small>
+                                        </div>
+                                        
+                                        <!-- Catalog Error Alert -->
+                                        <div id="catalogErrorAlert" class="alert alert-danger alert-sm" style="display: none;">
+                                            <small>
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                <span id="catalogErrorMessage"></span>
+                                            </small>
+                                        </div>
+                                        
+                                        <!-- Catalog Summary -->
+                                        <div id="catalogSummaryContainer" style="display: none; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 0.9rem;">
+                                            <strong>Summary:</strong>
+                                            <div id="catalogSummaryText"></div>
+                                            
+                                            <!-- Download Catalog Skipped Report -->
+                                            <div id="catalogSkippedSection" class="mt-2" style="display: none;">
+                                                <button class="btn btn-warning btn-sm" id="downloadCatalogSkippedBtn">
+                                                    <i class="fas fa-download me-1"></i>
+                                                    Skipped Report
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                        
+                        <!-- Lot Upload Section -->
+                        <div class="card mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-tag me-2"></i>
+                                        Lot Upload
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Upload Lot CSV</label>
+                                        <input type="file" class="form-control lot-file-input" id="lotCsvInput" accept=".csv">
+                                        <div class="form-text">
+                                            Maximum file size: 10MB. Maximum rows: 5,000.
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-success" id="uploadLotBtn" disabled>
+                                        <i class="fas fa-upload me-2"></i>
+                                        Upload Lots
+                                    </button>
+                                    
+                                    <!-- Lot Progress -->
+                                    <div id="lotUploadProgress" class="mt-3" style="display: none;">
+                                        <div class="text-center">
+                                            <div class="spinner-border spinner-border-sm text-success mb-2" role="status">
+                                                <span class="visually-hidden">Processing...</span>
+                                            </div>
+                                            <p class="mb-0 text-muted">Processing lots...</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Lot Results -->
+                                    <div id="lotResults" class="mt-3" style="display: none;">
+                                        <!-- Lot Success Alert -->
+                                        <div id="lotSuccessAlert" class="alert alert-success alert-sm" style="display: none;">
+                                            <small>
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                <span id="lotSuccessMessage"></span>
+                                            </small>
+                                        </div>
+                                        
+                                        <!-- Lot Error Alert -->
+                                        <div id="lotErrorAlert" class="alert alert-danger alert-sm" style="display: none;">
+                                            <small>
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                <span id="lotErrorMessage"></span>
+                                            </small>
+                                        </div>
+                                        
+                                        <!-- Lot Summary -->
+                                        <div id="lotSummaryContainer" style="display: none; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 0.9rem;">
+                                            <strong>Summary:</strong>
+                                            <div id="lotSummaryText"></div>
+                                            
+                                            <!-- Download Lot Skipped Report -->
+                                            <div id="lotSkippedSection" class="mt-2" style="display: none;">
+                                                <button class="btn btn-warning btn-sm" id="downloadLotSkippedBtn">
+                                                    <i class="fas fa-download me-1"></i>
+                                                    Skipped Report
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <!-- </div> -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="newUploadBtn" style="display: none;">
-                        <i class="fas fa-redo me-2"></i>
-                        New Upload
-                    </button>
                 </div>
             </div>
         </div>
@@ -1947,8 +2015,8 @@ function updateButtonStates() {
         }
 
         // Bulk Upload functionality
-        let uploadResults = null;
-        let currentUploadType = 'catalog';
+        let catalogUploadResults = null;
+        let lotUploadResults = null;
 
         // Initialize bulk upload event listeners
         function initializeBulkUpload() {
@@ -1957,98 +2025,131 @@ function updateButtonStates() {
                 openBulkUploadModal();
             });
             
-            // Upload type radio buttons
-            document.querySelectorAll('input[name="uploadType"]').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    currentUploadType = this.value;
-                    updateTemplateType();
-                });
+            // Download templates button
+            document.getElementById('downloadTemplatesBtn').addEventListener('click', function() {
+                downloadBothTemplates();
             });
             
-            // Download template button
-            document.getElementById('downloadTemplateBtn').addEventListener('click', function() {
-                downloadTemplate();
+            // Catalog file input
+            document.getElementById('catalogCsvInput').addEventListener('change', function() {
+                handleCatalogFileSelect(this);
             });
             
-            // File input change
-            document.getElementById('csvFileInput').addEventListener('change', function() {
-                handleFileSelect(this);
+            // Lot file input
+            document.getElementById('lotCsvInput').addEventListener('change', function() {
+                handleLotFileSelect(this);
             });
             
-            // Upload button
-            document.getElementById('uploadBtn').addEventListener('click', function() {
-                uploadFile();
+            // Upload buttons
+            document.getElementById('uploadCatalogBtn').addEventListener('click', function() {
+                uploadCatalogFile();
             });
             
-            // New upload button
-            document.getElementById('newUploadBtn').addEventListener('click', function() {
-                resetUploadModal();
+            document.getElementById('uploadLotBtn').addEventListener('click', function() {
+                uploadLotFile();
             });
             
-            // Download skipped report button
-            document.getElementById('downloadSkippedBtn').addEventListener('click', function() {
-                downloadSkippedReport();
+            // Download skipped report buttons
+            document.getElementById('downloadCatalogSkippedBtn').addEventListener('click', function() {
+                downloadCatalogSkippedReport();
+            });
+            
+            document.getElementById('downloadLotSkippedBtn').addEventListener('click', function() {
+                downloadLotSkippedReport();
+            });
+            
+            // Reset on modal close
+            document.getElementById('bulkUploadModal').addEventListener('hidden.bs.modal', function() {
+                resetBulkUploadModal();
             });
         }
 
         // Open bulk upload modal
         function openBulkUploadModal() {
-            resetUploadModal();
+            resetBulkUploadModal();
             const modal = new bootstrap.Modal(document.getElementById('bulkUploadModal'));
             modal.show();
         }
 
-        // Update template type text
-        function updateTemplateType() {
-            const typeText = currentUploadType === 'catalog' ? 'Catalog' : 'Lot';
-            document.getElementById('templateTypeText').textContent = typeText;
-        }
-
-        // Download template
-        function downloadTemplate() {
-            const filename = currentUploadType === 'catalog' ? 'catalogs_template.csv' : 'lots_template.csv';
+        // Download both templates
+        function downloadBothTemplates() {
+            // Download catalog template
+            const catalogLink = document.createElement('a');
+            catalogLink.href = 'upload_templates/catalogs_template.csv';
+            catalogLink.download = 'catalogs_template.csv';
+            document.body.appendChild(catalogLink);
+            catalogLink.click();
+            document.body.removeChild(catalogLink);
             
-            // Create a temporary link to download the template
-            const link = document.createElement('a');
-            link.href = 'upload_templates/' + filename; // Templates are in the upload_templates directory
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Small delay before downloading the second file
+            setTimeout(() => {
+                // Download lot template
+                const lotLink = document.createElement('a');
+                lotLink.href = 'upload_templates/lots_template.csv';
+                lotLink.download = 'lots_template.csv';
+                document.body.appendChild(lotLink);
+                lotLink.click();
+                document.body.removeChild(lotLink);
+            }, 500);
         }
 
-        // Handle file selection
-        function handleFileSelect(input) {
+        // Handle catalog file selection
+        function handleCatalogFileSelect(input) {
             const file = input.files[0];
-            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadBtn = document.getElementById('uploadCatalogBtn');
             
             if (file) {
-                // Validate file type
-                if (!file.name.toLowerCase().endsWith('.csv')) {
-                    alert('Please select a CSV file');
+                // Validate file
+                if (!validateCSVFile(file)) {
                     input.value = '';
                     uploadBtn.disabled = true;
                     return;
                 }
-                
-                // Validate file size (10MB max)
-                const maxSize = 10 * 1024 * 1024; // 10MB
-                if (file.size > maxSize) {
-                    alert('File size exceeds 10MB limit');
-                    input.value = '';
-                    uploadBtn.disabled = true;
-                    return;
-                }
-                
                 uploadBtn.disabled = false;
             } else {
                 uploadBtn.disabled = true;
             }
         }
 
-        // Upload file
-        function uploadFile() {
-            const fileInput = document.getElementById('csvFileInput');
+        // Handle lot file selection
+        function handleLotFileSelect(input) {
+            const file = input.files[0];
+            const uploadBtn = document.getElementById('uploadLotBtn');
+            
+            if (file) {
+                // Validate file
+                if (!validateCSVFile(file)) {
+                    input.value = '';
+                    uploadBtn.disabled = true;
+                    return;
+                }
+                uploadBtn.disabled = false;
+            } else {
+                uploadBtn.disabled = true;
+            }
+        }
+
+        // Validate CSV file
+        function validateCSVFile(file) {
+            // Check file type
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert('Please select a CSV file');
+                return false;
+            }
+            
+            // Check file size (10MB max)
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                alert('File size exceeds 10MB limit');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Upload catalog file
+        function uploadCatalogFile() {
+            const fileInput = document.getElementById('catalogCsvInput');
             const file = fileInput.files[0];
             
             if (!file) {
@@ -2056,15 +2157,15 @@ function updateButtonStates() {
                 return;
             }
             
-            // Show progress, hide other sections
-            document.getElementById('uploadProgress').style.display = 'block';
-            document.getElementById('uploadResults').style.display = 'none';
-            document.getElementById('uploadBtn').disabled = true;
+            // Show progress, hide results
+            document.getElementById('catalogUploadProgress').style.display = 'block';
+            document.getElementById('catalogResults').style.display = 'none';
+            document.getElementById('uploadCatalogBtn').disabled = true;
             
             // Prepare form data
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('uploadType', currentUploadType);
+            formData.append('uploadType', 'catalog');
             
             // Make API call
             fetch('api/bulk_upload.php', {
@@ -2073,87 +2174,158 @@ function updateButtonStates() {
             })
             .then(response => response.json())
             .then(data => {
-                // Show debug info if available
-                if (data.debug) {
-                    console.log('Debug messages:', data.debug);
-                }
-                displayUploadResults(data);
+                displayCatalogUploadResults(data);
             })
             .catch(error => {
-                console.error('Upload error:', error);
-                displayUploadError('An unexpected error occurred during upload. Please try again.');
+                console.error('Catalog upload error:', error);
+                displayCatalogUploadError('An unexpected error occurred during catalog upload.');
             })
             .finally(() => {
-                document.getElementById('uploadProgress').style.display = 'none';
+                document.getElementById('catalogUploadProgress').style.display = 'none';
+                document.getElementById('uploadCatalogBtn').disabled = false;
             });
         }
 
-        // Display upload results
-        function displayUploadResults(data) {
-            uploadResults = data;
+        // Upload lot file
+        function uploadLotFile() {
+            const fileInput = document.getElementById('lotCsvInput');
+            const file = fileInput.files[0];
             
-            const resultsSection = document.getElementById('uploadResults');
+            if (!file) {
+                alert('Please select a file to upload');
+                return;
+            }
+            
+            // Show progress, hide results
+            document.getElementById('lotUploadProgress').style.display = 'block';
+            document.getElementById('lotResults').style.display = 'none';
+            document.getElementById('uploadLotBtn').disabled = true;
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('uploadType', 'lot');
+            
+            // Make API call
+            fetch('api/bulk_upload.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayLotUploadResults(data);
+            })
+            .catch(error => {
+                console.error('Lot upload error:', error);
+                displayLotUploadError('An unexpected error occurred during lot upload.');
+            })
+            .finally(() => {
+                document.getElementById('lotUploadProgress').style.display = 'none';
+                document.getElementById('uploadLotBtn').disabled = false;
+            });
+        }
+
+        // Display catalog upload results
+        function displayCatalogUploadResults(data) {
+            catalogUploadResults = data;
+            
+            const resultsSection = document.getElementById('catalogResults');
             resultsSection.style.display = 'block';
             
             if (data.success) {
                 // Show success message
-                const successAlert = document.getElementById('successAlert');
-                const successMessage = document.getElementById('successMessage');
+                const successAlert = document.getElementById('catalogSuccessAlert');
+                const successMessage = document.getElementById('catalogSuccessMessage');
                 
                 if (data.status === 'success') {
-                    successMessage.textContent = `All ${data.summary.totalRows} records were processed successfully.`;
+                    successMessage.textContent = `All ${data.summary.totalRows} catalogs processed successfully.`;
                 } else if (data.status === 'partial') {
-                    successMessage.textContent = `Processing completed with some records skipped.`;
+                    successMessage.textContent = `Processing completed with some catalogs skipped.`;
                 }
                 
                 successAlert.style.display = 'block';
-                document.getElementById('errorAlert').style.display = 'none';
+                document.getElementById('catalogErrorAlert').style.display = 'none';
                 
                 // Show summary
-                displaySummary(data.summary);
+                displayCatalogSummary(data.summary);
                 
-                // Show new upload button
-                document.getElementById('newUploadBtn').style.display = 'inline-block';
+                // Reload catalogs
+                loadCatalogs();
                 
-                // Reload the appropriate data
-                if (currentUploadType === 'catalog') {
-                    loadCatalogs();
-                } else {
-                    // If lots were uploaded and a catalog is selected, reload lots
-                    if (currentCatalogNumber) {
-                        loadLots(currentCatalogNumber);
-                    }
+            } else {
+                // Show error message
+                displayCatalogUploadError(data.errorMessage || 'Catalog upload failed.');
+            }
+        }
+
+        // Display lot upload results
+        function displayLotUploadResults(data) {
+            lotUploadResults = data;
+            
+            const resultsSection = document.getElementById('lotResults');
+            resultsSection.style.display = 'block';
+            
+            if (data.success) {
+                // Show success message
+                const successAlert = document.getElementById('lotSuccessAlert');
+                const successMessage = document.getElementById('lotSuccessMessage');
+                
+                if (data.status === 'success') {
+                    successMessage.textContent = `All ${data.summary.totalRows} lots processed successfully.`;
+                } else if (data.status === 'partial') {
+                    successMessage.textContent = `Processing completed with some lots skipped.`;
+                }
+                
+                successAlert.style.display = 'block';
+                document.getElementById('lotErrorAlert').style.display = 'none';
+                
+                // Show summary
+                displayLotSummary(data.summary);
+                
+                // Reload lots if a catalog is selected
+                if (currentCatalogNumber) {
+                    loadLots(currentCatalogNumber);
                 }
                 
             } else {
                 // Show error message
-                displayUploadError(data.errorMessage || 'Upload failed. Please check your file and try again.');
+                displayLotUploadError(data.errorMessage || 'Lot upload failed.');
             }
         }
 
-        // Display upload error
-        function displayUploadError(message) {
-            const resultsSection = document.getElementById('uploadResults');
+        // Display catalog upload error
+        function displayCatalogUploadError(message) {
+            const resultsSection = document.getElementById('catalogResults');
             resultsSection.style.display = 'block';
             
-            const errorAlert = document.getElementById('errorAlert');
-            const errorMessage = document.getElementById('errorMessage');
+            const errorAlert = document.getElementById('catalogErrorAlert');
+            const errorMessage = document.getElementById('catalogErrorMessage');
             
             errorMessage.textContent = message;
             errorAlert.style.display = 'block';
-            document.getElementById('successAlert').style.display = 'none';
-            document.getElementById('summaryContainer').style.display = 'none';
-            
-            // Show new upload button
-            document.getElementById('newUploadBtn').style.display = 'inline-block';
+            document.getElementById('catalogSuccessAlert').style.display = 'none';
+            document.getElementById('catalogSummaryContainer').style.display = 'none';
         }
 
-        // Display summary
-        function displaySummary(summary) {
-            const summaryContainer = document.getElementById('summaryContainer');
-            const summaryText = document.getElementById('summaryText');
+        // Display lot upload error
+        function displayLotUploadError(message) {
+            const resultsSection = document.getElementById('lotResults');
+            resultsSection.style.display = 'block';
             
-            // Build summary text with colored lines
+            const errorAlert = document.getElementById('lotErrorAlert');
+            const errorMessage = document.getElementById('lotErrorMessage');
+            
+            errorMessage.textContent = message;
+            errorAlert.style.display = 'block';
+            document.getElementById('lotSuccessAlert').style.display = 'none';
+            document.getElementById('lotSummaryContainer').style.display = 'none';
+        }
+
+        // Display catalog summary
+        function displayCatalogSummary(summary) {
+            const summaryContainer = document.getElementById('catalogSummaryContainer');
+            const summaryText = document.getElementById('catalogSummaryText');
+            
             let text = `<div style="color: #0066cc;">Total rows: ${summary.totalRows || 0}</div>`;
             text += `<div style="color: #28a745;">Successfully Added: ${summary.successCount || 0}</div>`;
             text += `<div style="color: #ff9900;">Skipped (Duplicates): ${summary.skippedCount || 0}</div>`;
@@ -2163,50 +2335,90 @@ function updateButtonStates() {
             
             // Show download button if there are skipped records
             if (summary.skippedCount > 0 && summary.skippedReportPath) {
-                document.getElementById('skippedReportSection').style.display = 'block';
+                document.getElementById('catalogSkippedSection').style.display = 'block';
             } else {
-                document.getElementById('skippedReportSection').style.display = 'none';
+                document.getElementById('catalogSkippedSection').style.display = 'none';
             }
         }
 
-        // Download skipped report
-        function downloadSkippedReport() {
-            if (!uploadResults || !uploadResults.summary || !uploadResults.summary.skippedReportPath) {
-                alert('No skipped records report available');
+        // Display lot summary
+        function displayLotSummary(summary) {
+            const summaryContainer = document.getElementById('lotSummaryContainer');
+            const summaryText = document.getElementById('lotSummaryText');
+            
+            let text = `<div style="color: #0066cc;">Total rows: ${summary.totalRows || 0}</div>`;
+            text += `<div style="color: #28a745;">Successfully Added: ${summary.successCount || 0}</div>`;
+            text += `<div style="color: #ff9900;">Skipped (Duplicates): ${summary.skippedCount || 0}</div>`;
+            
+            summaryText.innerHTML = text;
+            summaryContainer.style.display = 'block';
+            
+            // Show download button if there are skipped records
+            if (summary.skippedCount > 0 && summary.skippedReportPath) {
+                document.getElementById('lotSkippedSection').style.display = 'block';
+            } else {
+                document.getElementById('lotSkippedSection').style.display = 'none';
+            }
+        }
+
+        // Download catalog skipped report
+        function downloadCatalogSkippedReport() {
+            if (!catalogUploadResults || !catalogUploadResults.summary || !catalogUploadResults.summary.skippedReportPath) {
+                alert('No catalog skipped records report available');
                 return;
             }
             
-            // Create download link
             const link = document.createElement('a');
-            link.href = 'api/download_report.php?file=' + encodeURIComponent(uploadResults.summary.skippedReportPath);
-            link.download = 'skipped_records_report.csv';
+            link.href = 'api/download_report.php?file=' + encodeURIComponent(catalogUploadResults.summary.skippedReportPath);
+            link.download = 'catalog_skipped_records.csv';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
-        // Reset upload modal
-        function resetUploadModal() {
-            // Reset to catalog upload
-            document.getElementById('uploadCatalogs').checked = true;
-            currentUploadType = 'catalog';
-            updateTemplateType();
+        // Download lot skipped report
+        function downloadLotSkippedReport() {
+            if (!lotUploadResults || !lotUploadResults.summary || !lotUploadResults.summary.skippedReportPath) {
+                alert('No lot skipped records report available');
+                return;
+            }
             
-            // Clear file input
-            document.getElementById('csvFileInput').value = '';
-            document.getElementById('uploadBtn').disabled = true;
+            const link = document.createElement('a');
+            link.href = 'api/download_report.php?file=' + encodeURIComponent(lotUploadResults.summary.skippedReportPath);
+            link.download = 'lot_skipped_records.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Reset bulk upload modal
+        function resetBulkUploadModal() {
+            // Clear file inputs
+            document.getElementById('catalogCsvInput').value = '';
+            document.getElementById('lotCsvInput').value = '';
             
-            // Hide all results
-            document.getElementById('uploadProgress').style.display = 'none';
-            document.getElementById('uploadResults').style.display = 'none';
-            document.getElementById('successAlert').style.display = 'none';
-            document.getElementById('errorAlert').style.display = 'none';
-            document.getElementById('summaryContainer').style.display = 'none';
-            document.getElementById('skippedReportSection').style.display = 'none';
-            document.getElementById('newUploadBtn').style.display = 'none';
+            // Disable upload buttons
+            document.getElementById('uploadCatalogBtn').disabled = true;
+            document.getElementById('uploadLotBtn').disabled = true;
+            
+            // Hide all progress and results
+            document.getElementById('catalogUploadProgress').style.display = 'none';
+            document.getElementById('catalogResults').style.display = 'none';
+            document.getElementById('catalogSuccessAlert').style.display = 'none';
+            document.getElementById('catalogErrorAlert').style.display = 'none';
+            document.getElementById('catalogSummaryContainer').style.display = 'none';
+            document.getElementById('catalogSkippedSection').style.display = 'none';
+            
+            document.getElementById('lotUploadProgress').style.display = 'none';
+            document.getElementById('lotResults').style.display = 'none';
+            document.getElementById('lotSuccessAlert').style.display = 'none';
+            document.getElementById('lotErrorAlert').style.display = 'none';
+            document.getElementById('lotSummaryContainer').style.display = 'none';
+            document.getElementById('lotSkippedSection').style.display = 'none';
             
             // Clear results
-            uploadResults = null;
+            catalogUploadResults = null;
+            lotUploadResults = null;
         }
 
     </script>
