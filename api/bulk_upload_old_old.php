@@ -7,12 +7,6 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 require_once '../config/database.php';
 require_once '../config/templates_config.php';
-require_once '../vendor/autoload.php';
-
-// PHPSpreadsheet imports
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 // Maximum allowed rows
 define('MAX_ROWS', 5000);
@@ -50,22 +44,26 @@ try {
     $uploadedFile = $_FILES['file'];
     $fileName = $uploadedFile['name'];
     
-    // Validate file type - CHANGED TO EXCEL
-    if (!preg_match('/\.(xlsx|xls)$/i', $fileName)) {
-        throw new Exception('Invalid file type. Only Excel files are allowed');
+    // Validate file type
+    if (!preg_match('/\.csv$/i', $fileName)) {
+        throw new Exception('Invalid file type. Only CSV files are allowed');
     }
     
-    // Read Excel file - REPLACED CSV READING
-    try {
-        $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
-        $worksheet = $spreadsheet->getActiveSheet();
-        $rows = $worksheet->toArray(null, true, true, false);
-    } catch (Exception $e) {
-        throw new Exception('Failed to read Excel file: ' . $e->getMessage());
+    // Open CSV file
+    $handle = fopen($uploadedFile['tmp_name'], 'r');
+    if ($handle === false) {
+        throw new Exception('Failed to open uploaded file');
     }
+    
+    // Read all rows into array first to count them
+    $rows = [];
+    while (($data = fgetcsv($handle)) !== false) {
+        $rows[] = $data;
+    }
+    fclose($handle);
     
     if (count($rows) < 2) {
-        throw new Exception('Excel file is empty or contains only headers');
+        throw new Exception('CSV file is empty or contains only headers');
     }
     
     // Check row limit
@@ -84,7 +82,7 @@ try {
     // Validate headers
     $expectedHeaders = $uploadType === 'catalog' ? CATALOG_HEADERS : LOT_HEADERS;
     if ($headers !== $expectedHeaders) {
-        throw new Exception('Invalid Excel headers. Please use the provided template');
+        throw new Exception('Invalid CSV headers. Please use the provided template');
     }
     
     // Process data
@@ -190,11 +188,6 @@ function processCatalogUpload($conn, $rows, $headers) {
     // Get template fields mapping
     $fieldMapping = getFieldMappingForTemplates();
     
-    // Define all possible catalog fields (excluding the basic 3)
-    $allCatalogFields = ['activity', 'cas', 'detail', 'formulation', 'observedMolMass', 
-                         'predictedMolMass', 'predictedNTerminal', 'reconstitution', 
-                         'shipping', 'source', 'stability'];
-    
     // Process each row
     for ($i = 1; $i < count($rows); $i++) {
         $row = $rows[$i];
@@ -212,19 +205,27 @@ function processCatalogUpload($conn, $rows, $headers) {
         $data = array_combine($headers, $row);
         $data = array_map('trim', $data);
         
-        // STEP 1: Validate basic required fields
+        // Validate required fields
         if (empty($data['templateCode']) || empty($data['catalogNumber']) || empty($data['catalogName'])) {
             throw new Exception("Row $i: Missing required field (templateCode, catalogNumber, or catalogName)");
         }
         
-        // STEP 2: Validate template code exists
+        // Validate template code
         if (!isset(TEMPLATES[$data['templateCode']])) {
             throw new Exception("Row $i: Invalid template code '{$data['templateCode']}'");
         }
         
         $templateCode = $data['templateCode'];
         
-        // STEP 3: Check if catalog already exists (SKIP if exists)
+        // Check if template fields are filled
+        $requiredFields = $fieldMapping[$templateCode]['catalog'] ?? [];
+        foreach ($requiredFields as $fieldName => $dbField) {
+            if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
+                throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
+            }
+        }
+        
+        // Check if catalog already exists
         $checkSql = "SELECT id FROM catalogs WHERE catalogNumber = ?";
         $checkStmt = $conn->prepare($checkSql);
         $checkStmt->bind_param("s", $data['catalogNumber']);
@@ -245,27 +246,7 @@ function processCatalogUpload($conn, $rows, $headers) {
         }
         $checkStmt->close();
         
-        // STEP 4: Validate EXACTLY the required fields for this template
-        $requiredFields = $fieldMapping[$templateCode]['catalog'] ?? [];
-        $requiredDbFields = array_values($requiredFields);
-        
-        // Check for missing required fields
-        foreach ($requiredFields as $fieldName => $dbField) {
-            if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
-                throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
-            }
-        }
-        
-        // Check for extra fields (fields that are filled but not required for this template)
-        foreach ($allCatalogFields as $field) {
-            if (!empty($data[$field]) && !in_array($field, $requiredDbFields)) {
-                // Find the friendly name for this field
-                $friendlyName = array_search($field, array_merge(...array_values($fieldMapping[$templateCode]))) ?: $field;
-                throw new Exception("Row $i: Extra field '$field' not allowed for template '$templateCode'. Only allowed fields are: " . implode(', ', array_keys($requiredFields)));
-            }
-        }
-        
-        // STEP 5: Insert catalog
+        // Insert catalog
         $insertSql = "INSERT INTO catalogs (catalogNumber, catalogName, templateCode";
         $values = [$data['catalogNumber'], $data['catalogName'], $templateCode];
         $types = "sss";
@@ -309,9 +290,6 @@ function processLotUpload($conn, $rows, $headers) {
     // Get template fields mapping
     $fieldMapping = getFieldMappingForTemplates();
     
-    // Define all possible lot fields (excluding the basic 3)
-    $allLotFields = ['activity', 'concentration', 'purity', 'formulation'];
-    
     // Process each row
     for ($i = 1; $i < count($rows); $i++) {
         $row = $rows[$i];
@@ -329,19 +307,19 @@ function processLotUpload($conn, $rows, $headers) {
         $data = array_combine($headers, $row);
         $data = array_map('trim', $data);
         
-        // STEP 1: Validate basic required fields
+        // Validate required fields
         if (empty($data['templateCode']) || empty($data['catalogNumber']) || empty($data['lotNumber'])) {
             throw new Exception("Row $i: Missing required field (templateCode, catalogNumber, or lotNumber)");
         }
         
-        // STEP 2: Validate template code exists
+        // Validate template code
         if (!isset(TEMPLATES[$data['templateCode']])) {
             throw new Exception("Row $i: Invalid template code '{$data['templateCode']}'");
         }
         
         $templateCode = $data['templateCode'];
         
-        // STEP 3: Check if catalog exists (SKIP if not exists)
+        // Check if catalog exists
         $catalogSql = "SELECT id, templateCode FROM catalogs WHERE catalogNumber = ?";
         $catalogStmt = $conn->prepare($catalogSql);
         $catalogStmt->bind_param("s", $data['catalogNumber']);
@@ -364,12 +342,20 @@ function processLotUpload($conn, $rows, $headers) {
         $catalog = $catalogResult->fetch_assoc();
         $catalogStmt->close();
         
-        // STEP 4: Check template match (STOP if mismatch)
+        // Check if template codes match
         if ($catalog['templateCode'] !== $templateCode) {
             throw new Exception("Row $i: Template code mismatch. Catalog has template '{$catalog['templateCode']}' but lot specifies '{$templateCode}'");
         }
         
-        // STEP 5: Check if lot already exists (SKIP if exists)
+        // Check if template fields are filled
+        $requiredFields = $fieldMapping[$templateCode]['lot'] ?? [];
+        foreach ($requiredFields as $fieldName => $dbField) {
+            if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
+                throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
+            }
+        }
+        
+        // Check if lot already exists
         $checkSql = "SELECT id FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
         $checkStmt = $conn->prepare($checkSql);
         $checkStmt->bind_param("ss", $data['catalogNumber'], $data['lotNumber']);
@@ -390,30 +376,7 @@ function processLotUpload($conn, $rows, $headers) {
         }
         $checkStmt->close();
         
-        // STEP 6: Validate EXACTLY the required fields for this template
-        $requiredFields = $fieldMapping[$templateCode]['lot'] ?? [];
-        $requiredDbFields = array_values($requiredFields);
-        
-        // Check for missing required fields
-        foreach ($requiredFields as $fieldName => $dbField) {
-            if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
-                throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
-            }
-        }
-        
-        // Check for extra fields (fields that are filled but not required for this template)
-        foreach ($allLotFields as $field) {
-            if (!empty($data[$field]) && !in_array($field, $requiredDbFields)) {
-                if (empty($requiredFields)) {
-                    // Special message for templates with no lot fields like RGT
-                    throw new Exception("Row $i: Template '$templateCode' does not allow any lot-specific fields. Only templateCode, catalogNumber, and lotNumber should be provided");
-                } else {
-                    throw new Exception("Row $i: Extra field '$field' not allowed for template '$templateCode'. Only allowed fields are: " . implode(', ', array_keys($requiredFields)));
-                }
-            }
-        }
-        
-        // STEP 7: Insert lot
+        // Insert lot
         $insertSql = "INSERT INTO lots (catalogNumber, lotNumber, templateCode";
         $values = [$data['catalogNumber'], $data['lotNumber'], $templateCode];
         $types = "sss";
@@ -470,7 +433,7 @@ function getFieldMappingForTemplates() {
 }
 
 /**
- * Generate skipped records report - Keep only latest file for each type
+ * Generate skipped records report
  */
 function generateSkippedReport($skippedRecords, $uploadType) {
     // Create reports directory if it doesn't exist
@@ -479,50 +442,28 @@ function generateSkippedReport($skippedRecords, $uploadType) {
         mkdir($reportsDir, 0755, true);
     }
     
-    // Delete any existing skipped file for this type
-    $existingFiles = glob($reportsDir . '/skipped_' . $uploadType . '_*.xlsx');
-    foreach ($existingFiles as $file) {
-        if (is_file($file)) {
-            @unlink($file);
-        }
-    }
-    
-    // Generate filename with timestamp
+    // Generate filename
     $timestamp = date('Ymd_His');
-    $filename = "skipped_{$uploadType}_{$timestamp}.xlsx";
+    $filename = "skipped_{$uploadType}_{$timestamp}.csv";
     $filepath = $reportsDir . '/' . $filename;
     
-    // Create new spreadsheet
-    $spreadsheet = new Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
+    // Create CSV content
+    $fp = fopen($filepath, 'w');
     
-    // Set headers
-    $headers = ['row_number', 'catalog_number', 'lot_number', 'reason'];
-    $sheet->fromArray($headers, null, 'A1');
+    // Write headers
+    fputcsv($fp, ['row_number', 'catalog_number', 'lot_number', 'reason']);
     
-    // Style headers (optional)
-    $sheet->getStyle('A1:D1')->getFont()->setBold(true);
-    
-    // Add data
-    $rowNum = 2;
+    // Write data
     foreach ($skippedRecords as $record) {
-        $sheet->fromArray([
+        fputcsv($fp, [
             $record['row'],
             $record['catalogNumber'],
             $record['lotNumber'],
             $record['reason']
-        ], null, "A{$rowNum}");
-        $rowNum++;
+        ]);
     }
     
-    // Auto-size columns
-    foreach (range('A', 'D') as $col) {
-        $sheet->getColumnDimension($col)->setAutoSize(true);
-    }
-    
-    // Save Excel file
-    $writer = new Xlsx($spreadsheet);
-    $writer->save($filepath);
+    fclose($fp);
     
     return $filename;
 }

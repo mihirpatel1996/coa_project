@@ -25,13 +25,13 @@ try {
         throw new Exception('File not found');
     }
     
-    // Validate file is a CSV
-    if (!preg_match('/^skipped_.*\.csv$/i', $filename)) {
+    // Validate file is an Excel file
+    if (!preg_match('/^skipped_.*\.xlsx$/i', $filename)) {
         throw new Exception('Invalid file type');
     }
     
-    // Set headers for CSV download
-    header('Content-Type: text/csv');
+    // Set headers for Excel download
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Content-Length: ' . filesize($filepath));
     header('Cache-Control: no-cache, no-store, must-revalidate');
@@ -41,33 +41,9 @@ try {
     // Output file
     readfile($filepath);
     
-    // Optional: Clean up old report files (older than 7 days)
-    cleanupOldReports();
-    
 } catch (Exception $e) {
     http_response_code(404);
     header('Content-Type: text/plain');
     echo 'Error: ' . $e->getMessage();
-}
-
-/**
- * Clean up old report files
- */
-function cleanupOldReports() {
-    $reportsDir = '../reports';
-    $maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
-    
-    if (is_dir($reportsDir)) {
-        $files = glob($reportsDir . '/skipped_*.csv');
-        $now = time();
-        
-        foreach ($files as $file) {
-            if (is_file($file)) {
-                if ($now - filemtime($file) > $maxAge) {
-                    @unlink($file);
-                }
-            }
-        }
-    }
 }
 ?>

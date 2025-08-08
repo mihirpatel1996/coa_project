@@ -188,6 +188,11 @@ function processCatalogUpload($conn, $rows, $headers) {
     // Get template fields mapping
     $fieldMapping = getFieldMappingForTemplates();
     
+    // Define all possible catalog fields (excluding the basic 3)
+    $allCatalogFields = ['activity', 'cas', 'detail', 'formulation', 'observedMolMass', 
+                         'predictedMolMass', 'predictedNTerminal', 'reconstitution', 
+                         'shipping', 'source', 'stability'];
+    
     // Process each row
     for ($i = 1; $i < count($rows); $i++) {
         $row = $rows[$i];
@@ -205,27 +210,19 @@ function processCatalogUpload($conn, $rows, $headers) {
         $data = array_combine($headers, $row);
         $data = array_map('trim', $data);
         
-        // Validate required fields
+        // STEP 1: Validate basic required fields
         if (empty($data['templateCode']) || empty($data['catalogNumber']) || empty($data['catalogName'])) {
             throw new Exception("Row $i: Missing required field (templateCode, catalogNumber, or catalogName)");
         }
         
-        // Validate template code
+        // STEP 2: Validate template code exists
         if (!isset(TEMPLATES[$data['templateCode']])) {
             throw new Exception("Row $i: Invalid template code '{$data['templateCode']}'");
         }
         
         $templateCode = $data['templateCode'];
         
-        // Check if template fields are filled
-        $requiredFields = $fieldMapping[$templateCode]['catalog'] ?? [];
-        foreach ($requiredFields as $fieldName => $dbField) {
-            if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
-                throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
-            }
-        }
-        
-        // Check if catalog already exists
+        // STEP 3: Check if catalog already exists (SKIP if exists)
         $checkSql = "SELECT id FROM catalogs WHERE catalogNumber = ?";
         $checkStmt = $conn->prepare($checkSql);
         $checkStmt->bind_param("s", $data['catalogNumber']);
@@ -246,7 +243,27 @@ function processCatalogUpload($conn, $rows, $headers) {
         }
         $checkStmt->close();
         
-        // Insert catalog
+        // STEP 4: Validate EXACTLY the required fields for this template
+        $requiredFields = $fieldMapping[$templateCode]['catalog'] ?? [];
+        $requiredDbFields = array_values($requiredFields);
+        
+        // Check for missing required fields
+        foreach ($requiredFields as $fieldName => $dbField) {
+            if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
+                throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
+            }
+        }
+        
+        // Check for extra fields (fields that are filled but not required for this template)
+        foreach ($allCatalogFields as $field) {
+            if (!empty($data[$field]) && !in_array($field, $requiredDbFields)) {
+                // Find the friendly name for this field
+                $friendlyName = array_search($field, array_merge(...array_values($fieldMapping[$templateCode]))) ?: $field;
+                throw new Exception("Row $i: Extra field '$field' not allowed for template '$templateCode'. Only allowed fields are: " . implode(', ', array_keys($requiredFields)));
+            }
+        }
+        
+        // STEP 5: Insert catalog
         $insertSql = "INSERT INTO catalogs (catalogNumber, catalogName, templateCode";
         $values = [$data['catalogNumber'], $data['catalogName'], $templateCode];
         $types = "sss";
@@ -290,6 +307,9 @@ function processLotUpload($conn, $rows, $headers) {
     // Get template fields mapping
     $fieldMapping = getFieldMappingForTemplates();
     
+    // Define all possible lot fields (excluding the basic 3)
+    $allLotFields = ['activity', 'concentration', 'purity', 'formulation'];
+    
     // Process each row
     for ($i = 1; $i < count($rows); $i++) {
         $row = $rows[$i];
@@ -307,19 +327,19 @@ function processLotUpload($conn, $rows, $headers) {
         $data = array_combine($headers, $row);
         $data = array_map('trim', $data);
         
-        // Validate required fields
+        // STEP 1: Validate basic required fields
         if (empty($data['templateCode']) || empty($data['catalogNumber']) || empty($data['lotNumber'])) {
             throw new Exception("Row $i: Missing required field (templateCode, catalogNumber, or lotNumber)");
         }
         
-        // Validate template code
+        // STEP 2: Validate template code exists
         if (!isset(TEMPLATES[$data['templateCode']])) {
             throw new Exception("Row $i: Invalid template code '{$data['templateCode']}'");
         }
         
         $templateCode = $data['templateCode'];
         
-        // Check if catalog exists
+        // STEP 3: Check if catalog exists (SKIP if not exists)
         $catalogSql = "SELECT id, templateCode FROM catalogs WHERE catalogNumber = ?";
         $catalogStmt = $conn->prepare($catalogSql);
         $catalogStmt->bind_param("s", $data['catalogNumber']);
@@ -342,20 +362,12 @@ function processLotUpload($conn, $rows, $headers) {
         $catalog = $catalogResult->fetch_assoc();
         $catalogStmt->close();
         
-        // Check if template codes match
+        // STEP 4: Check template match (STOP if mismatch)
         if ($catalog['templateCode'] !== $templateCode) {
             throw new Exception("Row $i: Template code mismatch. Catalog has template '{$catalog['templateCode']}' but lot specifies '{$templateCode}'");
         }
         
-        // Check if template fields are filled
-        $requiredFields = $fieldMapping[$templateCode]['lot'] ?? [];
-        foreach ($requiredFields as $fieldName => $dbField) {
-            if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
-                throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
-            }
-        }
-        
-        // Check if lot already exists
+        // STEP 5: Check if lot already exists (SKIP if exists)
         $checkSql = "SELECT id FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
         $checkStmt = $conn->prepare($checkSql);
         $checkStmt->bind_param("ss", $data['catalogNumber'], $data['lotNumber']);
@@ -376,7 +388,30 @@ function processLotUpload($conn, $rows, $headers) {
         }
         $checkStmt->close();
         
-        // Insert lot
+        // STEP 6: Validate EXACTLY the required fields for this template
+        $requiredFields = $fieldMapping[$templateCode]['lot'] ?? [];
+        $requiredDbFields = array_values($requiredFields);
+        
+        // Check for missing required fields
+        foreach ($requiredFields as $fieldName => $dbField) {
+            if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
+                throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
+            }
+        }
+        
+        // Check for extra fields (fields that are filled but not required for this template)
+        foreach ($allLotFields as $field) {
+            if (!empty($data[$field]) && !in_array($field, $requiredDbFields)) {
+                if (empty($requiredFields)) {
+                    // Special message for templates with no lot fields like RGT
+                    throw new Exception("Row $i: Template '$templateCode' does not allow any lot-specific fields. Only templateCode, catalogNumber, and lotNumber should be provided");
+                } else {
+                    throw new Exception("Row $i: Extra field '$field' not allowed for template '$templateCode'. Only allowed fields are: " . implode(', ', array_keys($requiredFields)));
+                }
+            }
+        }
+        
+        // STEP 7: Insert lot
         $insertSql = "INSERT INTO lots (catalogNumber, lotNumber, templateCode";
         $values = [$data['catalogNumber'], $data['lotNumber'], $templateCode];
         $types = "sss";

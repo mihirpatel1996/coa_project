@@ -545,8 +545,8 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="mb-3">
-                                        <label class="form-label">Upload Catalog CSV</label>
-                                        <input type="file" class="form-control catalog-file-input" id="catalogCsvInput" accept=".csv">
+                                        <label class="form-label">Upload Catalog Excel</label>
+                                        <input type="file" class="form-control catalog-file-input" id="catalogExcelInput" accept=".xlsx,.xls">
                                         <div class="form-text">
                                             Maximum file size: 10MB. Maximum rows: 5,000.
                                         </div>
@@ -613,8 +613,8 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="mb-3">
-                                        <label class="form-label">Upload Lot CSV</label>
-                                        <input type="file" class="form-control lot-file-input" id="lotCsvInput" accept=".csv">
+                                        <label class="form-label">Upload Lot Excel</label>
+                                        <input type="file" class="form-control lot-file-input" id="lotExcelInput" accept=".xlsx,.xls">
                                         <div class="form-text">
                                             Maximum file size: 10MB. Maximum rows: 5,000.
                                         </div>
@@ -2031,12 +2031,12 @@ function updateButtonStates() {
             });
             
             // Catalog file input
-            document.getElementById('catalogCsvInput').addEventListener('change', function() {
+            document.getElementById('catalogExcelInput').addEventListener('change', function() {
                 handleCatalogFileSelect(this);
             });
             
             // Lot file input
-            document.getElementById('lotCsvInput').addEventListener('change', function() {
+            document.getElementById('lotExcelInput').addEventListener('change', function() {
                 handleLotFileSelect(this);
             });
             
@@ -2075,8 +2075,8 @@ function updateButtonStates() {
         function downloadBothTemplates() {
             // Download catalog template
             const catalogLink = document.createElement('a');
-            catalogLink.href = 'upload_templates/catalogs_template.csv';
-            catalogLink.download = 'catalogs_template.csv';
+            catalogLink.href = 'upload_templates/catalogs_template.xlsx';
+            catalogLink.download = 'catalogs_template.xlsx';
             document.body.appendChild(catalogLink);
             catalogLink.click();
             document.body.removeChild(catalogLink);
@@ -2085,8 +2085,8 @@ function updateButtonStates() {
             setTimeout(() => {
                 // Download lot template
                 const lotLink = document.createElement('a');
-                lotLink.href = 'upload_templates/lots_template.csv';
-                lotLink.download = 'lots_template.csv';
+                lotLink.href = 'upload_templates/lots_template.xlsx';
+                lotLink.download = 'lots_template.xlsx';
                 document.body.appendChild(lotLink);
                 lotLink.click();
                 document.body.removeChild(lotLink);
@@ -2100,7 +2100,7 @@ function updateButtonStates() {
             
             if (file) {
                 // Validate file
-                if (!validateCSVFile(file)) {
+                if (!validateExcelFile(file)) {
                     input.value = '';
                     uploadBtn.disabled = true;
                     return;
@@ -2118,7 +2118,7 @@ function updateButtonStates() {
             
             if (file) {
                 // Validate file
-                if (!validateCSVFile(file)) {
+                if (!validateExcelFile(file)) {
                     input.value = '';
                     uploadBtn.disabled = true;
                     return;
@@ -2129,27 +2129,25 @@ function updateButtonStates() {
             }
         }
 
-        // Validate CSV file
-        function validateCSVFile(file) {
-            // Check file type
-            if (!file.name.toLowerCase().endsWith('.csv')) {
-                alert('Please select a CSV file');
+        // Validate Excel file
+        function validateExcelFile(file) {
+            const fileName = file.name.toLowerCase();
+            if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+                alert('Please select an Excel file (.xlsx or .xls)');
                 return false;
             }
-            
             // Check file size (10MB max)
             const maxSize = 10 * 1024 * 1024; // 10MB
             if (file.size > maxSize) {
                 alert('File size exceeds 10MB limit');
                 return false;
             }
-            
             return true;
         }
 
         // Upload catalog file
         function uploadCatalogFile() {
-            const fileInput = document.getElementById('catalogCsvInput');
+            const fileInput = document.getElementById('catalogExcelInput');
             const file = fileInput.files[0];
             
             if (!file) {
@@ -2188,7 +2186,7 @@ function updateButtonStates() {
 
         // Upload lot file
         function uploadLotFile() {
-            const fileInput = document.getElementById('lotCsvInput');
+            const fileInput = document.getElementById('lotExcelInput');
             const file = fileInput.files[0];
             
             if (!file) {
@@ -2370,7 +2368,7 @@ function updateButtonStates() {
             
             const link = document.createElement('a');
             link.href = 'api/download_report.php?file=' + encodeURIComponent(catalogUploadResults.summary.skippedReportPath);
-            link.download = 'catalog_skipped_records.csv';
+            link.download = 'catalog_skipped_records.xlsx';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -2385,7 +2383,7 @@ function updateButtonStates() {
             
             const link = document.createElement('a');
             link.href = 'api/download_report.php?file=' + encodeURIComponent(lotUploadResults.summary.skippedReportPath);
-            link.download = 'lot_skipped_records.csv';
+            link.download = 'lot_skipped_records.xlsx';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -2394,8 +2392,8 @@ function updateButtonStates() {
         // Reset bulk upload modal
         function resetBulkUploadModal() {
             // Clear file inputs
-            document.getElementById('catalogCsvInput').value = '';
-            document.getElementById('lotCsvInput').value = '';
+            document.getElementById('catalogExcelInput').value = '';
+            document.getElementById('lotExcelInput').value = '';
             
             // Disable upload buttons
             document.getElementById('uploadCatalogBtn').disabled = true;
