@@ -74,7 +74,9 @@ try {
     }
     
     // Get headers (first row)
-    $headers = array_map('trim', $rows[0]);
+    $headers = array_map(function($value) {
+        return $value === null ? '' : trim($value);
+    }, $rows[0]);
     
     // Remove BOM from first header if present
     if (!empty($headers[0])) {
@@ -208,9 +210,13 @@ function processCatalogUpload($conn, $rows, $headers) {
         if (count($row) !== count($headers)) {
             throw new Exception("Row $i: Column count mismatch. Expected " . count($headers) . " columns, got " . count($row));
         }
-        
+
         $data = array_combine($headers, $row);
-        $data = array_map('trim', $data);
+        // Handle null values before trimming (PHP 8.1+ compatibility)
+        $data = array_map(function($value) {
+            return $value === null ? '' : trim($value);
+        }, $data);
+        
         
         // STEP 1: Validate basic required fields
         if (empty($data['templateCode']) || empty($data['catalogNumber']) || empty($data['catalogName'])) {
@@ -327,7 +333,10 @@ function processLotUpload($conn, $rows, $headers) {
         }
         
         $data = array_combine($headers, $row);
-        $data = array_map('trim', $data);
+        // Handle null values before trimming (PHP 8.1+ compatibility)
+        $data = array_map(function($value) {
+            return $value === null ? '' : trim($value);
+        }, $data);
         
         // STEP 1: Validate basic required fields
         if (empty($data['templateCode']) || empty($data['catalogNumber']) || empty($data['lotNumber'])) {
