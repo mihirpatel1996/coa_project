@@ -664,13 +664,20 @@
                                         <div id="lotSummaryContainer" style="display: none; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 0.9rem;">
                                             <strong>Summary:</strong>
                                             <div id="lotSummaryText"></div>
-                                            
-                                            <!-- Download Lot Skipped Report -->
-                                            <div id="lotSkippedSection" class="mt-2" style="display: none;">
-                                                <button class="btn btn-warning btn-sm" id="downloadLotSkippedBtn">
-                                                    <i class="fas fa-download me-1"></i>
-                                                    Skipped Report
-                                                </button>
+                                            <div class="mt-2">
+                                                <div id="lotCompleteSection" class="mb-2" style="display: none;">
+                                                    <button class="btn btn-primary btn-sm" id="downloadLotCompleteBtn">
+                                                        <i class="fas fa-download me-1"></i>
+                                                        Upload Report
+                                                    </button>
+                                                </div>
+                                                <!-- Download Lot Skipped Report -->
+                                                <div id="lotSkippedSection" class="mt-2" style="display: none;">
+                                                    <button class="btn btn-warning btn-sm" id="downloadLotSkippedBtn">
+                                                        <i class="fas fa-download me-1"></i>
+                                                        Skipped Report
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -817,7 +824,13 @@ function loadTemplateStructure(templateCode) {
         // Display template fields with disabled textareas
         function displayTemplateFields() {
             const sections = [1, 2, 3];
-            
+            const keyRowsMap = {
+                'Source': 2,
+                'Activity': 5,
+                'Formulation': 3,
+                'Stability & Storage': 4
+            };
+
             sections.forEach(sectionId => {
                 const container = document.getElementById(`keyValues_${sectionId}`);
                 container.innerHTML = '';
@@ -827,26 +840,49 @@ function loadTemplateStructure(templateCode) {
                         const keyName = key.key_name;
                         const keySource = key.key_source;
                         const sourceColor = keySource === 'catalog' ? 'red' : 'green';
-                        
-                        const kvHtml = `
-                            <div class="key-value-row" data-key="${keyName}" data-source="${keySource}">
-                                <div class="row align-items-center">
-                                    <div class="col-md-4">
-                                        <label class="form-label" style="color: ${sourceColor};">${keyName}</label>
-                                    </div>
-                                    <div class="col-md-8">
-                                        <textarea class="form-control bulk-edit-textarea" 
-                                                  id="textarea_${sectionId}_${keyName.replace(/\s+/g, '_')}" 
-                                                  rows="2" 
-                                                  style="height: 38px;" 
-                                                  placeholder="Enter ${keyName.toLowerCase()}..."
-                                                  disabled></textarea>
-                                        <div class="invalid-feedback"></div>
+                        const rows = keyRowsMap[keyName] || 2; // Default to 2 if not found
+                        if(keyName == 'Source' || keyName == 'Activity' || keyName == 'Formulation' || keyName == 'Stability & Storage'){
+                            const kvHtml = `
+                                <div class="key-value-row" data-key="${keyName}" data-source="${keySource}">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4">
+                                            <label class="form-label" style="color: ${sourceColor};">${keyName}</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <textarea class="form-control bulk-edit-textarea" 
+                                                    id="textarea_${sectionId}_${keyName.replace(/\s+/g, '_')}" 
+                                                    rows="${rows}" 
+                                                    placeholder="Enter ${keyName.toLowerCase()}..."
+                                                    disabled></textarea>
+                                            <div class="invalid-feedback"></div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        `;
-                        container.insertAdjacentHTML('beforeend', kvHtml);
+                            `;
+                            container.insertAdjacentHTML('beforeend', kvHtml);
+                        }
+                        else{
+                            const kvHtml = `
+                                <div class="key-value-row" data-key="${keyName}" data-source="${keySource}">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4">
+                                            <label class="form-label" style="color: ${sourceColor};">${keyName}</label>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <textarea class="form-control bulk-edit-textarea" 
+                                                    id="textarea_${sectionId}_${keyName.replace(/\s+/g, '_')}" 
+                                                    rows="2" 
+                                                    style="height: 38px;" 
+                                                    placeholder="Enter ${keyName.toLowerCase()}..."
+                                                    disabled></textarea>
+                                            <div class="invalid-feedback"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            container.insertAdjacentHTML('beforeend', kvHtml);
+                        }
+
                     });
                 } else {
                     container.innerHTML = `
@@ -2070,6 +2106,14 @@ function updateButtonStates() {
             document.getElementById('bulkUploadModal').addEventListener('hidden.bs.modal', function() {
                 resetBulkUploadModal();
             });
+
+            document.getElementById('downloadCatalogCompleteBtn').addEventListener('click', function() {
+                downloadCatalogCompleteReport();
+            });
+
+            document.getElementById('downloadLotCompleteBtn').addEventListener('click', function() {
+                downloadLotCompleteReport();
+            });
         }
 
         // Open bulk upload modal
@@ -2339,6 +2383,13 @@ function updateButtonStates() {
             summaryText.innerHTML = text;
             summaryContainer.style.display = 'block';
             
+            // Show complete report download button if available
+            if (summary.completeReportPath) {
+                document.getElementById('catalogCompleteSection').style.display = 'block';
+            } else {
+                document.getElementById('catalogCompleteSection').style.display = 'none';
+            }
+
             // Show download button if there are skipped records
             if (summary.skippedCount > 0 && summary.skippedReportPath) {
                 document.getElementById('catalogSkippedSection').style.display = 'block';
@@ -2358,6 +2409,13 @@ function updateButtonStates() {
             
             summaryText.innerHTML = text;
             summaryContainer.style.display = 'block';
+
+            // Show complete report download button if available
+            if (summary.completeReportPath) {
+                document.getElementById('lotCompleteSection').style.display = 'block';
+            } else {
+                document.getElementById('lotCompleteSection').style.display = 'none';
+            }
             
             // Show download button if there are skipped records
             if (summary.skippedCount > 0 && summary.skippedReportPath) {
@@ -2365,6 +2423,36 @@ function updateButtonStates() {
             } else {
                 document.getElementById('lotSkippedSection').style.display = 'none';
             }
+        }
+
+        // Download catalog complete report
+        function downloadCatalogCompleteReport() {
+            if (!catalogUploadResults || !catalogUploadResults.summary || !catalogUploadResults.summary.completeReportPath) {
+                alert('No catalog upload report available');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.href = 'api/download_report.php?file=' + encodeURIComponent(catalogUploadResults.summary.completeReportPath);
+            link.download = 'catalog_upload_report.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Download lot complete report
+        function downloadLotCompleteReport() {
+            if (!lotUploadResults || !lotUploadResults.summary || !lotUploadResults.summary.completeReportPath) {
+                alert('No lot upload report available');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.href = 'api/download_report.php?file=' + encodeURIComponent(lotUploadResults.summary.completeReportPath);
+            link.download = 'lot_upload_report.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // Download catalog skipped report
@@ -2421,6 +2509,8 @@ function updateButtonStates() {
             document.getElementById('lotErrorAlert').style.display = 'none';
             document.getElementById('lotSummaryContainer').style.display = 'none';
             document.getElementById('lotSkippedSection').style.display = 'none';
+            document.getElementById('catalogCompleteSection').style.display = 'none';
+            document.getElementById('lotCompleteSection').style.display = 'none';
             
             // Clear results
             catalogUploadResults = null;

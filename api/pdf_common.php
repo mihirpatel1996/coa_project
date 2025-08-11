@@ -24,7 +24,7 @@ function loadHTMLTemplate($templateFile = 'coa_template_new.html') {
  */
 function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) {
     $html = '';
-    
+    $html .= '<table style="border-collapse:collapse; width:100%;">';
     if (!isset(TEMPLATE_FIELDS[$templateCode][$sectionId])) {
         return '<p>No data available for this section.</p>';
     }
@@ -52,10 +52,16 @@ function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) 
         
         // Add field to HTML
         //$html .= '<p><strong>' . htmlspecialchars($field_name) . ':</strong> ' . $value . '</p>' . "\n";
-        // Use div with class instead of p tags
-        $html .= '<div class="field-item"><strong>' . htmlspecialchars($field_name) . ':</strong> ' . $value . '</div>' . "\n";
-    }
+        //// Use div with class instead of p tags
+        //$html .= '<div class="field-item"><strong>' . htmlspecialchars($field_name) . ':</strong> ' . $value . '</div>' . "\n";
 
+        // Add field to table row
+        $html .= '<tr>
+            <td style="width: 35%; vertical-align: top; font-weight: bold;">' . htmlspecialchars($field_name) . '</td>
+            <td style="width: 65%; vertical-align: top;">' . $value . '</td>
+        </tr>' . "\n";
+    }
+    $html .='</html>';
     return $html ?: '<p>No data available for this section.</p>';
 }
 
@@ -174,6 +180,18 @@ function getCoAData($catalog_number, $lot_number) {
  * Generate PDF object using template
  */
 function generatePDF($catalog_data, $lot_data, $template_code) {
+
+    // Custom TCPDF class with footer
+    class CustomTCPDF extends TCPDF {
+        public function Footer() {
+            $this->SetY(-15);
+            $this->SetFont('helvetica', '', 8);
+            $this->SetTextColor(51, 51, 51);
+            $footerText = "Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)   Website: www.sinobiological.com";
+            $this->Cell(0, 8, $footerText, 0, 0, 'C');
+        }
+    }
+
     // Load HTML template
     $html = loadHTMLTemplate('coa_template_new.html');
     
@@ -185,17 +203,18 @@ function generatePDF($catalog_data, $lot_data, $template_code) {
     
     // Set document information
     $pdf->SetCreator('CoA Generator');
-    $pdf->SetAuthor('SignalChem Biotech / Sino Biological');
+    $pdf->SetAuthor('Sino Biological');
     $pdf->SetTitle('Certificate of Analysis - ' . $catalog_data['catalogNumber']);
     $pdf->SetSubject('Certificate of Analysis');
     
     // Remove default header/footer
     $pdf->setPrintHeader(false);
-    $pdf->setPrintFooter(false);
+    $pdf->setPrintFooter(true);
     
     // Set margins (left, top, right)
     // $pdf->SetMargins(20, 15, 20);
     $pdf->SetMargins(15, 10, 15);
+    $pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
     $pdf->SetAutoPageBreak(TRUE, 20);
     
     // Set font
@@ -259,18 +278,18 @@ function formatFieldValue($field_name, $value) {
 function generateFilename($catalog_number, $lot_number) {
     if (!empty($lot_number)) {
         return sprintf(
-            'CoA_%s_%s_%s.pdf',
+            '%s_%s.pdf',
             $catalog_number,
-            $lot_number,
-            date('Ymd')
+            $lot_number
         );
-    } else {
-        return sprintf(
-            'CoA_%s_%s.pdf',
-            $catalog_number,
-            date('Ymd')
-        );
-    }
+    } 
+    // else {
+    //     return sprintf(
+    //         'CoA_%s_%s.pdf',
+    //         $catalog_number,
+    //         date('Ymd')
+    //     );
+    // }
 }
 
 /**
