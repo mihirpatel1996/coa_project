@@ -117,6 +117,12 @@ try {
             $skippedReportPath = generateSkippedReport($results['skippedRecords'], $uploadType);
         }
         
+        // Generate complete upload report (always generated)
+        $completeReportPath = null;
+        if (!empty($results['allRecords'])) {
+            $completeReportPath = generateCompleteReport($results['allRecords'], $uploadType);
+        }
+        
         // Log upload - ensure autocommit is on
         $summary = [
             'uploadType' => $uploadType,
@@ -125,7 +131,8 @@ try {
             'successCount' => $results['successCount'],
             'skippedCount' => $results['skippedCount'],
             'errorCount' => 0,
-            'skippedReportPath' => $skippedReportPath
+            'skippedReportPath' => $skippedReportPath,
+            'completeReportPath' => $completeReportPath
         ];
         
         $status = $results['skippedCount'] > 0 ? 'partial' : 'success';
@@ -186,7 +193,8 @@ function processCatalogUpload($conn, $rows, $headers) {
         'totalRows' => count($rows) - 1,
         'successCount' => 0,
         'skippedCount' => 0,
-        'skippedRecords' => []
+        'skippedRecords' => [],
+        'allRecords' => []  // Store all processed records
     ];
     
     // Get template fields mapping
@@ -237,6 +245,10 @@ function processCatalogUpload($conn, $rows, $headers) {
         $checkStmt->execute();
         $checkResult = $checkStmt->get_result();
         
+        // Prepare record for complete report
+        $recordData = $data;
+        $recordData['row'] = $i;
+        
         if ($checkResult->num_rows > 0) {
             // Catalog exists, skip it
             $results['skippedCount']++;
@@ -246,6 +258,11 @@ function processCatalogUpload($conn, $rows, $headers) {
                 'lotNumber' => '',
                 'reason' => 'Catalog already exists'
             ];
+            
+            // Add to all records with status
+            $recordData['status'] = 'Skipped';
+            $results['allRecords'][] = $recordData;
+            
             $checkStmt->close();
             continue;
         }
@@ -292,6 +309,10 @@ function processCatalogUpload($conn, $rows, $headers) {
         
         if ($insertStmt->execute()) {
             $results['successCount']++;
+            
+            // Add to all records with status
+            $recordData['status'] = 'Inserted';
+            $results['allRecords'][] = $recordData;
         } else {
             throw new Exception("Row $i: Failed to insert catalog - " . $conn->error);
         }
@@ -309,7 +330,8 @@ function processLotUpload($conn, $rows, $headers) {
         'totalRows' => count($rows) - 1,
         'successCount' => 0,
         'skippedCount' => 0,
-        'skippedRecords' => []
+        'skippedRecords' => [],
+        'allRecords' => []  // Store all processed records
     ];
     
     // Get template fields mapping
@@ -337,6 +359,10 @@ function processLotUpload($conn, $rows, $headers) {
         $data = array_map(function($value) {
             return $value === null ? '' : trim($value);
         }, $data);
+        
+        // Prepare record for complete report
+        $recordData = $data;
+        $recordData['row'] = $i;
         
         // STEP 1: Validate basic required fields
         if (empty($data['templateCode']) || empty($data['catalogNumber']) || empty($data['lotNumber'])) {
@@ -366,6 +392,11 @@ function processLotUpload($conn, $rows, $headers) {
                 'lotNumber' => $data['lotNumber'],
                 'reason' => 'Catalog does not exist'
             ];
+            
+            // Add to all records with status
+            $recordData['status'] = 'Skipped';
+            $results['allRecords'][] = $recordData;
+            
             $catalogStmt->close();
             continue;
         }
@@ -394,6 +425,11 @@ function processLotUpload($conn, $rows, $headers) {
                 'lotNumber' => $data['lotNumber'],
                 'reason' => 'Lot already exists'
             ];
+            
+            // Add to all records with status
+            $recordData['status'] = 'Skipped';
+            $results['allRecords'][] = $recordData;
+            
             $checkStmt->close();
             continue;
         }
@@ -443,6 +479,10 @@ function processLotUpload($conn, $rows, $headers) {
         
         if ($insertStmt->execute()) {
             $results['successCount']++;
+            
+            // Add to all records with status
+            $recordData['status'] = 'Inserted';
+            $results['allRecords'][] = $recordData;
         } else {
             throw new Exception("Row $i: Failed to insert lot - " . $conn->error);
         }
@@ -526,6 +566,77 @@ function generateSkippedReport($skippedRecords, $uploadType) {
     
     // Auto-size columns
     foreach (range('A', 'D') as $col) {
+        $sheet->getColumnDimension($col)->setAutoSize(true);
+    }
+    
+    // Save Excel file
+    $writer = new Xlsx($spreadsheet);
+    $writer->save($filepath);
+    
+    return $filename;
+}
+
+/**
+ * Generate complete upload report with all records and their status
+ */
+function generateCompleteReport($allRecords, $uploadType) {
+    // Create reports directory if it doesn't exist
+    $reportsDir = '../reports';
+    if (!file_exists($reportsDir)) {
+        mkdir($reportsDir, 0755, true);
+    }
+    
+    // Delete any existing complete report file for this type
+    $existingFiles = glob($reportsDir . '/upload_report_' . $uploadType . '_*.xlsx');
+    foreach ($existingFiles as $file) {
+        if (is_file($file)) {
+            @unlink($file);
+        }
+    }
+    
+    // Generate filename with timestamp
+    $timestamp = date('Ymd_His');
+    $filename = "upload_report_{$uploadType}_{$timestamp}.xlsx";
+    $filepath = $reportsDir . '/' . $filename;
+    
+    // Create new spreadsheet
+    $spreadsheet = new Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+    
+    // Determine headers based on upload type
+    if ($uploadType === 'catalog') {
+        $headers = CATALOG_HEADERS;
+    } else {
+        $headers = LOT_HEADERS;
+    }
+    
+    // Add status column to headers
+    $headers[] = 'status';
+    
+    // Set headers
+    $sheet->fromArray($headers, null, 'A1');
+    
+    // Style headers
+    $lastCol = chr(64 + count($headers)); // Convert number to letter (A, B, C, etc.)
+    $sheet->getStyle("A1:{$lastCol}1")->getFont()->setBold(true);
+    
+    // Add data
+    $rowNum = 2;
+    foreach ($allRecords as $record) {
+        $rowData = [];
+        // Add all original fields in order
+        foreach (($uploadType === 'catalog' ? CATALOG_HEADERS : LOT_HEADERS) as $header) {
+            $rowData[] = isset($record[$header]) ? $record[$header] : '';
+        }
+        // Add status
+        $rowData[] = $record['status'];
+        
+        $sheet->fromArray($rowData, null, "A{$rowNum}");
+        $rowNum++;
+    }
+    
+    // Auto-size columns
+    foreach (range('A', $lastCol) as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
     

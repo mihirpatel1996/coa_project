@@ -588,13 +588,21 @@
                                         <div id="catalogSummaryContainer" style="display: none; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 0.9rem;">
                                             <strong>Summary:</strong>
                                             <div id="catalogSummaryText"></div>
-                                            
-                                            <!-- Download Catalog Skipped Report -->
-                                            <div id="catalogSkippedSection" class="mt-2" style="display: none;">
-                                                <button class="btn btn-warning btn-sm" id="downloadCatalogSkippedBtn">
-                                                    <i class="fas fa-download me-1"></i>
-                                                    Skipped Report
-                                                </button>
+                                            <div class="mt-2">
+                                                <!-- Download Complete Report -->
+                                                <div id="catalogCompleteSection" class="mb-2" style="display: none;">
+                                                    <button class="btn btn-primary btn-sm" id="downloadCatalogCompleteBtn">
+                                                        <i class="fas fa-download me-1"></i>
+                                                        Upload Report
+                                                    </button>
+                                                </div>
+                                                <!-- Download Catalog Skipped Report -->
+                                                <div id="catalogSkippedSection" class="mt-2" style="display: none;">
+                                                    <button class="btn btn-warning btn-sm" id="downloadCatalogSkippedBtn">
+                                                        <i class="fas fa-download me-1"></i>
+                                                        Skipped Report
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

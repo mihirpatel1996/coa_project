@@ -25,8 +25,13 @@ try {
         throw new Exception('File not found');
     }
     
-    // Validate file is an Excel file
-    if (!preg_match('/^skipped_.*\.xlsx$/i', $filename)) {
+    // // Validate file is an Excel file
+    // if (!preg_match('/^skipped_.*\.xlsx$/i', $filename)) {
+    //     throw new Exception('Invalid file type');
+    // }
+
+    // Validate file is an Excel file (skipped or complete report)
+    if (!preg_match('/^(skipped_|upload_report_).*\.xlsx$/i', $filename)) {
         throw new Exception('Invalid file type');
     }
     
