@@ -1,320 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
 <style>
-    table {
-        display: block;
-        page-break-inside: avoid;
-    }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    color: #000000;
+    line-height: 1.1;
+    background: white;
+  }
+  
+  .header-logos {
+    margin-bottom: 15px;
+  }
+  
+  .header-logos img {
+    height: 50px;
+  }
+  
+  .product-title {
+    font-size: 16pt;
+    font-weight: bold;
+    color: #000000;
+    margin-bottom: 5px;
+    line-height: 1.1;
+  }
+  
+  .catalog-info {
+    font-size: 10pt;
+    margin-bottom: 2px;
+    line-height: 1.1;
+  }
+  
+  .certificate-title {
+    font-size: 14pt;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #cccccc;
+    line-height: 1.1;
+  }
+  
+  .section {
+    margin-bottom: 2px;
+    page-break-inside: avoid;
+  }
+  
+  .section-title {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #000000;
+    /* margin-bottom: 3px; */
+    background-color: #f0f0f0;
+    padding: 5px 10px;
+    line-height: 1.1;
+  }
+  
+  .section-content {
+    /* padding: 0 8px; */
+    margin-bottom: 1px;
+  }
+  
+  .section-content p {
+    /* margin-bottom: 2px; */
+    line-height: 1.2;
+    font-size: 10pt;
+  }
+  
+  .section-content strong {
+    font-weight: bold;
+  }
+  
+  /* Remove extra spacing between field name and value */
+  .section-content p strong:after {
+    content: " ";
+  }
+  
+  .footer-disclaimer {
+    margin-top: 20px;
+    padding-top: 10px;
+    font-size: 9pt;
+    line-height: 1.2;
+    color: #000000;
+  }
+  
+  .contact-info {
+    margin-top: 8px;
+    font-size: 9pt;
+    color: #000000;
+    line-height: 1.2;
+  }
+  
+  .signature-section {
+    margin-top: 15px;
+    margin-bottom: 10px;
+  }
+  
+  .signature-image {
+    height: 35px;
+    margin-bottom: 2px;
+  }
+  
+  .signature-name {
+    font-weight: bold;
+    font-size: 10pt;
+    margin-bottom: 1px;
+    line-height: 1.1;
+  }
+  
+  .signature-title {
+    font-size: 9pt;
+    color: #000000;
+    line-height: 1.1;
+  }
+  
+  .footer-contact {
+    margin-top: 15px;
+    font-size: 8pt;
+    color: #333333;
+    line-height: 1.2;
+  }
+  
+  .footer-contact a {
+    color: #0066cc;
+    text-decoration: none;
+  }
+  
+  /* TCPDF specific - minimize spacing */
+  br {
+    line-height: 0.8;
+  }
+  
+  /* Handle special formatting */
+  sub {
+    font-size: 0.7em;
+    vertical-align: sub;
+  }
+  
+  /* Minimize paragraph spacing for TCPDF */
+  p {
+    margin: 0;
+    padding: 0;
+  }
 
-
-    ul.bullets { font-size: 9pt; color: #595959; }
-    li.bullets { font-size: 9pt; color: #595959; }
-    ul.default { font-size: 7pt; list-style-type: none; color: #595959; }
-    li.default { font-size: 7pt; color: #595959; }
-    div.default { font-size: 9pt; }
-    div.dark_gray { font-size: 9pt; color: #777777;font-weight: bold; }
-    div.red { font-size: 9pt; color: #b7080c; font-weight: bold; line-height: 140%; }
-    div.title { font-size: 14pt; font-weight: bold; }
-    div.descshort { font-size: 9pt; border-bottom: 1px solid #b7080c; }
-    div.catnumber { font-size: 10pt; font-weight: bold; }
-    div.lotnumber { font-size: 10pt; font-style: italic; }
-    div.heading { font-size: 11pt; color: #191919; }
-    div.headingwborder { font-size: 11pt; color: #191919; border-top: 1px solid #c0c0c0; border-bottom: 1px solid #c0c0c0; }
-
-  table.default { font-size: 1pt; color: #393939; font-family: helvetica; }
-  h1.default { font-size: 16pt; color: #777777; }
-  h2.default { font-size: 12pt; color: #595959; }
-  div.newline { font-size: 12pt; }
-  div.space { font-size: 3pt; }
-  div.content { font-size: 9pt; color: #595959; }
-  div.contentsmall { font-size: 8pt; }
-  div.tableheading { font-size: 7pt; color: #191919; font-weight: bold; }
-  div.tablecontent { font-size: 8pt; color: #191919; }
-  div.tablecontentsmall { font-size: 7pt; color: #191919; }
+  /*  */
+  /* Compact field display */
+  .field-item {
+      margin: 0;
+      padding: 2px 0;
+      line-height: 1.2;
+  }
 </style>
+</head>
+<body>
 
-<table class="default" cellpadding="0" cellspacing="0" border="0">
-    <tr>
-        <td width="45%" align="left" valign="top">
-            <img src="_common/images/logo.jpg" width="272" height="74" border="0">
-        </td>
-        <td width="55%"></td>
-    </tr>
-    <tr>
-        <td colspan="3"><span style="font-size: 9pt;">&nbsp;</span></td>
-    </tr>
-</table>
+<div class="header-logos">
+  <img src="images/signalchem_sino_logo.png" alt="SinoBiological SignalChem Logo" />
+</div>
 
-<table class="default" cellpadding="0" cellspacing="0" border="0">
-    <tr>
-        <td align="left">
-            <h2 class="default">[CATALOG_NAME]</h2>
-        </td>
-    </tr>
-    <tr>
-        <td align="left"><h2 class="default">Catalog Number: [CATALOG_NUMBER]</h2>
-        </td>
-    </tr>
-    <tr>
-        <td align="left"><h2 class="default">Lot Number: [LOT_NUMBER]</h3>
-        </td>
-    </tr>
-</table>
+<div class="product-title">[CATALOG_NAME]</div>
 
-<hr>
+<div class="catalog-info">
+  <strong>Catalog Number:</strong> [CATALOG_NUMBER]
+</div>
+<div class="catalog-info">
+  <strong>Lot Number:</strong> [LOT_NUMBER]
+</div>
 
-<h1 align="center"> Certificate of Analysis </h1>
+<div class="certificate-title">Certificate of Analysis</div>
 
-<table class="default" id="product-info-table" cellpadding="4" cellspacing="0" style="border: 1px solid #c0c0c0;">
-    <tr>
-        <td width="55" align="center" style="border: 1px solid #c0c0c0; background-color: #eeeeee;"><div class="tableheading"><br>Location</div></td>
-        <td width="95" align="center" style="border: 1px solid #c0c0c0; background-color: #eeeeee;"><div class="tableheading"><br>Catalog #</div></td>
-        <td width="130" align="center" style="border: 1px solid #c0c0c0; background-color: #eeeeee;"><div class="tableheading"><br>Product Name</div></td>
-        <td width="55" align="center" style="border: 1px solid #c0c0c0; background-color: #eeeeee;"><div class="tableheading"><br>Lot #</div></td>
-        <td width="55" align="center" style="border: 1px solid #c0c0c0; background-color: #eeeeee;"><div class="tableheading"><br>AR #</div></td>
-        <td width="45" align="center" style="border: 1px solid #c0c0c0; background-color: #eeeeee;"><div class="tableheading">Pack<br>Size</div></td>
-        <td width="45" align="center" style="border: 1px solid #c0c0c0; background-color: #eeeeee;"><div class="tableheading">Unit<br>Ordered</div></td>
-        <td width="45" align="center" style="border: 1px solid #c0c0c0; background-color: #eeeeee;"><div class="tableheading">Conc.</div></td>
-        <td width="35" align="center" style="border: 1px solid #c0c0c0; background-color: #eeeeee;"><div class="tableheading">1<sup>st</sup><br>Check</div></td>
-        <td width="35" align="center" style="border: 1px solid #c0c0c0; background-color: #eeeeee;"><div class="tableheading">2<sup>nd</sup><br>Check</div></td>
-        <td width="50" align="center" style="border: 1px solid #c0c0c0; background-color: #eeeeee;"><div class="tableheading">Datasheet<br>Check</div></td>
-    </tr>
-    [PRODUCT_LIST]
-</table>
-<table class="default" cellpadding="0" cellspacing="0" border="0">
-    <tr>
-        <td width="75%">
-            <div class="content" align="right" valign="top">Subtotal: [ITEM_TOTAL]</div>
-        </td>
-        <td width="25%">
-            <div class="content" align="right" valign="top">Value: [VALUE_TOTAL]</div>
-        </td>
-    </tr>
-</table>
-<div class="space" style="font-size: 30pt;">&nbsp;</div>
+<div class="section">
+  <div class="section-title">Description</div>
+  <div class="section-content">
+    [DESCRIPTION]
+  </div>
+</div>
 
-<table class="default" cellpadding="0" cellspacing="0">
-  <tr>
-    <td width="450" align="left">
-      <table class="default" cellpadding="4" cellspacing="0" style="border: 1px solid #c0c0c0;">
-        <tr>
-          <td colspan="6">&nbsp;</td>
-        </tr>
-        <tr>
-          <td width="150"><div class="tablecontent"><b>BOX SIZE</b></div></td>
-          <td width="50"><div class="tablecontent">SMALL</div></td>
-          <td width="50"><div class="tablecontent">TALL</div></td>
-          <td width="50"><div class="tablecontent">LARGE</div></td>
-          <td width="50"><div class="tablecontent">MINI</div></td>
-          <td width="100"><div class="tablecontent">OTHER</div></td>
-        </tr>
-        <tr>
-          <td><div class="tablecontent"><b>DRY ICE WEIGHT (kg)</b></div></td>
-          <td><div class="tablecontent">2</div></td>
-          <td><div class="tablecontent">4</div></td>
-          <td><div class="tablecontent">14</div></td>
-          <td><div class="tablecontent"></div></td>
-          <td><div class="tablecontent"></div></td>
-        </tr>
-        <tr>
-          <td><div class="tablecontent"><b>TOTAL WEIGHT (kg)</b></div></td>
-          <td><div class="tablecontent">2.8</div></td>
-          <td><div class="tablecontent">4.8</div></td>
-          <td><div class="tablecontent">15.2</div></td>
-          <td><div class="tablecontent"></div></td>
-          <td><div class="tablecontent"></div></td>
-        </tr>
-        <tr>
-          <td colspan="6">&nbsp;</td>
-        </tr>
-        <tr>
-          <td colspan="3"><div class="tablecontent"><br><b>Fedex Acct #:</b> [FEDEX_NUMBER]</div></td>
-          <td colspan="3"><div class="tablecontent"><b>Shipping<br>Charges:</b> _______________________</div></td>
-        </tr>
-        <tr>
-          <td colspan="6">&nbsp;</td>
-        </tr>
-      </table>
-    </td>
-    <td width="50">&nbsp;</td>
-    <td width="130" align="left">
-      <table class="default" cellpadding="0" cellspacing="0" style="border: 1px solid #c0c0c0;">
-        <tr>
-          <td colspan="2"><div style="font-size: 5pt;">&nbsp;</div></td>
-        </tr>
-        <tr>
-          <td width="90" align="right"><div class="tableheading">Marketing<br>Material/Notepads</div></td>
-          <td width="40" style="border-bottom: 1px solid #c0c0c0;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="font-size: 4pt;">&nbsp;</td>
-        </tr>
-        <tr>
-          <td align="right"><div class="tableheading">Box Sealed</div></td>
-          <td style="border-bottom: 1px solid #c0c0c0;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="font-size: 4pt;">&nbsp;</td>
-        </tr>
-        <tr>
-          <td align="right"><div class="tableheading">Address Label</div></td>
-          <td style="border-bottom: 1px solid #c0c0c0;"></td>
-        </tr>
-        <tr>
-          <td colspan="3">&nbsp;</td>
-        </tr>
-        <tr>
-          <td colspan="2" style="font-size: 4pt;">&nbsp;</td>
-        </tr>
-        <tr>
-          <td align="right"><div class="tableheading">Fedex Label</div></td>
-          <td style="border-bottom: 1px solid #c0c0c0;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="font-size: 4pt;">&nbsp;</td>
-        </tr>
-        <tr>
-          <td align="right"><div class="tableheading">Dry-Ice Label</div></td>
-          <td style="border-bottom: 1px solid #c0c0c0;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="font-size: 4pt;">&nbsp;</td>
-        </tr>
-        <tr>
-          <td align="right"><div class="tableheading">-70/-20 Sticker</div></td>
-          <td style="border-bottom: 1px solid #c0c0c0;"></td>
-        </tr>
-        <tr>
-          <td colspan="2"><div style="font-size: 4pt;">&nbsp;</div></td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+<div class="section">
+  <div class="section-title">Specifications</div>
+  <div class="section-content">
+    [SPECIFICATIONS]
+  </div>
+</div>
 
-<div class="space">&nbsp;</div>
+<div class="section">
+  <div class="section-title">Preparation and Storage</div>
+  <div class="section-content">
+    [PREPARATION_AND_STORAGE]
+  </div>
+</div>
 
-<table class="default" cellpadding="2" cellspacing="0" border="0" style="border: 1px solid #c0c0c0;">
-  <tr>
-    <td width="50%" align="left">
-      <div class="tableheading">Additional Details and Comments</div>
-      <div style="font-size: 9pt;">&nbsp;</div>
-      <table class="default" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #c0c0c0;">
-        <tr>
-          <td width="10" style="font-size: 6pt;">&nbsp;</td>
-        </tr>
-      </table>
-      <div style="font-size: 2pt;">&nbsp;</div>
-    </td>
-    <td width="50%" align="left">
-      <div class="tableheading">&nbsp;</div>
-      <div style="font-size: 9pt;">&nbsp;</div>
-      <table class="default" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #c0c0c0;">
-        <tr>
-          <td width="10" style="font-size: 6pt;">&nbsp;</td>
-        </tr>
-      </table>
-      <div style="font-size: 2pt;">&nbsp;</div>
-    </td>
-  </tr>
-  <tr>
-    <td align="left" style="border-top: 1px solid #c0c0c0;">
-      <div style="font-size: 7pt;">&nbsp;</div>
-      <table class="default" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #c0c0c0;">
-        <tr>
-          <td width="10" style="font-size: 6pt;">&nbsp;</td>
-        </tr>
-      </table>
-      <div style="font-size: 2pt;">&nbsp;</div>
-    </td>
-    <td align="left" style="border-top: 1px solid #c0c0c0;">
-      <div style="font-size: 7pt;">&nbsp;</div>
-      <table class="default" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #c0c0c0;">
-        <tr>
-          <td width="10" style="font-size: 6pt;">&nbsp;</td>
-        </tr>
-      </table>
-      <div style="font-size: 2pt;">&nbsp;</div>
-    </td>
-  </tr>
-  <tr>
-    <td align="left" style="border-top: 1px solid #c0c0c0;">
-      <div style="font-size: 7pt;">&nbsp;</div>
-      <table class="default" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #c0c0c0;">
-        <tr>
-          <td width="10" style="font-size: 6pt;">&nbsp;</td>
-        </tr>
-      </table>
-      <div style="font-size: 2pt;">&nbsp;</div>
-    </td>
-    <td align="left" style="border-top: 1px solid #c0c0c0;">
-      <div style="font-size: 7pt;">&nbsp;</div>
-      <table class="default" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #c0c0c0;">
-        <tr>
-          <td width="10" style="font-size: 6pt;">&nbsp;</td>
-        </tr>
-      </table>
-      <div style="font-size: 2pt;">&nbsp;</div>
-    </td>
-  </tr>
-  <tr>
-    <td align="left" style="border-top: 1px solid #c0c0c0;">
-      <div style="font-size: 7pt;">&nbsp;</div>
-      <table class="default" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #c0c0c0;">
-        <tr>
-          <td width="10" style="font-size: 6pt;">&nbsp;</td>
-        </tr>
-      </table>
-      <div style="font-size: 2pt;">&nbsp;</div>
-    </td>
-    <td align="left" style="border-top: 1px solid #c0c0c0;">
-      <div style="font-size: 7pt;">&nbsp;</div>
-      <table class="default" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #c0c0c0;">
-        <tr>
-          <td width="10" style="font-size: 6pt;">&nbsp;</td>
-        </tr>
-      </table>
-      <div style="font-size: 2pt;">&nbsp;</div>
-    </td>
-  </tr>
-</table>
+<div class="footer-disclaimer">
+  The products are not to be used in humans. In the absence of any express written agreement to the contrary, products sold by SINO BIOLOGICAL, INC. are for research-use-only (RUO).
+</div>
 
-<div class="space">&nbsp;</div>
+<div class="contact-info">
+  If you have any further questions, please contact Technical Services at <strong>support@sinobiological.com</strong>
+</div>
 
-<table class="default" cellpadding="0" cellspacing="0" border="0">
-  <tr>
-    <td width="45%" align="left" style="border-bottom: 1px solid #c0c0c0;">
-      <div class="tableheading">SIGNATURE</div>
-      <div style="font-size: 6pt;">&nbsp;</div>
-      <div class="tablecontent">&nbsp;</div>
-    </td>
-    <td width="10%">&nbsp;</td>
-    <td width="45%" align="left" style="border-bottom: 1px solid #c0c0c0;">
-      <div class="tableheading">SHIPPING DATE</div>
-      <div style="font-size: 6pt;">&nbsp;</div>
-      <div class="tablecontent">&nbsp;&nbsp;&nbsp;[SHIPPING_DATE]</div>
-    </td>
-  </tr>
-</table>
+<div class="signature-section">
+  <img src="images/signature.jpg" alt="Signature" class="signature-image" />
+  <div class="signature-name">Donna Morrison, PhD</div>
+  <div class="signature-title">Quality Assurance, SignalChem Biotech / Sino Biological</div>
+</div>
 
-<div class="space">&nbsp;</div>
+<!-- <div class="footer-contact">
+  Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)<br>
+  Website: <a href="http://www.sinobiological.com">www.sinobiological.com</a>
+</div> -->
 
-<table class="default" cellpadding="4" cellspacing="0" style="border: 2px solid #c0c0c0; background-color: #eeeeee;">
-  <tr>
-    <td width="630" align="left">
-      <div class="content" style="color: #000000;">Internal Comments:</div>
-      <div class="space">&nbsp;</div>
-      <div class="content" style="color: #000000;">[INOTES]</div>
-    </td>
-  </tr>
-</table>
-
-<div class="space">&nbsp;</div>
-
-<table class="default" cellpadding="4" cellspacing="0" style="border: 2px solid #c0c0c0; background-color: #eeeeee;">
-  <tr>
-    <td width="630" align="left">
-      <div class="content" style="color: #000000;">Auto Alerts:</div>
-      <div class="space">&nbsp;</div>
-      <div class="content" style="color: #000000;">[AUTOALERTS]</div>
-    </td>
-  </tr>
-</table>
+</body>
+</html>

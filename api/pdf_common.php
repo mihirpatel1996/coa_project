@@ -1,5 +1,5 @@
 <?php
-// api/pdf_common.php - Template-based version
+// api/pdf_common.php - TCPDF Optimized Template-based version
 
 // Required files
 require_once '../vendor/autoload.php';
@@ -16,18 +16,28 @@ function loadHTMLTemplate($templateFile = 'coa_template_new.html') {
         throw new Exception("Template file not found: $templateFile");
     }
     
-    return file_get_contents($templatePath);
+    $html = file_get_contents($templatePath);
+    
+    // TCPDF-specific adjustments to ensure compatibility
+    // Remove any problematic CSS properties that might have been added
+    $html = preg_replace('/margin\s*:\s*[^;]+;/i', '', $html);
+    $html = preg_replace('/padding\s*:\s*[^;]+;/i', '', $html);
+    $html = preg_replace('/box-sizing\s*:\s*[^;]+;/i', '', $html);
+    
+    return $html;
 }
 
 /**
- * Generate HTML content for a section
+ * Generate HTML content for a section - TCPDF optimized version
  */
 function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) {
     $html = '';
-    $html .= '<table cellpadding="1" cellspacing="1" border="1" >';
+    
     if (!isset(TEMPLATE_FIELDS[$templateCode][$sectionId])) {
-        return '<p>No data available for this section.</p>';
+        return '<tr><td colspan="2">No data available for this section.</td></tr>';
     }
+    
+    $hasContent = false;
     
     foreach (TEMPLATE_FIELDS[$templateCode][$sectionId] as $field_config) {
         $field_name = $field_config['field_name'];
@@ -43,87 +53,201 @@ function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) 
         }
         
         // Skip empty values
-        if (empty($value)) {
+        if (empty($value) || $value === null || trim($value) === '') {
             continue;
         }
+        
+        $hasContent = true;
         
         // Format special fields
         $value = formatFieldValue($field_name, $value);
         
-        // Add field to HTML
-        //$html .= '<p><strong>' . htmlspecialchars($field_name) . ':</strong> ' . $value . '</p>' . "\n";
-        //// Use div with class instead of p tags
-        //$html .= '<div class="field-item"><strong>' . htmlspecialchars($field_name) . ':</strong> ' . $value . '</div>' . "\n";
-
-        // Add field to table row
-        $html .= '<tr>
-            <td style="width: 35%; vertical-align: top; font-weight: bold; padding:2px;">' . htmlspecialchars($field_name) . '</td>
-            <td style="width: 65%; vertical-align: top; padding:2px;">' . $value . '</td>
-        </tr>';
+        // Add field as table row with explicit width and styling
+        $html .= '<tr>' . "\n";
+        $html .= '  <td width="35%" style="font-weight: bold; vertical-align: top;">' . htmlspecialchars($field_name) . ':</td>' . "\n";
+        $html .= '  <td width="65%" style="vertical-align: top;">' . $value . '</td>' . "\n";
+        $html .= '</tr>' . "\n";
     }
-    $html .='</table>';
-    return $html ?: '<p>No data available for this section.</p>';
+    
+    if (!$hasContent) {
+        return '<tr><td colspan="2">No data available for this section.</td></tr>';
+    }
+    
+    return $html;
+}
+
+/**
+ * Format field values for TCPDF compatibility
+ */
+function formatFieldValue($field_name, $value) {
+    // First, ensure we're working with a string
+    $value = (string) $value;
+    
+    // Handle line breaks - convert \n to <br />
+    $value = str_replace("\n", "<br />", $value);
+    
+    // Handle special HTML entities
+    $value = str_replace('&deg;', '°', $value);
+    
+    // Handle special formatting based on field name
+    $field_lower = strtolower($field_name);
+    
+    switch($field_lower) {
+        case 'molecular weight':
+        case 'molecular mass':
+        case 'predicted molecular mass':
+            // Handle subscripts in chemical formulas
+            $value = preg_replace('/H2O/', 'H<sub>2</sub>O', $value);
+            $value = preg_replace('/CO2/', 'CO<sub>2</sub>', $value);
+            $value = preg_replace('/H2/', 'H<sub>2</sub>', $value);
+            $value = preg_replace('/O2/', 'O<sub>2</sub>', $value);
+            break;
+            
+        case 'storage':
+        case 'stability & storage':
+        case 'shipping':
+            // Handle temperature symbols - more comprehensive
+            $value = preg_replace('/(-?\d+)\s*°\s*C/', '$1°C', $value);
+            $value = preg_replace('/(-?\d+)\s*C\b/', '$1°C', $value);
+            $value = str_replace('degrees C', '°C', $value);
+            $value = str_replace('-20C', '-20°C', $value);
+            $value = str_replace('-80C', '-80°C', $value);
+            $value = str_replace('4C', '4°C', $value);
+            $value = str_replace('RT', 'RT', $value); // Room Temperature
+            break;
+            
+        case 'concentration':
+        case 'purity':
+            // Ensure percentages are properly formatted
+            $value = preg_replace('/(\d+\.?\d*)\s*%/', '$1%', $value);
+            break;
+            
+        case 'ph':
+            // Format pH properly
+            $value = str_replace('pH', 'pH', $value);
+            break;
+    }
+    
+    // Handle superscripts for common notations
+    $value = preg_replace('/10\^(-?\d+)/', '10<sup>$1</sup>', $value);
+    
+    // Clean up any double spaces
+    $value = preg_replace('/\s+/', ' ', $value);
+    
+    return trim($value);
 }
 
 /**
  * Replace placeholders in template
  */
 function replacePlaceholders($html, $catalogData, $lotData, $templateCode) {
-    // Basic replacements
-    $replacements = [
-        '[CATALOG_NAME]' => htmlspecialchars($catalogData['catalogName'] ?? ''),
-        '[CATALOG_NUMBER]' => htmlspecialchars($catalogData['catalogNumber'] ?? ''),
-        '[LOT_NUMBER]' => htmlspecialchars($lotData['lotNumber'] ?? ''),
-    ];
+    // First, let's check if the template exists
+    if (!isset(TEMPLATE_FIELDS[$templateCode])) {
+        // Template doesn't exist, show error
+        $error_msg = "Template code '$templateCode' not found. Available templates: " . implode(', ', array_keys(TEMPLATE_FIELDS));
+        $replacements = [
+            '[CATALOG_NAME]' => htmlspecialchars($catalogData['catalogName'] ?? ''),
+            '[CATALOG_NUMBER]' => htmlspecialchars($catalogData['catalogNumber'] ?? ''),
+            '[LOT_NUMBER]' => htmlspecialchars($lotData['lotNumber'] ?? ''),
+            '[DESCRIPTION]' => '<p style="color: red;">' . $error_msg . '</p>',
+            '[SPECIFICATIONS]' => '<p style="color: red;">' . $error_msg . '</p>',
+            '[PREPARATION_AND_STORAGE]' => '<p style="color: red;">' . $error_msg . '</p>'
+        ];
+    } else {
+        // Get all sections for this template
+        $all_sections = array_keys(TEMPLATE_FIELDS[$templateCode]);
+        
+        // Method 1: Try to find sections by name
+        $desc_section = null;
+        $spec_section = null;
+        $prep_section = null;
+        
+        foreach ($all_sections as $section) {
+            $lower = strtolower($section);
+            if (strpos($lower, 'description') !== false) {
+                $desc_section = $section;
+            } elseif (strpos($lower, 'spec') !== false) {
+                $spec_section = $section;
+            } elseif (strpos($lower, 'preparation') !== false || strpos($lower, 'storage') !== false || strpos($lower, 'prep') !== false) {
+                $prep_section = $section;
+            }
+        }
+        
+        // Method 2: If not found by name, use array positions
+        if ($desc_section === null && isset($all_sections[0])) $desc_section = $all_sections[0];
+        if ($spec_section === null && isset($all_sections[1])) $spec_section = $all_sections[1];
+        if ($prep_section === null && isset($all_sections[2])) $prep_section = $all_sections[2];
+        
+        // Generate content
+        $descriptionContent = $desc_section ? 
+            '<table width="100%" cellpadding="2" cellspacing="0" border="0">' . 
+            generateSectionHTML($desc_section, $catalogData, $lotData, $templateCode) . 
+            '</table>' : 
+            '<p>Description section not found</p>';
+        
+        $specificationsContent = $spec_section ? 
+            '<table width="100%" cellpadding="2" cellspacing="0" border="0">' . 
+            generateSectionHTML($spec_section, $catalogData, $lotData, $templateCode) . 
+            '</table>' : 
+            '<p>Specifications section not found</p>';
+        
+        $preparationContent = $prep_section ? 
+            '<table width="100%" cellpadding="2" cellspacing="0" border="0">' . 
+            generateSectionHTML($prep_section, $catalogData, $lotData, $templateCode) . 
+            '</table>' : 
+            '<p>Preparation section not found</p>';
+        
+        // Set replacements
+        $replacements = [
+            '[CATALOG_NAME]' => htmlspecialchars($catalogData['catalogName'] ?? ''),
+            '[CATALOG_NUMBER]' => htmlspecialchars($catalogData['catalogNumber'] ?? ''),
+            '[LOT_NUMBER]' => htmlspecialchars($lotData['lotNumber'] ?? ''),
+            '[DESCRIPTION]' => $descriptionContent,
+            '[SPECIFICATIONS]' => $specificationsContent,
+            '[PREPARATION_AND_STORAGE]' => $preparationContent
+        ];
+    }
     
-    // Replace basic placeholders
+    // Perform replacements
     foreach ($replacements as $placeholder => $value) {
         $html = str_replace($placeholder, $value, $html);
     }
     
-    // Generate and replace section content
-    $html = str_replace('[DESCRIPTION]', generateSectionHTML(1, $catalogData, $lotData, $templateCode), $html);
-    $html = str_replace('[SPECIFICATIONS]', generateSectionHTML(2, $catalogData, $lotData, $templateCode), $html);
-    $html = str_replace('[PREPARATION_AND_STORAGE]', generateSectionHTML(3, $catalogData, $lotData, $templateCode), $html);
-
-    // Handle conditional lot number display
-    // if (empty($lotData['lotNumber'])) {
-    //     // Remove the entire lot number line if no lot
-    //     $html = preg_replace('/<strong>Lot Number:<\/strong>.*?<br>/s', '', $html);
-    //     $html = preg_replace('/Lot Number: <strong>\[LOT_NUMBER\]<\/strong><br>/s', '', $html);
-    // }
-
     return $html;
 }
 
 /**
- * Validate all required fields based on template
+ * Validate all required fields are filled
  */
-function validateAllFields($catalog_data, $lot_data, $template_code) {
+function validateAllFields($catalogData, $lotData, $templateCode) {
     $errors = [];
     
-    // Always required
-    if (empty($catalog_data['catalogName'])) {
+    // Check catalog name
+    if (empty($catalogData['catalogName'])) {
         $errors[] = 'Catalog Name';
     }
     
-    // Check template-specific fields
-    if (isset(TEMPLATE_FIELDS[$template_code])) {
-        foreach (TEMPLATE_FIELDS[$template_code] as $section_id => $fields) {
-            foreach ($fields as $field_config) {
+    // Check if we have at least some data in each section
+    $sections = ['description', 'specifications', 'preparation_storage'];
+    
+    foreach ($sections as $section) {
+        if (isset(TEMPLATE_FIELDS[$templateCode][$section])) {
+            $hasData = false;
+            foreach (TEMPLATE_FIELDS[$templateCode][$section] as $field_config) {
                 $db_field = $field_config['db_field'];
-                $field_name = $field_config['field_name'];
                 $source = $field_config['field_source'];
                 
-                if ($source === 'catalog') {
-                    if (empty($catalog_data[$db_field])) {
-                        $errors[] = $field_name;
-                    }
-                } else { // lot
-                    if (empty($lot_data[$db_field])) {
-                        $errors[] = $field_name;
-                    }
+                if ($source === 'catalog' && !empty($catalogData[$db_field])) {
+                    $hasData = true;
+                    break;
+                } elseif ($source === 'lot' && !empty($lotData[$db_field])) {
+                    $hasData = true;
+                    break;
                 }
+            }
+            
+            if (!$hasData) {
+                $errors[] = ucfirst(str_replace('_', ' ', $section));
             }
         }
     }
@@ -132,7 +256,7 @@ function validateAllFields($catalog_data, $lot_data, $template_code) {
 }
 
 /**
- * Get catalog and lot data
+ * Get CoA data from database
  */
 function getCoAData($catalog_number, $lot_number) {
     $conn = getDBConnection();
@@ -166,7 +290,6 @@ function getCoAData($catalog_number, $lot_number) {
         $lot_stmt->close();
     }
     
-    // Don't close connection here - let the calling script handle it
     // $conn->close();
     
     return [
@@ -176,16 +299,30 @@ function getCoAData($catalog_number, $lot_number) {
     ];
 }
 
-// Custom TCPDF class with footer
+// Custom TCPDF class with table-based footer
 class CustomTCPDF extends TCPDF {
     public function Footer() {
+        // Position from bottom
         $this->SetY(-20);
-        $this->writeHTML('<hr style="border-top: 1px solid black;">', true, false, false, false, '');
         
-        $this->SetFont('helvetica', '', 8);
-        $this->SetTextColor(51, 51, 51);
-        $footerText = "Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)   Website: www.sinobiological.com";
-        $this->Cell(0, 8, $footerText, 0, 0, 'C');
+        // Create table-based footer that matches the template style
+        $footerHtml = '
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td height="1" style="border-top: 1px solid black;">&nbsp;</td>
+            </tr>
+            <!--<tr>
+                <td height="1">&nbsp;</td>
+            </tr>-->
+            <tr>
+                <td align="center" style="font-size: 8pt; color: #333333;">
+                    Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)&nbsp;&nbsp;&nbsp;Website: www.sinobiological.com
+                </td>
+            </tr>
+        </table>';
+        
+        // Write HTML without resetting margins
+        $this->writeHTML($footerHtml, false, false, false, false, '');
     }
 }
 
@@ -193,7 +330,6 @@ class CustomTCPDF extends TCPDF {
  * Generate PDF object using template
  */
 function generatePDF($catalog_data, $lot_data, $template_code) {
-
     // Load HTML template
     $html = loadHTMLTemplate('coa_template_new.html');
     
@@ -203,95 +339,56 @@ function generatePDF($catalog_data, $lot_data, $template_code) {
     // Create new PDF document
     $pdf = new CustomTCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
     
+    // Remove default header
+    $pdf->setPrintHeader(false);
+    
     // Set document information
     $pdf->SetCreator('CoA Generator');
     $pdf->SetAuthor('Sino Biological');
     $pdf->SetTitle('Certificate of Analysis - ' . $catalog_data['catalogNumber']);
     $pdf->SetSubject('Certificate of Analysis');
+    $pdf->SetKeywords('CoA, Certificate, Analysis, ' . $catalog_data['catalogNumber']);
     
-    // Remove default header/footer
-    $pdf->setPrintHeader(false);
-    $pdf->setPrintFooter(true);
-    
-    // Set margins (left, top, right)
-    // $pdf->SetMargins(20, 15, 20);
+    // Set margins (left, top, right) - optimized for table layout
     $pdf->SetMargins(15, 10, 15);
-    $pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
-    $pdf->SetAutoPageBreak(TRUE, 20);
     
-    // Set font
+    // Set auto page breaks with margin for footer
+    $pdf->SetAutoPageBreak(TRUE, 25);
+    
+    // Set image scale factor
+    $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+    
+    // Set font subsetting to reduce file size
+    $pdf->setFontSubsetting(true);
+    
+    // Set default font
     $pdf->SetFont('helvetica', '', 10);
     
     // Add a page
     $pdf->AddPage();
     
-    // Write HTML to PDF
+    // Output the HTML content with specific parameters for table rendering
     $pdf->writeHTML($html, true, false, true, false, '');
     
+    // Reset pointer to the last page
+    $pdf->lastPage();
+    
     return $pdf;
-}
-
-/**
- * Format field values for display
- */
-function formatFieldValue($field_name, $value) {
-    // Handle special formatting
-    switch ($field_name) {
-        case 'Molecular Formula':
-            // Convert numbers to subscripts (e.g., H2O becomes H<sub>2</sub>O)
-            $value = preg_replace('/(\d+)/', '<sub>$1</sub>', $value);
-            break;
-            
-        case 'Predicted Molecular Mass':
-        case 'Observed Molecular Mass':
-            // Ensure units
-            if (!preg_match('/\s*(kDa|Da|g\/mol)$/i', $value)) {
-                $value .= ' Da';
-            }
-            break;
-            
-        case 'Temperature':
-        case 'Shipping':
-        case 'Stability & Storage':
-            // Fix temperature notation
-            $value = str_replace(
-                ['-20C', '-80C', '-70C', '4C', '-20oC', '-80oC', '-70oC', '4oC'], 
-                ['-20°C', '-80°C', '-70°C', '4°C', '-20°C', '-80°C', '-70°C', '4°C'], 
-                $value
-            );
-            break;
-            
-        case 'Activity':
-            // Convert \n to <br> for multiline activity descriptions
-            $value = nl2br($value);
-            break;
-    }
-    
-    // Handle line breaks for all fields
-    $value = nl2br($value);
-    
-    // Ensure proper encoding
-    return $value; // Already escaped in generateSectionHTML
 }
 
 /**
  * Generate filename for PDF
  */
 function generateFilename($catalog_number, $lot_number) {
+    $filename = 'CoA_' . $catalog_number;
     if (!empty($lot_number)) {
-        return sprintf(
-            '%s_%s.pdf',
-            $catalog_number,
-            $lot_number
-        );
-    } 
-    // else {
-    //     return sprintf(
-    //         'CoA_%s_%s.pdf',
-    //         $catalog_number,
-    //         date('Ymd')
-    //     );
-    // }
+        // Replace any slashes or special characters in lot number
+        $lot_clean = str_replace(['/', '\\', ' ', '.'], '-', $lot_number);
+        $filename .= '_' . $lot_clean;
+    }
+    $filename .= '_' . date('Ymd') . '.pdf';
+    
+    return $filename;
 }
 
 /**
@@ -302,27 +399,105 @@ function displayError($message) {
     echo '<!DOCTYPE html>
     <html>
     <head>
-        <title>PDF Generation Error</title>
+        <title>Error</title>
         <style>
-            body { font-family: Arial, sans-serif; margin: 40px; }
-            .error { background-color: #f8d7da; border: 1px solid #f5c6cb; 
-                    color: #721c24; padding: 20px; border-radius: 5px; }
-            .back { margin-top: 20px; }
-            a { color: #007bff; text-decoration: none; }
-            a:hover { text-decoration: underline; }
+            body { font-family: Arial, sans-serif; margin: 50px; }
+            .error { 
+                background-color: #f8d7da; 
+                border: 1px solid #f5c6cb; 
+                color: #721c24; 
+                padding: 15px; 
+                border-radius: 4px; 
+            }
         </style>
     </head>
     <body>
         <div class="error">
-            <h2>PDF Generation Error</h2>
+            <h2>Error Generating PDF</h2>
             <p>' . htmlspecialchars($message) . '</p>
-        </div>
-        <div class="back">
-            <a href="javascript:window.close()">Close Window</a> | 
-            <a href="javascript:history.back()">Go Back</a>
+            <p><a href="javascript:history.back()">Go Back</a></p>
         </div>
     </body>
     </html>';
     exit;
 }
+
+/**
+ * Additional helper functions for complex content
+ */
+
+/**
+ * Create spacing row for table-based layouts
+ */
+function createSpacingRow($height = 5) {
+    return '<tr><td height="' . $height . '" colspan="2">&nbsp;</td></tr>';
+}
+
+/**
+ * Ensure proper table structure for TCPDF
+ */
+function wrapInTable($content, $width = '100%', $cellpadding = 2) {
+    return '<table width="' . $width . '" cellpadding="' . $cellpadding . '" cellspacing="0" border="0">' . $content . '</table>';
+}
+
+/**
+ * Create a subsection within a section
+ */
+function createSubsectionRow($title, $content) {
+    $html = '<tr>' . "\n";
+    $html .= '  <td colspan="2">' . "\n";
+    $html .= '    <table width="100%" cellpadding="0" cellspacing="0" border="0">' . "\n";
+    $html .= '      <tr><td style="font-weight: bold;">' . htmlspecialchars($title) . '</td></tr>' . "\n";
+    $html .= '      <tr><td>' . $content . '</td></tr>' . "\n";
+    $html .= '    </table>' . "\n";
+    $html .= '  </td>' . "\n";
+    $html .= '</tr>' . "\n";
+    
+    return $html;
+}
+
+/**
+ * Create a bordered info box
+ */
+function createInfoBox($content, $bgcolor = '#ffffcc') {
+    $html = '<tr>' . "\n";
+    $html .= '  <td colspan="2">' . "\n";
+    $html .= '    <table width="100%" cellpadding="5" cellspacing="0" border="1" bgcolor="' . $bgcolor . '">' . "\n";
+    $html .= '      <tr><td>' . $content . '</td></tr>' . "\n";
+    $html .= '    </table>' . "\n";
+    $html .= '  </td>' . "\n";
+    $html .= '</tr>' . "\n";
+    
+    return $html;
+}
+
+/**
+ * Generate test results table
+ */
+function generateTestResultsTable($testData) {
+    $html = '<tr><td colspan="2">';
+    $html .= '<table width="100%" cellpadding="3" cellspacing="0" border="1">';
+    
+    // Header row
+    $html .= '<tr bgcolor="#e0e0e0">';
+    $html .= '<td width="40%"><strong>Test Parameter</strong></td>';
+    $html .= '<td width="30%"><strong>Result</strong></td>';
+    $html .= '<td width="30%"><strong>Specification</strong></td>';
+    $html .= '</tr>';
+    
+    // Data rows
+    foreach ($testData as $test) {
+        $html .= '<tr>';
+        $html .= '<td>' . htmlspecialchars($test['parameter']) . '</td>';
+        $html .= '<td align="center">' . htmlspecialchars($test['result']) . '</td>';
+        $html .= '<td align="center">' . htmlspecialchars($test['specification']) . '</td>';
+        $html .= '</tr>';
+    }
+    
+    $html .= '</table>';
+    $html .= '</td></tr>';
+    
+    return $html;
+}
+
 ?>
