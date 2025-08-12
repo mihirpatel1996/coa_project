@@ -24,7 +24,7 @@ function loadHTMLTemplate($templateFile = 'coa_template_new.html') {
  */
 function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) {
     $html = '';
-    $html .= '<table style="border-collapse:collapse; width:100%;">';
+    $html .= '<table cellpadding="1" cellspacing="1" border="1" >';
     if (!isset(TEMPLATE_FIELDS[$templateCode][$sectionId])) {
         return '<p>No data available for this section.</p>';
     }
@@ -57,11 +57,11 @@ function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) 
 
         // Add field to table row
         $html .= '<tr>
-            <td style="width: 35%; vertical-align: top; font-weight: bold;">' . htmlspecialchars($field_name) . '</td>
-            <td style="width: 65%; vertical-align: top;">' . $value . '</td>
-        </tr>' . "\n";
+            <td style="width: 35%; vertical-align: top; font-weight: bold; padding:2px;">' . htmlspecialchars($field_name) . '</td>
+            <td style="width: 65%; vertical-align: top; padding:2px;">' . $value . '</td>
+        </tr>';
     }
-    $html .='</html>';
+    $html .='</table>';
     return $html ?: '<p>No data available for this section.</p>';
 }
 
@@ -176,21 +176,23 @@ function getCoAData($catalog_number, $lot_number) {
     ];
 }
 
+// Custom TCPDF class with footer
+class CustomTCPDF extends TCPDF {
+    public function Footer() {
+        $this->SetY(-20);
+        $this->writeHTML('<hr style="border-top: 1px solid black;">', true, false, false, false, '');
+        
+        $this->SetFont('helvetica', '', 8);
+        $this->SetTextColor(51, 51, 51);
+        $footerText = "Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)   Website: www.sinobiological.com";
+        $this->Cell(0, 8, $footerText, 0, 0, 'C');
+    }
+}
+
 /**
  * Generate PDF object using template
  */
 function generatePDF($catalog_data, $lot_data, $template_code) {
-
-    // Custom TCPDF class with footer
-    class CustomTCPDF extends TCPDF {
-        public function Footer() {
-            $this->SetY(-15);
-            $this->SetFont('helvetica', '', 8);
-            $this->SetTextColor(51, 51, 51);
-            $footerText = "Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)   Website: www.sinobiological.com";
-            $this->Cell(0, 8, $footerText, 0, 0, 'C');
-        }
-    }
 
     // Load HTML template
     $html = loadHTMLTemplate('coa_template_new.html');
@@ -199,7 +201,7 @@ function generatePDF($catalog_data, $lot_data, $template_code) {
     $html = replacePlaceholders($html, $catalog_data, $lot_data, $template_code);
     
     // Create new PDF document
-    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    $pdf = new CustomTCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
     
     // Set document information
     $pdf->SetCreator('CoA Generator');
