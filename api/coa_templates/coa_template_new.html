@@ -3,26 +3,66 @@
 <head>
 <meta charset="UTF-8">
 <style>
+  /* mPDF supports modern CSS, so we can use more advanced styles */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
   body {
-    font-family: Helvetica, Arial, sans-serif;
+    font-family: DejaVuSans, Helvetica, Arial, sans-serif;
     font-size: 10pt;
     color: #000000;
+    line-height: 1.4;
+  }
+  
+  /* Header section */
+  .header-section {
+    margin-bottom: 20px;
+  }
+  
+  .logo-container {
+    text-align: left;
+    margin-bottom: 15px;
+  }
+  
+  .logo-container img {
+    height: 55px;
+    width: auto;
   }
   
   .product-title {
     font-size: 16pt;
     font-weight: bold;
     color: #000000;
+    margin-bottom: 8px;
   }
   
   .catalog-info {
     font-size: 10pt;
-    color: #000000;
+    margin-bottom: 3px;
   }
   
+  .catalog-info strong {
+    font-weight: bold;
+  }
+  
+  /* Certificate title */
   .certificate-title {
     font-size: 14pt;
     font-weight: bold;
+    text-align: center;
+    margin: 20px 0;
+    padding: 15px 0;
+    border-top: 1px solid #cccccc;
+    border-bottom: 1px solid #cccccc;
+  }
+  
+  /* Content sections */
+  .content-section {
+    margin-bottom: 15px;
+    page-break-inside: avoid;
   }
   
   .section-title {
@@ -30,40 +70,78 @@
     font-weight: bold;
     color: #000000;
     background-color: #f0f0f0;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    border-radius: 3px;
+  }
+  
+  .section-content {
+    padding: 0 8px;
+  }
+  
+  /* Field rows in sections */
+  .field-row {
+    display: table;
+    width: 100%;
+    margin-bottom: 5px;
   }
   
   .field-label {
+    display: table-cell;
+    width: 35%;
     font-weight: bold;
     vertical-align: top;
-    width: 35%;
+    padding-right: 10px;
   }
   
   .field-value {
-    vertical-align: top;
+    display: table-cell;
     width: 65%;
+    vertical-align: top;
   }
   
-  .footer-text {
-    font-size: 9pt;
-    color: #000000;
+  /* Footer sections */
+  .footer-section {
+    margin-top: 30px;
   }
   
-  .contact-text {
+  .disclaimer {
     font-size: 9pt;
-    color: #000000;
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+  
+  .contact-info {
+    font-size: 9pt;
+    margin-bottom: 15px;
+  }
+  
+  .contact-info strong {
+    font-weight: bold;
+  }
+  
+  /* Signature section */
+  .signature-section {
+    margin: 20px 0;
+  }
+  
+  .signature-image {
+    height: 35px;
+    margin-bottom: 5px;
   }
   
   .signature-name {
     font-weight: bold;
     font-size: 10pt;
+    margin-bottom: 3px;
   }
   
   .signature-title {
     font-size: 9pt;
-    color: #000000;
+    color: #333333;
   }
   
-  /* For sub and superscript */
+  /* Special formatting */
   sub {
     font-size: 0.7em;
     vertical-align: sub;
@@ -73,193 +151,98 @@
     font-size: 0.7em;
     vertical-align: super;
   }
+  
+  /* Tables for better compatibility */
+  table.field-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  table.field-table td {
+    padding: 3px 0;
+    vertical-align: top;
+  }
+  
+  table.field-table td.label {
+    width: 35%;
+    font-weight: bold;
+  }
+  
+  table.field-table td.value {
+    width: 65%;
+  }
+  
+  /* Responsive adjustments for mPDF */
+  @media print {
+    .content-section {
+      page-break-inside: avoid;
+    }
+  }
 </style>
 </head>
 <body>
 
-<!-- Main container table -->
-<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<!-- Header Section -->
+<div class="header-section">
+  <div class="logo-container">
+    <img src="images/signalchem_sino_logo.png" alt="SinoBiological SignalChem Logo" />
+  </div>
   
-  <!-- Header with logos -->
-  <tr>
-    <td>
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td align="left">
-            <a href="https://www.sinobiological.com" target="_blank"><img src="images/signalchem_sino_logo.png" alt="SinoBiological SignalChem Logo" height="55" /></a>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
+  <div class="product-title">[CATALOG_NAME]</div>
   
-  <!-- Spacing after logo -->
-  <tr>
-    <td height="15">&nbsp;</td>
-  </tr>
+  <div class="catalog-info">
+    <strong>Catalog Number:</strong> [CATALOG_NUMBER]
+  </div>
+  <div class="catalog-info">
+    <strong>Lot Number:</strong> [LOT_NUMBER]
+  </div>
+</div>
+
+<!-- Certificate Title -->
+<div class="certificate-title">
+  Certificate of Analysis
+</div>
+
+<!-- Content Sections -->
+<div class="content-section">
+  <div class="section-title">Description</div>
+  <div class="section-content">
+    [DESCRIPTION]
+  </div>
+</div>
+
+<div class="content-section">
+  <div class="section-title">Specifications</div>
+  <div class="section-content">
+    [SPECIFICATIONS]
+  </div>
+</div>
+
+<div class="content-section">
+  <div class="section-title">Preparation and Storage</div>
+  <div class="section-content">
+    [PREPARATION_AND_STORAGE]
+  </div>
+</div>
+
+<!-- Footer Section -->
+<div class="footer-section">
+  <div class="disclaimer">
+    The products are not to be used in humans. In the absence of any express written agreement to the contrary, products sold by SINO BIOLOGICAL, INC. are for research-use-only (RUO).
+  </div>
   
-  <!-- Product Title and Info -->
-  <tr>
-    <td>
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td class="product-title">[CATALOG_NAME]</td>
-        </tr>
-        <tr>
-          <td height="5">&nbsp;</td>
-        </tr>
-        <tr>
-          <td class="catalog-info"><strong>Catalog Number:</strong> [CATALOG_NUMBER]</td>
-        </tr>
-        <tr>
-          <td height="1">&nbsp;</td>
-        </tr>
-        <tr>
-          <td class="catalog-info"><strong>Lot Number:</strong> [LOT_NUMBER]</td>
-        </tr>
-      </table>
-    </td>
-  </tr>
+  <div class="contact-info">
+    If you have any further questions, please contact Technical Services at <strong>support@sinobiological.com</strong>
+  </div>
   
-  <!-- Certificate Title with border -->
-  <tr>
-    <td height="10">&nbsp;</td>
-  </tr>
-  <tr>
-    <td>
-      <table width="100%" cellpadding="18" cellspacing="0" style="border-top: 1px solid #cccccc;">
-        <tr>
-          <td align="center" >
-            <span class="certificate-title">Certificate of Analysis</span>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-  <!-- <tr>
-    <td height="1">&nbsp;</td>
-  </tr> -->
-  
-  <!-- Description Section -->
-  <tr>
-    <td>
-      <table width="100%" cellpadding="5" cellspacing="0" border="0">
-        <tr>
-          <td class="section-title" bgcolor="#f0f0f0">Description</td>
-        </tr>
-        <tr>
-          <td bgcolor="#ffffff">
-            [DESCRIPTION]
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-  
-  <!-- Spacing between sections -->
-  <tr>
-    <td height="2">&nbsp;</td>
-  </tr>
-  
-  <!-- Specifications Section -->
-  <tr>
-    <td>
-      <table width="100%" cellpadding="5" cellspacing="0" border="0">
-        <tr>
-          <td class="section-title" bgcolor="#f0f0f0">Specifications</td>
-        </tr>
-        <tr>
-          <td bgcolor="#ffffff">
-            [SPECIFICATIONS]
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-  
-  <!-- Spacing between sections -->
-  <tr>
-    <td height="2">&nbsp;</td>
-  </tr>
-  
-  <!-- Preparation and Storage Section -->
-  <tr>
-    <td>
-      <table width="100%" cellpadding="5" cellspacing="0" border="0">
-        <tr>
-          <td class="section-title" bgcolor="#f0f0f0">Preparation and Storage</td>
-        </tr>
-        <tr>
-          <td bgcolor="#ffffff">
-            [PREPARATION_AND_STORAGE]
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-  
-  <!-- Footer Disclaimer -->
-  <tr>
-    <td height="20">&nbsp;</td>
-  </tr>
-  <tr>
-    <td>
-      <table width="100%" cellpadding="10" cellspacing="0" border="0">
-        <tr>
-          <td class="footer-text">The products are not to be used in humans. In the absence of any express written agreement to the contrary, products sold by SINO BIOLOGICAL, INC. are for research-use-only (RUO).
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-  
-  <!-- Contact Info -->
-  <tr>
-    <td height="8">&nbsp;</td>
-  </tr>
-  <tr>
-    <td>
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td class="contact-text">
-            If you have any further questions, please contact Technical Services at <strong>support@sinobiological.com</strong>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-  
-  <!-- Signature Section -->
-  <tr>
-    <td height="15">&nbsp;</td>
-  </tr>
-  <tr>
-    <td>
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td>
-            <img src="images/signature.jpg" alt="Signature" height="35" />
-          </td>
-        </tr>
-        <tr>
-          <td height="2">&nbsp;</td>
-        </tr>
-        <tr>
-          <td class="signature-name">Donna Morrison, PhD</td>
-        </tr>
-        <tr>
-          <td class="signature-title">Quality Assurance, SignalChem Biotech / Sino Biological</td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-  
-  <!-- Bottom spacing for footer -->
-  <tr>
-    <td height="30">&nbsp;</td>
-  </tr>
-  
-</table>
+  <div class="signature-section">
+    <img src="images/signature.jpg" alt="Signature" class="signature-image" />
+    <div class="signature-name">Donna Morrison, PhD</div>
+    <div class="signature-title">Quality Assurance, SignalChem Biotech / Sino Biological</div>
+  </div>
+</div>
+
+<!-- Footer is handled by mPDF SetHTMLFooter() -->
 
 </body>
 </html>

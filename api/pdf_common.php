@@ -1,10 +1,13 @@
 <?php
-// api/pdf_common.php - TCPDF Optimized Template-based version
+// api/pdf_common_mpdf.php - mPDF version (migrated from TCPDF)
 
 // Required files
 require_once '../vendor/autoload.php';
 require_once '../config/database.php';
 require_once '../config/templates_config.php';
+
+// Import mPDF
+use Mpdf\Mpdf;
 
 /**
  * Load HTML template from file
@@ -18,17 +21,14 @@ function loadHTMLTemplate($templateFile = 'coa_template_new.html') {
     
     $html = file_get_contents($templatePath);
     
-    // TCPDF-specific adjustments to ensure compatibility
-    // Remove any problematic CSS properties that might have been added
-    $html = preg_replace('/margin\s*:\s*[^;]+;/i', '', $html);
-    $html = preg_replace('/padding\s*:\s*[^;]+;/i', '', $html);
-    $html = preg_replace('/box-sizing\s*:\s*[^;]+;/i', '', $html);
+    // mPDF handles CSS much better than TCPDF, so we don't need to remove CSS properties
+    // In fact, mPDF supports most standard CSS including margins, padding, box-sizing
     
     return $html;
 }
 
 /**
- * Generate HTML content for a section - TCPDF optimized version
+ * Generate HTML content for a section - mPDF optimized version
  */
 function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) {
     $html = '';
@@ -61,11 +61,11 @@ function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) 
         
         // Format special fields
         $value = formatFieldValue($field_name, $value);
-        
-        // Add field as table row with explicit width and styling
+
+        // Add field as table row - mPDF supports style attributes well
         $html .= '<tr>' . "\n";
-        $html .= '  <td width="35%" style="font-weight: bold; vertical-align: top;">' . htmlspecialchars($field_name) . ':</td>' . "\n";
-        $html .= '  <td width="65%" style="vertical-align: top;">' . $value . '</td>' . "\n";
+        $html .= '  <td width="35%" style="font-weight: bold; vertical-align: top; padding: 2px 0;">' . htmlspecialchars($field_name) . ':</td>' . "\n";
+        $html .= '  <td width="65%" style="vertical-align: top; padding: 2px 0;">' .  htmlspecialchars($value) . '</td>' . "\n";
         $html .= '</tr>' . "\n";
     }
     
@@ -77,17 +77,17 @@ function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) 
 }
 
 /**
- * Format field values for TCPDF compatibility
+ * Format field values for mPDF compatibility
  */
 function formatFieldValue($field_name, $value) {
     // First, ensure we're working with a string
     $value = (string) $value;
     
-    // Handle line breaks - convert \n to <br />
+    // Handle line breaks - mPDF handles <br /> well
     $value = str_replace("\n", "<br />", $value);
     
-    // Handle special HTML entities
-    $value = str_replace('&deg;', '°', $value);
+    // mPDF handles HTML entities better than TCPDF
+    // No need to replace &deg; as mPDF handles it correctly
     
     // Handle special formatting based on field name
     $field_lower = strtolower($field_name);
@@ -106,14 +106,9 @@ function formatFieldValue($field_name, $value) {
         case 'storage':
         case 'stability & storage':
         case 'shipping':
-            // Handle temperature symbols - more comprehensive
-            $value = preg_replace('/(-?\d+)\s*°\s*C/', '$1°C', $value);
-            $value = preg_replace('/(-?\d+)\s*C\b/', '$1°C', $value);
+            // Handle temperature symbols - mPDF handles degree symbol well
+            $value = preg_replace('/(-?\d+)\s*°?\s*C\b/', '$1°C', $value);
             $value = str_replace('degrees C', '°C', $value);
-            $value = str_replace('-20C', '-20°C', $value);
-            $value = str_replace('-80C', '-80°C', $value);
-            $value = str_replace('4C', '4°C', $value);
-            $value = str_replace('RT', 'RT', $value); // Room Temperature
             break;
             
         case 'concentration':
@@ -144,7 +139,8 @@ function replacePlaceholders($html, $catalogData, $lotData, $templateCode) {
     // First, let's check if the template exists
     if (!isset(TEMPLATE_FIELDS[$templateCode])) {
         // Template doesn't exist, show error
-        $error_msg = "Template code '$templateCode' not found. Available templates: " . implode(', ', array_keys(TEMPLATE_FIELDS));
+        $error_msg = "Template code '$templateCode' not found. Available templates: " . 
+                     implode(', ', array_keys(TEMPLATE_FIELDS));
         $replacements = [
             '[CATALOG_NAME]' => htmlspecialchars($catalogData['catalogName'] ?? ''),
             '[CATALOG_NUMBER]' => htmlspecialchars($catalogData['catalogNumber'] ?? ''),
@@ -208,7 +204,7 @@ function replacePlaceholders($html, $catalogData, $lotData, $templateCode) {
         ];
     }
     
-    // Perform replacements
+    // Replace all placeholders
     foreach ($replacements as $placeholder => $value) {
         $html = str_replace($placeholder, $value, $html);
     }
@@ -217,37 +213,33 @@ function replacePlaceholders($html, $catalogData, $lotData, $templateCode) {
 }
 
 /**
- * Validate all required fields are filled
+ * Validate all required fields exist
  */
 function validateAllFields($catalogData, $lotData, $templateCode) {
     $errors = [];
     
-    // Check catalog name
-    if (empty($catalogData['catalogName'])) {
-        $errors[] = 'Catalog Name';
+    if (!isset(TEMPLATE_FIELDS[$templateCode])) {
+        return ["Template '$templateCode' not found"];
     }
     
-    // Check if we have at least some data in each section
-    $sections = ['description', 'specifications', 'preparation_storage'];
-    
-    foreach ($sections as $section) {
-        if (isset(TEMPLATE_FIELDS[$templateCode][$section])) {
-            $hasData = false;
-            foreach (TEMPLATE_FIELDS[$templateCode][$section] as $field_config) {
-                $db_field = $field_config['db_field'];
-                $source = $field_config['field_source'];
-                
-                if ($source === 'catalog' && !empty($catalogData[$db_field])) {
-                    $hasData = true;
-                    break;
-                } elseif ($source === 'lot' && !empty($lotData[$db_field])) {
-                    $hasData = true;
-                    break;
-                }
+    foreach (TEMPLATE_FIELDS[$templateCode] as $section_name => $fields) {
+        foreach ($fields as $field_config) {
+            $field_name = $field_config['field_name'];
+            $db_field = $field_config['db_field'];
+            $source = $field_config['field_source'];
+            $required = $field_config['required'] ?? false;
+            
+            if (!$required) continue;
+            
+            $value = '';
+            if ($source === 'catalog' && isset($catalogData[$db_field])) {
+                $value = $catalogData[$db_field];
+            } elseif ($source === 'lot' && isset($lotData[$db_field])) {
+                $value = $lotData[$db_field];
             }
             
-            if (!$hasData) {
-                $errors[] = ucfirst(str_replace('_', ' ', $section));
+            if (empty($value) || trim($value) === '') {
+                $errors[] = "$field_name (from $source.$db_field)";
             }
         }
     }
@@ -256,7 +248,7 @@ function validateAllFields($catalogData, $lotData, $templateCode) {
 }
 
 /**
- * Get CoA data from database
+ * Get catalog and lot data from database
  */
 function getCoAData($catalog_number, $lot_number) {
     $conn = getDBConnection();
@@ -299,35 +291,8 @@ function getCoAData($catalog_number, $lot_number) {
     ];
 }
 
-// Custom TCPDF class with table-based footer
-class CustomTCPDF extends TCPDF {
-    public function Footer() {
-        // Position from bottom
-        $this->SetY(-20);
-        
-        // Create table-based footer that matches the template style
-        $footerHtml = '
-        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-                <td height="1" style="border-top: 1px solid black;">&nbsp;</td>
-            </tr>
-            <!--<tr>
-                <td height="1">&nbsp;</td>
-            </tr>-->
-            <tr>
-                <td align="center" style="font-size: 8pt; color: #333333;">
-                    Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)&nbsp;&nbsp;&nbsp;Website: www.sinobiological.com
-                </td>
-            </tr>
-        </table>';
-        
-        // Write HTML without resetting margins
-        $this->writeHTML($footerHtml, false, false, false, false, '');
-    }
-}
-
 /**
- * Generate PDF object using template
+ * Generate PDF object using mPDF
  */
 function generatePDF($catalog_data, $lot_data, $template_code) {
     // Load HTML template
@@ -336,44 +301,51 @@ function generatePDF($catalog_data, $lot_data, $template_code) {
     // Replace placeholders with data
     $html = replacePlaceholders($html, $catalog_data, $lot_data, $template_code);
     
-    // Create new PDF document
-    $pdf = new CustomTCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-    
-    // Remove default header
-    $pdf->setPrintHeader(false);
+    // Create new mPDF document with full Unicode support (proven configuration)
+    $mpdf = new Mpdf([
+        'mode' => 'utf-8',
+        'format' => 'A4',
+        'margin_left' => 15,
+        'margin_right' => 15,
+        'margin_top' => 10,
+        'margin_bottom' => 25,
+        'margin_header' => 0,
+        'margin_footer' => 10,
+        'default_font_size' => 10,
+        'default_font' => 'helvetica',  // lowercase for consistency
+        // Enable full Unicode support
+        'useSubstitutions' => true,
+        'useKerning' => true,
+        'autoScriptToLang' => true,
+        'autoLangToFont' => true,
+        'backup_substitute_fonts' => ['helvetica', 'freesans'],
+        // Set temp directory if needed
+        'tempDir' => sys_get_temp_dir() . '/mpdf'
+    ]);
     
     // Set document information
-    $pdf->SetCreator('CoA Generator');
-    $pdf->SetAuthor('Sino Biological');
-    $pdf->SetTitle('Certificate of Analysis - ' . $catalog_data['catalogNumber']);
-    $pdf->SetSubject('Certificate of Analysis');
-    $pdf->SetKeywords('CoA, Certificate, Analysis, ' . $catalog_data['catalogNumber']);
+    $mpdf->SetTitle('Certificate of Analysis - ' . $catalog_data['catalogNumber']);
+    $mpdf->SetAuthor('Sino Biological');
+    $mpdf->SetSubject('Certificate of Analysis');
+    $mpdf->SetKeywords('CoA, Certificate, Analysis, ' . $catalog_data['catalogNumber']);
     
-    // Set margins (left, top, right) - optimized for table layout
-    $pdf->SetMargins(15, 10, 15);
+    // Define footer HTML with better mPDF support
+    $footerHtml = '
+    <div style="border-top: 1px solid black; padding-top: 5px; text-align: center; font-size: 8pt; color: #333333;">
+        Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)&nbsp;&nbsp;&nbsp;Website: www.sinobiological.com
+    </div>';
     
-    // Set auto page breaks with margin for footer
-    $pdf->SetAutoPageBreak(TRUE, 25);
+    // Set HTML footer
+    $mpdf->SetHTMLFooter($footerHtml);
     
-    // Set image scale factor
-    $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+    // Optional: Add watermark if needed
+    // $mpdf->SetWatermarkText('DRAFT');
+    // $mpdf->showWatermarkText = true;
     
-    // Set font subsetting to reduce file size
-    $pdf->setFontSubsetting(true);
-    
-    // Set default font
-    $pdf->SetFont('helvetica', '', 10);
-    
-    // Add a page
-    $pdf->AddPage();
-    
-    // Output the HTML content with specific parameters for table rendering
-    $pdf->writeHTML($html, true, false, true, false, '');
-    
-    // Reset pointer to the last page
-    $pdf->lastPage();
-    
-    return $pdf;
+    // Write HTML to PDF
+    $mpdf->WriteHTML($html);
+
+    return $mpdf;
 }
 
 /**
@@ -423,7 +395,7 @@ function displayError($message) {
 }
 
 /**
- * Additional helper functions for complex content
+ * Additional helper functions for mPDF
  */
 
 /**
@@ -434,7 +406,7 @@ function createSpacingRow($height = 5) {
 }
 
 /**
- * Ensure proper table structure for TCPDF
+ * Wrap content in a table (mPDF handles tables well)
  */
 function wrapInTable($content, $width = '100%', $cellpadding = 2) {
     return '<table width="' . $width . '" cellpadding="' . $cellpadding . '" cellspacing="0" border="0">' . $content . '</table>';
@@ -457,47 +429,15 @@ function createSubsectionRow($title, $content) {
 }
 
 /**
- * Create a bordered info box
+ * Optional: Add custom fonts to mPDF if needed
  */
-function createInfoBox($content, $bgcolor = '#ffffcc') {
-    $html = '<tr>' . "\n";
-    $html .= '  <td colspan="2">' . "\n";
-    $html .= '    <table width="100%" cellpadding="5" cellspacing="0" border="1" bgcolor="' . $bgcolor . '">' . "\n";
-    $html .= '      <tr><td>' . $content . '</td></tr>' . "\n";
-    $html .= '    </table>' . "\n";
-    $html .= '  </td>' . "\n";
-    $html .= '</tr>' . "\n";
+function addCustomFonts($mpdf) {
+    // Example: Add custom font
+    // $mpdf->AddFontDirectory(__DIR__ . '/fonts');
+    // $mpdf->fontdata['customfont'] = [
+    //     'R' => 'CustomFont-Regular.ttf',
+    //     'B' => 'CustomFont-Bold.ttf',
+    // ];
     
-    return $html;
+    return $mpdf;
 }
-
-/**
- * Generate test results table
- */
-function generateTestResultsTable($testData) {
-    $html = '<tr><td colspan="2">';
-    $html .= '<table width="100%" cellpadding="3" cellspacing="0" border="1">';
-    
-    // Header row
-    $html .= '<tr bgcolor="#e0e0e0">';
-    $html .= '<td width="40%"><strong>Test Parameter</strong></td>';
-    $html .= '<td width="30%"><strong>Result</strong></td>';
-    $html .= '<td width="30%"><strong>Specification</strong></td>';
-    $html .= '</tr>';
-    
-    // Data rows
-    foreach ($testData as $test) {
-        $html .= '<tr>';
-        $html .= '<td>' . htmlspecialchars($test['parameter']) . '</td>';
-        $html .= '<td align="center">' . htmlspecialchars($test['result']) . '</td>';
-        $html .= '<td align="center">' . htmlspecialchars($test['specification']) . '</td>';
-        $html .= '</tr>';
-    }
-    
-    $html .= '</table>';
-    $html .= '</td></tr>';
-    
-    return $html;
-}
-
-?>

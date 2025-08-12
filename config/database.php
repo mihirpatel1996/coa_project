@@ -3,7 +3,7 @@
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'coa_db');
 define('DB_USER', 'root');
-define('DB_PASS', ''); // Usually empty for WAMP
+define('DB_PASS', '');
 define('DB_CHARSET', 'utf8mb4');
 
 // Global database connection variable
