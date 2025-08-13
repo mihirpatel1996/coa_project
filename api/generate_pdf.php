@@ -52,12 +52,30 @@ try {
         error_log("PDF generation log failed: " . $logException->getMessage());
     }
     
+    //file path to save the PDF
+    if (!is_dir(__DIR__ . '/generated_pdfs')) {
+        mkdir(__DIR__ . '/generated_pdfs', 0755, true);
+    }
+    $filepath = __DIR__ . '//..//generated_pdfs//' . $filename;
+
     // Output PDF
     // 'D' = force download
     // 'I' = inline (display in browser)
     // 'F' = save to file
     // 'S' = return as string
-    $mpdf->Output($filename, 'F');
+    $mpdf->Output($filepath, 'F');
+    // Output to browser
+    //$mpdf->Output($filepath, 'I');
+
+    // echo "file generated successfully";
+
+    // Respond with JSON
+    echo json_encode([
+        'success' => true,
+        'message' => 'PDF generated successfully',
+        'file' => 'generated_pdfs/' . $filename // or provide a download link if needed
+    ]);
+    exit;
     
 } catch (Exception $e) {
     // Display error page

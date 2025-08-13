@@ -347,7 +347,8 @@ function getCoAData($catalog_number, $lot_number) {
  * Generate filename for PDF
  */
 function generateFilename($catalog_number, $lot_number) {
-    $filename = 'CoA_' . $catalog_number;
+    // $filename = 'CoA_' . $catalog_number;
+    $filename = $catalog_number;
     if (!empty($lot_number)) {
         // Replace any slashes or special characters in lot number
         $lot_clean = str_replace(['/', '\\', ' ', '.'], '-', $lot_number);

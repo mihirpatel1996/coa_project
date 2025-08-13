@@ -184,7 +184,7 @@
         .action-buttons {
             display: flex;
             gap: 10px;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
         }
         .button-divider {
@@ -423,15 +423,16 @@
         <div class="row mt-3 mb-3">
             <div class="col-12">
                 <div class="action-buttons">
+                    <button class="btn btn-info" id="bulkUploadBtn">
+                        <i class="fas fa-upload me-1"></i>
+                        Bulk Upload
+                    </button>
+                    <!-- <div class="button-divider"></div> -->
                     <button class="btn btn-success" id="saveAllBtn" disabled>
                         <i class="fas fa-save me-1"></i>
                         Save All
                     </button>
-                    <button class="btn btn-secondary" id="cancelBtn" disabled>
-                        <i class="fas fa-times me-1"></i>
-                        Cancel
-                    </button>
-                    <div class="button-divider"></div>
+                    
                     <button class="btn btn-primary" id="previewBtn" disabled>
                         <i class="fas fa-eye me-1"></i>
                         Preview PDF
@@ -440,10 +441,11 @@
                         <i class="fas fa-file-pdf me-1"></i>
                         Generate PDF
                     </button>
-                    <div class="button-divider"></div>
-                    <button class="btn btn-info" id="bulkUploadBtn">
-                        <i class="fas fa-upload me-1"></i>
-                        Bulk Upload
+                    <!-- <div class="button-divider"></div> -->
+
+                    <button class="btn btn-secondary" id="cancelBtn" disabled>
+                        <i class="fas fa-times me-1"></i>
+                        Cancel
                     </button>
                 </div>
             </div>
@@ -1980,62 +1982,51 @@ function updateButtonStates() {
             }, 1000);
         }
 
-        // Replace the generatePDF() function in index.php with this:
         function generatePDF() {
             if (!currentCatalogNumber) {
                 alert('Please select a catalog');
                 return;
             }
-            
-            // All templates require lots
             if (!currentLotNumber) {
                 alert('Please select a lot number');
                 return;
             }
-            
-            // Double-check no unsaved changes
             if (hasUnsavedChanges) {
                 alert('Please save all changes before generating the PDF');
                 return;
             }
-            
-            // Double-check all fields are filled
             if (!checkAllFieldsFilled()) {
                 alert('Please fill all required fields before generating the PDF');
                 return;
             }
-            
-            // Show loading state on button
+
             const generateBtn = document.getElementById('generateBtn');
             const originalText = generateBtn.innerHTML;
             generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Generating...';
             generateBtn.disabled = true;
-            
+
             // Build URL for generate API
             let generateUrl = `api/generate_pdf.php?catalog_number=${encodeURIComponent(currentCatalogNumber)}`;
-            generateUrl += `&lot_number=${encodeURIComponent(currentLotNumber || '')}`; // Empty string if no lot
-            
-            // Open in new window/tab
-            const pdfWindow = window.open(generateUrl, '_blank');
-            
-            // Check if popup was blocked
-            if (!pdfWindow || pdfWindow.closed || typeof pdfWindow.closed == 'undefined') {
-                alert('Please allow popups for PDF generation');
-                generateBtn.innerHTML = originalText;
-                generateBtn.disabled = false;
-                updateButtonStates();
-                return;
-            }
-            
-            // Show success message after a delay
-            setTimeout(() => {
-                showPDFGeneratedSuccess();
-                
-                // Restore button
-                generateBtn.innerHTML = originalText;
-                generateBtn.disabled = false;
-                updateButtonStates();
-            }, 2000);
+            generateUrl += `&lot_number=${encodeURIComponent(currentLotNumber || '')}`;
+
+            // AJAX call instead of opening a new tab
+            fetch(generateUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showPDFGeneratedSuccess();
+                    } else {
+                        alert('PDF generation failed: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    alert('Error generating PDF: ' + error.message);
+                })
+                .finally(() => {
+                    generateBtn.innerHTML = originalText;
+                    generateBtn.disabled = false;
+                    updateButtonStates();
+                });
         }
 
         // Show success message after PDF generation
