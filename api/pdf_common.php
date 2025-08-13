@@ -1,5 +1,5 @@
 <?php
-// api/pdf_common_mpdf.php - mPDF version (migrated from TCPDF)
+// api/pdf_common.php - mPDF with Hybrid Approach
 
 // Required files
 require_once '../vendor/autoload.php';
@@ -12,82 +12,35 @@ use Mpdf\Mpdf;
 /**
  * Load HTML template from file
  */
-function loadHTMLTemplate($templateFile = 'coa_template_new.html') {
-    $templatePath = __DIR__ . '/coa_templates/' . $templateFile;
+// function loadHTMLTemplate($templateFile = 'coa_template_new.html') {
+//     $templatePath = __DIR__ . '/coa_templates/' . $templateFile;
     
-    if (!file_exists($templatePath)) {
-        throw new Exception("Template file not found: $templateFile");
-    }
+//     if (!file_exists($templatePath)) {
+//         throw new Exception("Template file not found: $templateFile");
+//     }
     
-    $html = file_get_contents($templatePath);
+//     $html = file_get_contents($templatePath);
     
-    // mPDF handles CSS much better than TCPDF, so we don't need to remove CSS properties
-    // In fact, mPDF supports most standard CSS including margins, padding, box-sizing
-    
-    return $html;
-}
+//     return $html;
+// }
 
 /**
- * Generate HTML content for a section - mPDF optimized version
+ * Generate HTML content for a section
  */
 function generateSectionHTML($sectionId, $catalogData, $lotData, $templateCode) {
-    $html = '';
-    
-    if (!isset(TEMPLATE_FIELDS[$templateCode][$sectionId])) {
-        return '<tr><td colspan="2">No data available for this section.</td></tr>';
-    }
-    
-    $hasContent = false;
-    
-    foreach (TEMPLATE_FIELDS[$templateCode][$sectionId] as $field_config) {
-        $field_name = $field_config['field_name'];
-        $db_field = $field_config['db_field'];
-        $source = $field_config['field_source'];
-        
-        // Get value from appropriate source
-        $value = '';
-        if ($source === 'catalog' && isset($catalogData[$db_field])) {
-            $value = $catalogData[$db_field];
-        } elseif ($source === 'lot' && isset($lotData[$db_field])) {
-            $value = $lotData[$db_field];
-        }
-        
-        // Skip empty values
-        if (empty($value) || $value === null || trim($value) === '') {
-            continue;
-        }
-        
-        $hasContent = true;
-        
-        // Format special fields
-        $value = formatFieldValue($field_name, $value);
-
-        // Add field as table row - mPDF supports style attributes well
-        $html .= '<tr>' . "\n";
-        $html .= '  <td width="35%" style="font-weight: bold; vertical-align: top; padding: 2px 0;">' . htmlspecialchars($field_name) . ':</td>' . "\n";
-        $html .= '  <td width="65%" style="vertical-align: top; padding: 2px 0;">' .  htmlspecialchars($value) . '</td>' . "\n";
-        $html .= '</tr>' . "\n";
-    }
-    
-    if (!$hasContent) {
-        return '<tr><td colspan="2">No data available for this section.</td></tr>';
-    }
-    
-    return $html;
+    // Return empty - we'll use direct rendering instead
+    return '';
 }
 
 /**
- * Format field values for mPDF compatibility
+ * Format field values
  */
 function formatFieldValue($field_name, $value) {
     // First, ensure we're working with a string
     $value = (string) $value;
     
-    // Handle line breaks - mPDF handles <br /> well
+    // Handle line breaks
     $value = str_replace("\n", "<br />", $value);
-    
-    // mPDF handles HTML entities better than TCPDF
-    // No need to replace &deg; as mPDF handles it correctly
     
     // Handle special formatting based on field name
     $field_lower = strtolower($field_name);
@@ -106,7 +59,7 @@ function formatFieldValue($field_name, $value) {
         case 'storage':
         case 'stability & storage':
         case 'shipping':
-            // Handle temperature symbols - mPDF handles degree symbol well
+            // Handle temperature symbols
             $value = preg_replace('/(-?\d+)\s*°?\s*C\b/', '$1°C', $value);
             $value = str_replace('degrees C', '°C', $value);
             break;
@@ -136,80 +89,179 @@ function formatFieldValue($field_name, $value) {
  * Replace placeholders in template
  */
 function replacePlaceholders($html, $catalogData, $lotData, $templateCode) {
-    // First, let's check if the template exists
-    if (!isset(TEMPLATE_FIELDS[$templateCode])) {
-        // Template doesn't exist, show error
-        $error_msg = "Template code '$templateCode' not found. Available templates: " . 
-                     implode(', ', array_keys(TEMPLATE_FIELDS));
-        $replacements = [
-            '[CATALOG_NAME]' => htmlspecialchars($catalogData['catalogName'] ?? ''),
-            '[CATALOG_NUMBER]' => htmlspecialchars($catalogData['catalogNumber'] ?? ''),
-            '[LOT_NUMBER]' => htmlspecialchars($lotData['lotNumber'] ?? ''),
-            '[DESCRIPTION]' => '<p style="color: red;">' . $error_msg . '</p>',
-            '[SPECIFICATIONS]' => '<p style="color: red;">' . $error_msg . '</p>',
-            '[PREPARATION_AND_STORAGE]' => '<p style="color: red;">' . $error_msg . '</p>'
-        ];
-    } else {
-        // Get all sections for this template
-        $all_sections = array_keys(TEMPLATE_FIELDS[$templateCode]);
+    // We'll handle these directly in the PDF
+    return $html;
+}
+
+/**
+ * Render fields as HTML table
+ */
+function renderFieldsAsHTML($fields, $catalogData, $lotData) {
+    $html = '<table width="100%" cellpadding="2" cellspacing="0" border="0">';
+    $hasContent = false;
+    
+    foreach ($fields as $field_config) {
+        $field_name = $field_config['field_name'];
+        $db_field = $field_config['db_field'];
+        $source = $field_config['field_source'];
         
-        // Method 1: Try to find sections by name
-        $desc_section = null;
-        $spec_section = null;
-        $prep_section = null;
-        
-        foreach ($all_sections as $section) {
-            $lower = strtolower($section);
-            if (strpos($lower, 'description') !== false) {
-                $desc_section = $section;
-            } elseif (strpos($lower, 'spec') !== false) {
-                $spec_section = $section;
-            } elseif (strpos($lower, 'preparation') !== false || strpos($lower, 'storage') !== false || strpos($lower, 'prep') !== false) {
-                $prep_section = $section;
-            }
+        // Get value from appropriate source
+        $value = '';
+        if ($source === 'catalog' && isset($catalogData[$db_field])) {
+            $value = $catalogData[$db_field];
+        } elseif ($source === 'lot' && isset($lotData[$db_field])) {
+            $value = $lotData[$db_field];
         }
         
-        // Method 2: If not found by name, use array positions
-        if ($desc_section === null && isset($all_sections[0])) $desc_section = $all_sections[0];
-        if ($spec_section === null && isset($all_sections[1])) $spec_section = $all_sections[1];
-        if ($prep_section === null && isset($all_sections[2])) $prep_section = $all_sections[2];
+        // Skip empty values
+        if (empty($value) || trim($value) === '') {
+            continue;
+        }
         
-        // Generate content
-        $descriptionContent = $desc_section ? 
-            '<table width="100%" cellpadding="2" cellspacing="0" border="0">' . 
-            generateSectionHTML($desc_section, $catalogData, $lotData, $templateCode) . 
-            '</table>' : 
-            '<p>Description section not found</p>';
+        $hasContent = true;
         
-        $specificationsContent = $spec_section ? 
-            '<table width="100%" cellpadding="2" cellspacing="0" border="0">' . 
-            generateSectionHTML($spec_section, $catalogData, $lotData, $templateCode) . 
-            '</table>' : 
-            '<p>Specifications section not found</p>';
+        // Format value
+        $value = formatFieldValue($field_name, $value);
         
-        $preparationContent = $prep_section ? 
-            '<table width="100%" cellpadding="2" cellspacing="0" border="0">' . 
-            generateSectionHTML($prep_section, $catalogData, $lotData, $templateCode) . 
-            '</table>' : 
-            '<p>Preparation section not found</p>';
-        
-        // Set replacements
-        $replacements = [
-            '[CATALOG_NAME]' => htmlspecialchars($catalogData['catalogName'] ?? ''),
-            '[CATALOG_NUMBER]' => htmlspecialchars($catalogData['catalogNumber'] ?? ''),
-            '[LOT_NUMBER]' => htmlspecialchars($lotData['lotNumber'] ?? ''),
-            '[DESCRIPTION]' => $descriptionContent,
-            '[SPECIFICATIONS]' => $specificationsContent,
-            '[PREPARATION_AND_STORAGE]' => $preparationContent
-        ];
+        // Add row
+        $html .= '<tr>';
+        $html .= '<td width="30%" style="vertical-align: top; padding: 2px 0;">' . htmlspecialchars($field_name) . ':</td>';
+        $html .= '<td width="70%" style="vertical-align: top; padding: 2px 0;">' . htmlspecialchars($value) . '</td>';
+        $html .= '</tr>';
     }
     
-    // Replace all placeholders
-    foreach ($replacements as $placeholder => $value) {
-        $html = str_replace($placeholder, $value, $html);
+    if (!$hasContent) {
+        $html .= '<tr><td colspan="2" style="font-style: italic;">No data available for this section.</td></tr>';
     }
+    
+    $html .= '</table>';
     
     return $html;
+}
+
+/**
+ * Generate PDF object using mPDF
+ */
+function generatePDF($catalog_data, $lot_data, $template_code) {
+    // Create new mPDF document with full Unicode support
+    $mpdf = new Mpdf([
+        'mode' => 'utf-8',
+        'format' => 'A4',
+        'margin_left' => 15,
+        'margin_right' => 15,
+        'margin_top' => 10,
+        'margin_bottom' => 25,
+        'margin_header' => 0,
+        'margin_footer' => 10,
+        'default_font_size' => 10,
+        // 'default_font' => 'dejavusans',
+        'default_font' => 'helvetica',
+        'useSubstitutions' => true,
+        'useKerning' => true,
+        'autoScriptToLang' => true,
+        'autoLangToFont' => true,
+        // 'backup_substitute_fonts' => ['dejavusans', 'freesans'],
+        'backup_substitute_fonts' => ['helvetica', 'freesans'],
+        'tempDir' => sys_get_temp_dir() . '/mpdf'
+    ]);
+    
+    // Set document information
+    $mpdf->SetTitle('Certificate of Analysis - ' . $catalog_data['catalogNumber']);
+    $mpdf->SetAuthor('Sino Biological');
+    $mpdf->SetSubject('Certificate of Analysis');
+    $mpdf->SetKeywords('CoA, Certificate, Analysis, ' . $catalog_data['catalogNumber']);
+    
+    // Build complete HTML document
+    $html = '
+    <style>
+        /* body { font-family: dejavusans, Arial, sans-serif; }*/
+        body { font-family: helvetica, Arial, sans-serif; }
+        .product-title { font-size: 16pt; font-weight: bold; margin-bottom: 5px; }
+        .catalog-info { font-size: 10pt; margin-bottom: 2px; }
+        .certificate-title { font-size: 14pt; font-weight: bold; text-align: center; margin: 10px 0 20px 0; }
+        .section-header { background-color: #f0f0f0; font-size: 12pt; font-weight: bold; padding: 5px; margin-bottom: 10px; }
+        .last-section { margin-top: 30px; }
+        .disclaimer { line-height: 1.3; margin-bottom: 10px; }
+        .contact-info { margin-bottom: 15px; }
+        .contact-info strong { font-weight: bold; }
+        .signature-section { margin: 20px 0; }
+        .signature-image { height: 40px; margin-bottom: 5px; }
+        .signature-name { font-weight: bold; font-size: 10pt; margin-bottom: 3px; }
+        .signature-title { color: #333333; }
+    </style>';
+    
+    // 1. Header with logo
+    $html .= '
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="left">
+                <img src="images/signalchem_sino_logo.png" alt="SinoBiological SignalChem Logo" height="55" />
+            </td>
+        </tr>
+    </table>
+    <br/>';
+    
+    // 2. Product info
+    $html .= '
+    <div class="product-title">' . htmlspecialchars($catalog_data['catalogName']) . '</div>
+    <div class="catalog-info"><strong>Catalog Number:</strong> ' . htmlspecialchars($catalog_data['catalogNumber']) . '</div>
+    <div class="catalog-info"><strong>Lot Number:</strong> ' . htmlspecialchars($lot_data['lotNumber'] ?? '') . '</div>';
+    
+    // 3. Certificate title with line
+    $html .= '
+    <hr style="border: 0; border-top: 1px solid #cccccc; margin: 15px 0;">
+    <div class="certificate-title" style="text-align: center;">Certificate of Analysis</div>';
+    
+    // 4. Description section
+    $html .= '<div class="section-header">Description</div>';
+    if (isset(TEMPLATE_FIELDS[$template_code][1])) {
+        $html .= renderFieldsAsHTML(TEMPLATE_FIELDS[$template_code][1], $catalog_data, $lot_data);
+    }
+    $html .= '<br/>';
+    
+    // 5. Specifications section
+    $html .= '<div class="section-header">Specifications</div>';
+    if (isset(TEMPLATE_FIELDS[$template_code][2])) {
+        $html .= renderFieldsAsHTML(TEMPLATE_FIELDS[$template_code][2], $catalog_data, $lot_data);
+    }
+    $html .= '<br/>';
+    
+    // 6. Preparation and Storage section
+    $html .= '<div class="section-header">Preparation and Storage</div>';
+    if (isset(TEMPLATE_FIELDS[$template_code][3])) {
+        $html .= renderFieldsAsHTML(TEMPLATE_FIELDS[$template_code][3], $catalog_data, $lot_data);
+    }
+
+    // 7. Footer section HTML
+    $html .= '<div class="last-section">
+    <div class="disclaimer">
+        The products are not to be used in humans. In the absence of any express written agreement to the contrary, products sold by SINO BIOLOGICAL, INC. are for research-use-only (RUO).
+    </div>
+    
+    <div class="contact-info">
+        If you have any further questions, please contact Technical Services at <strong>support@sinobiological.com</strong>
+    </div>
+    
+    <div class="signature-section">
+        <img src="images/signature.jpg" alt="Signature" class="signature-image" />
+        <div class="signature-name">Donna Morrison, PhD</div>
+        <div class="signature-title">Quality Assurance, SignalChem Biotech / Sino Biological</div>
+    </div>
+    </div>';
+
+    // Write main content
+    $mpdf->WriteHTML($html);
+
+    // 8. PDF Footer (not HTML footer)
+    $footerHtml = '
+        <div style="text-align: center; font-size: 8pt; color: #333; margin-top: 3mm; border-top: 1px solid #333; padding-top: 3mm;">
+            Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)&nbsp;&nbsp;&nbsp;
+            Website: www.sinobiological.com
+        </div>
+    ';
+    $mpdf->SetHTMLFooter($footerHtml);
+    
+    return $mpdf;
 }
 
 /**
@@ -292,63 +344,6 @@ function getCoAData($catalog_number, $lot_number) {
 }
 
 /**
- * Generate PDF object using mPDF
- */
-function generatePDF($catalog_data, $lot_data, $template_code) {
-    // Load HTML template
-    $html = loadHTMLTemplate('coa_template_new.html');
-    
-    // Replace placeholders with data
-    $html = replacePlaceholders($html, $catalog_data, $lot_data, $template_code);
-    
-    // Create new mPDF document with full Unicode support (proven configuration)
-    $mpdf = new Mpdf([
-        'mode' => 'utf-8',
-        'format' => 'A4',
-        'margin_left' => 15,
-        'margin_right' => 15,
-        'margin_top' => 10,
-        'margin_bottom' => 25,
-        'margin_header' => 0,
-        'margin_footer' => 10,
-        'default_font_size' => 10,
-        'default_font' => 'helvetica',  // lowercase for consistency
-        // Enable full Unicode support
-        'useSubstitutions' => true,
-        'useKerning' => true,
-        'autoScriptToLang' => true,
-        'autoLangToFont' => true,
-        'backup_substitute_fonts' => ['helvetica', 'freesans'],
-        // Set temp directory if needed
-        'tempDir' => sys_get_temp_dir() . '/mpdf'
-    ]);
-    
-    // Set document information
-    $mpdf->SetTitle('Certificate of Analysis - ' . $catalog_data['catalogNumber']);
-    $mpdf->SetAuthor('Sino Biological');
-    $mpdf->SetSubject('Certificate of Analysis');
-    $mpdf->SetKeywords('CoA, Certificate, Analysis, ' . $catalog_data['catalogNumber']);
-    
-    // Define footer HTML with better mPDF support
-    $footerHtml = '
-    <div style="border-top: 1px solid black; padding-top: 5px; text-align: center; font-size: 8pt; color: #333333;">
-        Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)&nbsp;&nbsp;&nbsp;Website: www.sinobiological.com
-    </div>';
-    
-    // Set HTML footer
-    $mpdf->SetHTMLFooter($footerHtml);
-    
-    // Optional: Add watermark if needed
-    // $mpdf->SetWatermarkText('DRAFT');
-    // $mpdf->showWatermarkText = true;
-    
-    // Write HTML to PDF
-    $mpdf->WriteHTML($html);
-
-    return $mpdf;
-}
-
-/**
  * Generate filename for PDF
  */
 function generateFilename($catalog_number, $lot_number) {
@@ -393,51 +388,4 @@ function displayError($message) {
     </html>';
     exit;
 }
-
-/**
- * Additional helper functions for mPDF
- */
-
-/**
- * Create spacing row for table-based layouts
- */
-function createSpacingRow($height = 5) {
-    return '<tr><td height="' . $height . '" colspan="2">&nbsp;</td></tr>';
-}
-
-/**
- * Wrap content in a table (mPDF handles tables well)
- */
-function wrapInTable($content, $width = '100%', $cellpadding = 2) {
-    return '<table width="' . $width . '" cellpadding="' . $cellpadding . '" cellspacing="0" border="0">' . $content . '</table>';
-}
-
-/**
- * Create a subsection within a section
- */
-function createSubsectionRow($title, $content) {
-    $html = '<tr>' . "\n";
-    $html .= '  <td colspan="2">' . "\n";
-    $html .= '    <table width="100%" cellpadding="0" cellspacing="0" border="0">' . "\n";
-    $html .= '      <tr><td style="font-weight: bold;">' . htmlspecialchars($title) . '</td></tr>' . "\n";
-    $html .= '      <tr><td>' . $content . '</td></tr>' . "\n";
-    $html .= '    </table>' . "\n";
-    $html .= '  </td>' . "\n";
-    $html .= '</tr>' . "\n";
-    
-    return $html;
-}
-
-/**
- * Optional: Add custom fonts to mPDF if needed
- */
-function addCustomFonts($mpdf) {
-    // Example: Add custom font
-    // $mpdf->AddFontDirectory(__DIR__ . '/fonts');
-    // $mpdf->fontdata['customfont'] = [
-    //     'R' => 'CustomFont-Regular.ttf',
-    //     'B' => 'CustomFont-Bold.ttf',
-    // ];
-    
-    return $mpdf;
-}
+?>

@@ -57,7 +57,7 @@ try {
     // 'I' = inline (display in browser)
     // 'F' = save to file
     // 'S' = return as string
-    $mpdf->Output($filename, 'D');
+    $mpdf->Output($filename, 'F');
     
 } catch (Exception $e) {
     // Display error page
