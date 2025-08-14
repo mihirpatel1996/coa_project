@@ -56,7 +56,8 @@ try {
     if (!is_dir(__DIR__ . '/generated_pdfs')) {
         mkdir(__DIR__ . '/generated_pdfs', 0755, true);
     }
-    $filepath = __DIR__ . '//..//generated_pdfs//' . $filename;
+    // $filepath = __DIR__ . '//..//generated_pdfs//' . $filename;
+    $filepath = __DIR__ . '/../generated_pdfs/' . $filename;
 
     // Output PDF
     // 'D' = force download

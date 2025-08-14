@@ -126,7 +126,7 @@ function renderFieldsAsHTML($fields, $catalogData, $lotData) {
         // Add row
         $html .= '<tr>';
         $html .= '<td width="30%" style="vertical-align: top; padding: 2px 0;">' . htmlspecialchars($field_name) . ':</td>';
-        $html .= '<td width="70%" style="vertical-align: top; padding: 2px 0;">' . htmlspecialchars($value) . '</td>';
+        $html .= '<td width="70%" style="vertical-align: top; padding: 2px 0;">' . $value . '</td>';
         $html .= '</tr>';
     }
     
