@@ -51,7 +51,8 @@ try {
         // Silently fail logging - don't interrupt PDF generation
         error_log("PDF generation log failed: " . $logException->getMessage());
     }
-    
+
+    /*
     //windows path
         //file path to save the PDF
         if (!is_dir(__DIR__ . '/generated_pdfs')) {
@@ -63,6 +64,17 @@ try {
     //linux path
         // Define the path for the generated PDFs directory, one level above the current 'api' directory.
         $pdf_dir = dirname(__DIR__) . '/generated_pdfs';
+    */
+        
+	if (PHP_OS_FAMILY === 'Windows') {
+		// $filepath = __DIR__ . '//..//generated_pdfs//' . $filename;
+        $filepath = __DIR__ . '/../generated_pdfs/' . $filename;
+	} 
+	if (PHP_OS_FAMILY === 'Linux') {
+		// Define the path for the generated PDFs directory, one level above the current 'api' directory.
+        $pdf_dir = dirname(__DIR__) . '/generated_pdfs';
+        $filepath = $pdf_dir . '/' . $filename;
+	}
 
     // Output PDF
     // 'D' = force download
@@ -71,16 +83,16 @@ try {
     // 'S' = return as string
     $mpdf->Output($filepath, 'F');
     // Output to browser
-    //$mpdf->Output($filepath, 'I');
+    $mpdf->Output($filename, 'D');
 
     // echo "file generated successfully";
 
     // Respond with JSON
-    echo json_encode([
-        'success' => true,
-        'message' => 'PDF generated successfully',
-        'file' => 'generated_pdfs/' . $filename // or provide a download link if needed
-    ]);
+    // echo json_encode([
+    //     'success' => true,
+    //     'message' => 'PDF generated successfully',
+    //     'file' => 'generated_pdfs/' . $filename // or provide a download link if needed
+    // ]);
     exit;
     
 } catch (Exception $e) {

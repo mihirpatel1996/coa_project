@@ -2015,6 +2015,22 @@ function updateButtonStates() {
             let generateUrl = `api/generate_pdf.php?catalog_number=${encodeURIComponent(currentCatalogNumber)}`;
             generateUrl += `&lot_number=${encodeURIComponent(currentLotNumber || '')}`;
 
+            // Open the URL in a new tab. The PHP script will force a download.
+            const pdfWindow = window.open(generateUrl, '_blank');
+
+            // Check if popup was blocked
+            if (!pdfWindow || pdfWindow.closed || typeof pdfWindow.closed == 'undefined') {
+                alert('Please allow popups for PDF download.');
+            }
+
+            // Restore button after a short delay to allow the download to start
+            setTimeout(() => {
+                generateBtn.innerHTML = originalText;
+                generateBtn.disabled = false;
+                updateButtonStates();
+            }, 1500);
+            
+            /*
             // AJAX call instead of opening a new tab
             fetch(generateUrl)
                 .then(response => response.json())
@@ -2033,6 +2049,7 @@ function updateButtonStates() {
                     generateBtn.disabled = false;
                     updateButtonStates();
                 });
+                */
         }
 
         // Show success message after PDF generation

@@ -354,7 +354,8 @@ function generateFilename($catalog_number, $lot_number) {
         $lot_clean = str_replace(['/', '\\', ' ', '.'], '-', $lot_number);
         $filename .= '_' . $lot_clean;
     }
-    $filename .= '_' . date('Ymd') . '.pdf';
+    //$filename .= '_' . date('Ymd') . '.pdf';
+    $filename .= '.pdf';
     
     return $filename;
 }
