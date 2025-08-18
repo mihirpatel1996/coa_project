@@ -52,12 +52,17 @@ try {
         error_log("PDF generation log failed: " . $logException->getMessage());
     }
     
-    //file path to save the PDF
-    if (!is_dir(__DIR__ . '/generated_pdfs')) {
-        mkdir(__DIR__ . '/generated_pdfs', 0755, true);
-    }
-    // $filepath = __DIR__ . '//..//generated_pdfs//' . $filename;
-    $filepath = __DIR__ . '/../generated_pdfs/' . $filename;
+    //windows path
+        //file path to save the PDF
+        if (!is_dir(__DIR__ . '/generated_pdfs')) {
+            mkdir(__DIR__ . '/generated_pdfs', 0755, true);
+        }
+        // $filepath = __DIR__ . '//..//generated_pdfs//' . $filename;
+        $filepath = __DIR__ . '/../generated_pdfs/' . $filename;
+
+    //linux path
+        // Define the path for the generated PDFs directory, one level above the current 'api' directory.
+        $pdf_dir = dirname(__DIR__) . '/generated_pdfs';
 
     // Output PDF
     // 'D' = force download

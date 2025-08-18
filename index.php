@@ -290,6 +290,12 @@
             width: 1.5rem;
             height: 1.5rem;
         }
+
+        /* Add custom styles here */
+        /* .alert-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        } */
     </style>
 </head>
 <body>
@@ -432,7 +438,7 @@
                         <i class="fas fa-save me-1"></i>
                         Save All
                     </button>
-                    
+
                     <button class="btn btn-primary" id="previewBtn" disabled>
                         <i class="fas fa-eye me-1"></i>
                         Preview PDF
@@ -598,11 +604,11 @@
                                                         Upload Report
                                                     </button>
                                                 </div>
-                                                <!-- Download Catalog Skipped Report -->
-                                                <div id="catalogSkippedSection" class="mt-2" style="display: none;">
-                                                    <button class="btn btn-warning btn-sm" id="downloadCatalogSkippedBtn">
+                                                <!-- Download Catalog Updated Report -->
+                                                <div id="catalogUpdatedSection" class="mt-2" style="display: none;">
+                                                    <button class="btn btn-info btn-sm" id="downloadCatalogUpdatedBtn">
                                                         <i class="fas fa-download me-1"></i>
-                                                        Skipped Report
+                                                        Updated Records Report
                                                     </button>
                                                 </div>
                                             </div>
@@ -673,11 +679,11 @@
                                                         Upload Report
                                                     </button>
                                                 </div>
-                                                <!-- Download Lot Skipped Report -->
-                                                <div id="lotSkippedSection" class="mt-2" style="display: none;">
-                                                    <button class="btn btn-warning btn-sm" id="downloadLotSkippedBtn">
+                                                <!-- Download Lot Updated Report -->
+                                                <div id="lotUpdatedSection" class="mt-2" style="display: none;">
+                                                    <button class="btn btn-info btn-sm" id="downloadLotUpdatedBtn">
                                                         <i class="fas fa-download me-1"></i>
-                                                        Skipped Report
+                                                        Updated Records Report
                                                     </button>
                                                 </div>
                                             </div>
@@ -2085,17 +2091,26 @@ function updateButtonStates() {
             });
             
             // Download skipped report buttons
-            document.getElementById('downloadCatalogSkippedBtn').addEventListener('click', function() {
-                downloadCatalogSkippedReport();
-            });
+            // document.getElementById('downloadCatalogSkippedBtn').addEventListener('click', function() {
+            //     downloadCatalogSkippedReport();
+            // });
             
-            document.getElementById('downloadLotSkippedBtn').addEventListener('click', function() {
-                downloadLotSkippedReport();
-            });
+            // document.getElementById('downloadLotSkippedBtn').addEventListener('click', function() {
+            //     downloadLotSkippedReport();
+            // });
             
             // Reset on modal close
             document.getElementById('bulkUploadModal').addEventListener('hidden.bs.modal', function() {
                 resetBulkUploadModal();
+            });
+
+            // Download updated report buttons
+            document.getElementById('downloadCatalogUpdatedBtn')?.addEventListener('click', function() {
+                downloadCatalogUpdatedReport();
+            });
+            
+            document.getElementById('downloadLotUpdatedBtn')?.addEventListener('click', function() {
+                downloadLotUpdatedReport();
             });
 
             document.getElementById('downloadCatalogCompleteBtn').addEventListener('click', function() {
@@ -2105,6 +2120,7 @@ function updateButtonStates() {
             document.getElementById('downloadLotCompleteBtn').addEventListener('click', function() {
                 downloadLotCompleteReport();
             });
+
         }
 
         // Open bulk upload modal
@@ -2369,11 +2385,14 @@ function updateButtonStates() {
             
             let text = `<div style="color: #0066cc;">Total rows: ${summary.totalRows || 0}</div>`;
             text += `<div style="color: #28a745;">Successfully Added: ${summary.successCount || 0}</div>`;
-            text += `<div style="color: #ff9900;">Skipped (Duplicates): ${summary.skippedCount || 0}</div>`;
+            text += `<div style="color: #17a2b8;">Updated Records: ${summary.updateCount || 0}</div>`;
+            if (summary.skippedCount > 0) {
+                text += `<div style="color: #ff9900;">Skipped (Validation Failed): ${summary.skippedCount || 0}</div>`;
+            }
             
             summaryText.innerHTML = text;
             summaryContainer.style.display = 'block';
-            
+
             // Show complete report download button if available
             if (summary.completeReportPath) {
                 document.getElementById('catalogCompleteSection').style.display = 'block';
@@ -2381,11 +2400,11 @@ function updateButtonStates() {
                 document.getElementById('catalogCompleteSection').style.display = 'none';
             }
 
-            // Show download button if there are skipped records
-            if (summary.skippedCount > 0 && summary.skippedReportPath) {
-                document.getElementById('catalogSkippedSection').style.display = 'block';
+            // Show download button if there are updated records
+            if (summary.updateCount > 0 && summary.updatedReportPath) {
+                document.getElementById('catalogUpdatedSection').style.display = 'block';
             } else {
-                document.getElementById('catalogSkippedSection').style.display = 'none';
+                document.getElementById('catalogUpdatedSection').style.display = 'none';
             }
         }
 
@@ -2396,7 +2415,10 @@ function updateButtonStates() {
             
             let text = `<div style="color: #0066cc;">Total rows: ${summary.totalRows || 0}</div>`;
             text += `<div style="color: #28a745;">Successfully Added: ${summary.successCount || 0}</div>`;
-            text += `<div style="color: #ff9900;">Skipped (Duplicates): ${summary.skippedCount || 0}</div>`;
+            text += `<div style="color: #17a2b8;">Updated Records: ${summary.updateCount || 0}</div>`;
+            if (summary.skippedCount > 0) {
+                text += `<div style="color: #ff9900;">Skipped (Validation Failed): ${summary.skippedCount || 0}</div>`;
+            }
             
             summaryText.innerHTML = text;
             summaryContainer.style.display = 'block';
@@ -2408,13 +2430,14 @@ function updateButtonStates() {
                 document.getElementById('lotCompleteSection').style.display = 'none';
             }
             
-            // Show download button if there are skipped records
-            if (summary.skippedCount > 0 && summary.skippedReportPath) {
-                document.getElementById('lotSkippedSection').style.display = 'block';
+            // Show download button if there are updated records
+            if (summary.updateCount > 0 && summary.updatedReportPath) {
+                document.getElementById('lotUpdatedSection').style.display = 'block';
             } else {
-                document.getElementById('lotSkippedSection').style.display = 'none';
+                document.getElementById('lotUpdatedSection').style.display = 'none';
             }
         }
+
 
         // Download catalog complete report
         function downloadCatalogCompleteReport() {
@@ -2446,31 +2469,31 @@ function updateButtonStates() {
             document.body.removeChild(link);
         }
 
-        // Download catalog skipped report
-        function downloadCatalogSkippedReport() {
-            if (!catalogUploadResults || !catalogUploadResults.summary || !catalogUploadResults.summary.skippedReportPath) {
-                alert('No catalog skipped records report available');
+        // Download catalog updated records report
+        function downloadCatalogUpdatedReport() {
+            if (!catalogUploadResults || !catalogUploadResults.summary || !catalogUploadResults.summary.updatedReportPath) {
+                alert('No catalog updated records report available');
                 return;
             }
             
             const link = document.createElement('a');
-            link.href = 'api/download_report.php?file=' + encodeURIComponent(catalogUploadResults.summary.skippedReportPath);
-            link.download = 'catalog_skipped_records.xlsx';
+            link.href = 'api/download_report.php?file=' + encodeURIComponent(catalogUploadResults.summary.updatedReportPath);
+            link.download = 'catalog_updated_records.xlsx';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
-        // Download lot skipped report
-        function downloadLotSkippedReport() {
-            if (!lotUploadResults || !lotUploadResults.summary || !lotUploadResults.summary.skippedReportPath) {
-                alert('No lot skipped records report available');
+        // Download lot updated records report
+        function downloadLotUpdatedReport() {
+            if (!lotUploadResults || !lotUploadResults.summary || !lotUploadResults.summary.updatedReportPath) {
+                alert('No lot updated records report available');
                 return;
             }
             
             const link = document.createElement('a');
-            link.href = 'api/download_report.php?file=' + encodeURIComponent(lotUploadResults.summary.skippedReportPath);
-            link.download = 'lot_skipped_records.xlsx';
+            link.href = 'api/download_report.php?file=' + encodeURIComponent(lotUploadResults.summary.updatedReportPath);
+            link.download = 'lot_updated_records.xlsx';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -2492,14 +2515,14 @@ function updateButtonStates() {
             document.getElementById('catalogSuccessAlert').style.display = 'none';
             document.getElementById('catalogErrorAlert').style.display = 'none';
             document.getElementById('catalogSummaryContainer').style.display = 'none';
-            document.getElementById('catalogSkippedSection').style.display = 'none';
+            document.getElementById('catalogUpdatedSection').style.display = 'none';
             
             document.getElementById('lotUploadProgress').style.display = 'none';
             document.getElementById('lotResults').style.display = 'none';
             document.getElementById('lotSuccessAlert').style.display = 'none';
             document.getElementById('lotErrorAlert').style.display = 'none';
             document.getElementById('lotSummaryContainer').style.display = 'none';
-            document.getElementById('lotSkippedSection').style.display = 'none';
+            document.getElementById('lotUpdatedSection').style.display = 'none';
             document.getElementById('catalogCompleteSection').style.display = 'none';
             document.getElementById('lotCompleteSection').style.display = 'none';
             

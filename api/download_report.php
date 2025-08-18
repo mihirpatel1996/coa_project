@@ -1,6 +1,6 @@
 <?php
 // api/download_report.php
-// Download skipped records report
+// Download upload reports (updated records and complete reports)
 
 // Prevent any output before headers
 ob_clean();
@@ -19,24 +19,35 @@ try {
     $filename = basename($filename);
     
     // Check if file exists
-    $filepath = '../reports/' . $filename;
+    $filepath = '../api/upload_reports/' . $filename;
     
     if (!file_exists($filepath)) {
-        throw new Exception('File not found');
+        // Try legacy reports directory for backward compatibility
+        $legacyPath = '../reports/' . $filename;
+        if (file_exists($legacyPath)) {
+            $filepath = $legacyPath;
+        } else {
+            throw new Exception('File not found');
+        }
     }
     
-    // // Validate file is an Excel file
-    // if (!preg_match('/^skipped_.*\.xlsx$/i', $filename)) {
-    //     throw new Exception('Invalid file type');
-    // }
-
-    // Validate file is an Excel file (skipped or complete report)
-    if (!preg_match('/^(skipped_|upload_report_).*\.xlsx$/i', $filename)) {
+    // Validate file is a valid report file (updated, complete, or legacy skipped)
+    if (!preg_match('/^(updated_|complete_|skipped_|upload_report_).*\.(xlsx|csv)$/i', $filename)) {
         throw new Exception('Invalid file type');
     }
     
-    // Set headers for Excel download
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    // Determine content type based on file extension
+    $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    if ($extension === 'xlsx') {
+        $contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    } elseif ($extension === 'xls') {
+        $contentType = 'application/vnd.ms-excel';
+    } else {
+        $contentType = 'text/csv';
+    }
+    
+    // Set headers for download
+    header('Content-Type: ' . $contentType);
     header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Content-Length: ' . filesize($filepath));
     header('Cache-Control: no-cache, no-store, must-revalidate');
