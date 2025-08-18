@@ -1,12 +1,11 @@
 <?php
-// api/bulk_upload.php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
+/**
+ * Bulk Upload API - Modified to UPDATE existing records instead of skipping
+ * Handles bulk upload of catalogs and lots from Excel files
+ */
 
-require_once '../config/database.php';
-require_once '../config/templates_config.php';
+require_once 'config.php';
+require_once 'template_config.php';
 require_once '../vendor/autoload.php';
 
 // PHPSpreadsheet imports
@@ -14,63 +13,67 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
-// Maximum allowed rows
-define('MAX_ROWS', 5000);
+// Constants
+const MAX_ROWS = 5000;
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-// Expected headers for each upload type
-define('CATALOG_HEADERS', [
-    'templateCode', 'catalogNumber', 'catalogName', 'cas', 
-    'detail', 'formulation', 'observedMolMass', 
-    'predictedMolMass', 'predictedNTerminal', 'reconstitution', 
-    'shipping', 'source', 'stability'
-]);
+// Define expected headers
+const CATALOG_HEADERS = ['templateCode', 'catalogNumber', 'catalogName', 'activity', 'cas', 'detail', 'formulation', 'molFormula', 'observedMolMass', 'predictedMolMass', 'predictedNTerminal', 'reconstitution', 'shipping', 'source', 'stability'];
+const LOT_HEADERS = ['templateCode', 'lotNumber', 'catalogNumber', 'activity', 'concentration', 'purity', 'formulation'];
 
-define('LOT_HEADERS', [
-    'templateCode', 'lotNumber', 'catalogNumber', 'activity', 
-    'concentration', 'purity', 'formulation'
-]);
+// Debug flag
+$debugMessages = [];
+
+// Error handler
+set_error_handler(function($severity, $message, $file, $line) {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
 
 try {
     // Validate request method
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        throw new Exception('Only POST method allowed');
+        throw new Exception('Invalid request method');
     }
     
     // Validate upload type
-    $uploadType = isset($_POST['uploadType']) ? $_POST['uploadType'] : '';
-    if (!in_array($uploadType, ['catalog', 'lot'])) {
-        throw new Exception('Invalid upload type. Must be "catalog" or "lot"');
+    if (!isset($_POST['uploadType']) || !in_array($_POST['uploadType'], ['catalog', 'lot'])) {
+        throw new Exception('Invalid upload type');
     }
+    
+    $uploadType = $_POST['uploadType'];
     
     // Validate file upload
     if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception('No file uploaded or upload error occurred');
+        throw new Exception('File upload failed');
     }
     
     $uploadedFile = $_FILES['file'];
-    $fileName = $uploadedFile['name'];
+    $fileName = basename($uploadedFile['name']);
     
-    // Validate file type - CHANGED TO EXCEL
-    if (!preg_match('/\.(xlsx|xls)$/i', $fileName)) {
-        throw new Exception('Invalid file type. Only Excel files are allowed');
+    // Validate file size
+    if ($uploadedFile['size'] > MAX_FILE_SIZE) {
+        throw new Exception('File size exceeds maximum allowed size (10MB)');
     }
     
-    // Read Excel file - REPLACED CSV READING
-    try {
-        $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
-        $worksheet = $spreadsheet->getActiveSheet();
-        $rows = $worksheet->toArray(null, true, true, false);
-    } catch (Exception $e) {
-        throw new Exception('Failed to read Excel file: ' . $e->getMessage());
+    // Validate file extension
+    $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+    if (!in_array($fileExtension, ['xlsx', 'xls'])) {
+        throw new Exception('Invalid file format. Only Excel files (.xlsx, .xls) are allowed');
     }
     
-    if (count($rows) < 2) {
-        throw new Exception('Excel file is empty or contains only headers');
+    // Load the spreadsheet
+    $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
+    $worksheet = $spreadsheet->getActiveSheet();
+    $rows = $worksheet->toArray();
+    
+    // Validate minimum rows
+    if (count($rows) < 1) {
+        throw new Exception('File is empty');
     }
     
-    // Check row limit
-    if (count($rows) - 1 > MAX_ROWS) {
-        throw new Exception('File exceeds maximum allowed rows (' . MAX_ROWS . ')');
+    // Validate maximum rows
+    if (count($rows) > MAX_ROWS) {
+        throw new Exception('File contains too many rows (maximum ' . MAX_ROWS . ')');
     }
     
     // Get headers (first row)
@@ -96,8 +99,10 @@ try {
     $results = [
         'totalRows' => count($rows) - 1,
         'successCount' => 0,
+        'updateCount' => 0,  // NEW: Track updates
         'skippedCount' => 0,
-        'skippedRecords' => []
+        'skippedRecords' => [],
+        'updatedRecords' => []  // NEW: Track updated records
     ];
     
     try {
@@ -111,7 +116,7 @@ try {
         $conn->commit();
         $conn->autocommit(true);
         
-        // Generate skipped report if needed
+        // Generate reports if needed
         $skippedReportPath = null;
         if ($results['skippedCount'] > 0) {
             $skippedReportPath = generateSkippedReport($results['skippedRecords'], $uploadType);
@@ -123,19 +128,20 @@ try {
             $completeReportPath = generateCompleteReport($results['allRecords'], $uploadType);
         }
         
-        // Log upload - ensure autocommit is on
+        // Log upload
         $summary = [
             'uploadType' => $uploadType,
             'fileName' => $fileName,
             'totalRows' => $results['totalRows'],
             'successCount' => $results['successCount'],
+            'updateCount' => $results['updateCount'],  // NEW: Include update count
             'skippedCount' => $results['skippedCount'],
             'errorCount' => 0,
             'skippedReportPath' => $skippedReportPath,
             'completeReportPath' => $completeReportPath
         ];
         
-        $status = $results['skippedCount'] > 0 ? 'partial' : 'success';
+        $status = ($results['skippedCount'] > 0) ? 'partial' : 'success';
         logUpload($conn, $status, $summary, null);
         
         // Return success response
@@ -144,12 +150,6 @@ try {
             'status' => $status,
             'summary' => $summary
         ];
-        
-        // Add debug info if available
-        global $debugMessages;
-        if (isset($debugMessages) && !empty($debugMessages)) {
-            $response['debug'] = $debugMessages;
-        }
         
         echo json_encode($response);
         
@@ -167,6 +167,7 @@ try {
             'fileName' => $fileName,
             'totalRows' => isset($results) ? $results['totalRows'] : 0,
             'successCount' => 0,
+            'updateCount' => 0,
             'skippedCount' => 0,
             'errorCount' => isset($results) ? $results['totalRows'] : 0
         ];
@@ -186,15 +187,17 @@ try {
 }
 
 /**
- * Process catalog upload
+ * Process catalog upload with UPDATE support
  */
 function processCatalogUpload($conn, $rows, $headers) {
     $results = [
         'totalRows' => count($rows) - 1,
         'successCount' => 0,
+        'updateCount' => 0,  // NEW: Track updates
         'skippedCount' => 0,
         'skippedRecords' => [],
-        'allRecords' => []  // Store all processed records
+        'updatedRecords' => [],  // NEW: Track updated records
+        'allRecords' => []
     ];
     
     // Get template fields mapping
@@ -225,6 +228,8 @@ function processCatalogUpload($conn, $rows, $headers) {
             return $value === null ? '' : trim($value);
         }, $data);
         
+        // Prepare record data for tracking
+        $recordData = array_merge(['row' => $i], $data);
         
         // STEP 1: Validate basic required fields
         if (empty($data['templateCode']) || empty($data['catalogNumber']) || empty($data['catalogName'])) {
@@ -238,100 +243,127 @@ function processCatalogUpload($conn, $rows, $headers) {
         
         $templateCode = $data['templateCode'];
         
-        // STEP 3: Check if catalog already exists (SKIP if exists)
-        $checkSql = "SELECT id FROM catalogs WHERE catalogNumber = ?";
-        $checkStmt = $conn->prepare($checkSql);
-        $checkStmt->bind_param("s", $data['catalogNumber']);
-        $checkStmt->execute();
-        $checkResult = $checkStmt->get_result();
-        
-        // Prepare record for complete report
-        $recordData = $data;
-        $recordData['row'] = $i;
-        
-        if ($checkResult->num_rows > 0) {
-            // Catalog exists, skip it
-            $results['skippedCount']++;
-            $results['skippedRecords'][] = [
-                'row' => $i,
-                'catalogNumber' => $data['catalogNumber'],
-                'lotNumber' => '',
-                'reason' => 'Catalog already exists'
-            ];
-            
-            // Add to all records with status
-            $recordData['status'] = 'Skipped';
-            $results['allRecords'][] = $recordData;
-            
-            $checkStmt->close();
-            continue;
-        }
-        $checkStmt->close();
-        
-        // STEP 4: Validate EXACTLY the required fields for this template
+        // STEP 3: Check required fields for template
         $requiredFields = $fieldMapping[$templateCode]['catalog'] ?? [];
-        $requiredDbFields = array_values($requiredFields);
-        
-        // Check for missing required fields
         foreach ($requiredFields as $fieldName => $dbField) {
             if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
                 throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
             }
         }
         
-        // Check for extra fields (fields that are filled but not required for this template)
+        // STEP 4: Validate no extra fields for template
         foreach ($allCatalogFields as $field) {
-            if (!empty($data[$field]) && !in_array($field, $requiredDbFields)) {
-                // Find the friendly name for this field
-                $friendlyName = array_search($field, array_merge(...array_values($fieldMapping[$templateCode]))) ?: $field;
+            if (!empty($data[$field]) && !in_array($field, array_values($requiredFields))) {
+                $field = array_search($field, $headers) !== false ? $headers[array_search($field, $headers)] : $field;
                 throw new Exception("Row $i: Extra field '$field' not allowed for template '$templateCode'. Only allowed fields are: " . implode(', ', array_keys($requiredFields)));
             }
         }
         
-        // STEP 5: Insert catalog
-        $insertSql = "INSERT INTO catalogs (catalogNumber, catalogName, templateCode";
-        $values = [$data['catalogNumber'], $data['catalogName'], $templateCode];
-        $types = "sss";
+        // STEP 5: Check if catalog already exists
+        $checkSql = "SELECT id, templateCode FROM catalogs WHERE catalogNumber = ?";
+        $checkStmt = $conn->prepare($checkSql);
+        $checkStmt->bind_param("s", $data['catalogNumber']);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
         
-        // Add template-specific fields
-        foreach ($requiredFields as $fieldName => $dbField) {
-            if (!empty($data[$dbField])) {
-                $insertSql .= ", $dbField";
-                $values[] = $data[$dbField];
-                $types .= "s";
-            }
-        }
-        
-        $insertSql .= ") VALUES (" . str_repeat("?,", count($values) - 1) . "?)";
-        
-        $insertStmt = $conn->prepare($insertSql);
-        $insertStmt->bind_param($types, ...$values);
-        
-        if ($insertStmt->execute()) {
-            $results['successCount']++;
+        if ($checkResult->num_rows > 0) {
+            // Catalog exists - UPDATE it
+            $existingCatalog = $checkResult->fetch_assoc();
+            $checkStmt->close();
             
-            // Add to all records with status
-            $recordData['status'] = 'Inserted';
-            $results['allRecords'][] = $recordData;
+            // Verify template code matches
+            if ($existingCatalog['templateCode'] !== $templateCode) {
+                throw new Exception("Row $i: Catalog '{$data['catalogNumber']}' already exists with different template code '{$existingCatalog['templateCode']}'");
+            }
+            
+            // Build UPDATE query
+            $updateSql = "UPDATE catalogs SET catalogName = ?, updatedAt = NOW()";
+            $values = [$data['catalogName']];
+            $types = "s";
+            
+            // Add all catalog fields (both required and optional)
+            foreach ($allCatalogFields as $field) {
+                if (isset($data[$field])) {
+                    $updateSql .= ", $field = ?";
+                    $values[] = $data[$field];
+                    $types .= "s";
+                }
+            }
+            
+            $updateSql .= " WHERE catalogNumber = ?";
+            $values[] = $data['catalogNumber'];
+            $types .= "s";
+            
+            $updateStmt = $conn->prepare($updateSql);
+            $updateStmt->bind_param($types, ...$values);
+            
+            if ($updateStmt->execute()) {
+                $results['updateCount']++;
+                $results['updatedRecords'][] = [
+                    'row' => $i,
+                    'catalogNumber' => $data['catalogNumber'],
+                    'catalogName' => $data['catalogName']
+                ];
+                
+                // Add to all records with status
+                $recordData['status'] = 'Updated';
+                $results['allRecords'][] = $recordData;
+            } else {
+                throw new Exception("Row $i: Failed to update catalog - " . $conn->error);
+            }
+            $updateStmt->close();
+            
         } else {
-            throw new Exception("Row $i: Failed to insert catalog - " . $conn->error);
+            // Catalog doesn't exist - INSERT it
+            $checkStmt->close();
+            
+            // Insert catalog
+            $insertSql = "INSERT INTO catalogs (catalogNumber, catalogName, templateCode";
+            $values = [$data['catalogNumber'], $data['catalogName'], $templateCode];
+            $types = "sss";
+            
+            // Add template-specific fields
+            foreach ($requiredFields as $fieldName => $dbField) {
+                if (!empty($data[$dbField])) {
+                    $insertSql .= ", $dbField";
+                    $values[] = $data[$dbField];
+                    $types .= "s";
+                }
+            }
+            
+            $insertSql .= ") VALUES (" . str_repeat("?,", count($values) - 1) . "?)";
+            
+            $insertStmt = $conn->prepare($insertSql);
+            $insertStmt->bind_param($types, ...$values);
+            
+            if ($insertStmt->execute()) {
+                $results['successCount']++;
+                
+                // Add to all records with status
+                $recordData['status'] = 'Inserted';
+                $results['allRecords'][] = $recordData;
+            } else {
+                throw new Exception("Row $i: Failed to insert catalog - " . $conn->error);
+            }
+            $insertStmt->close();
         }
-        $insertStmt->close();
     }
     
     return $results;
 }
 
 /**
- * Process lot upload
+ * Process lot upload with UPDATE support
  */
 function processLotUpload($conn, $rows, $headers) {
     $results = [
         'totalRows' => count($rows) - 1,
         'successCount' => 0,
+        'updateCount' => 0,  // NEW: Track updates
         'skippedCount' => 0,
         'skippedRecords' => [],
-        'allRecords' => []  // Store all processed records
+        'updatedRecords' => [],  // NEW: Track updated records
+        'allRecords' => []
     ];
     
     // Get template fields mapping
@@ -360,9 +392,8 @@ function processLotUpload($conn, $rows, $headers) {
             return $value === null ? '' : trim($value);
         }, $data);
         
-        // Prepare record for complete report
-        $recordData = $data;
-        $recordData['row'] = $i;
+        // Prepare record data for tracking
+        $recordData = array_merge(['row' => $i], $data);
         
         // STEP 1: Validate basic required fields
         if (empty($data['templateCode']) || empty($data['catalogNumber']) || empty($data['lotNumber'])) {
@@ -376,7 +407,7 @@ function processLotUpload($conn, $rows, $headers) {
         
         $templateCode = $data['templateCode'];
         
-        // STEP 3: Check if catalog exists (SKIP if not exists)
+        // STEP 3: Check if catalog exists
         $catalogSql = "SELECT id, templateCode FROM catalogs WHERE catalogNumber = ?";
         $catalogStmt = $conn->prepare($catalogSql);
         $catalogStmt->bind_param("s", $data['catalogNumber']);
@@ -384,7 +415,7 @@ function processLotUpload($conn, $rows, $headers) {
         $catalogResult = $catalogStmt->get_result();
         
         if ($catalogResult->num_rows === 0) {
-            // Catalog doesn't exist, skip
+            // Catalog doesn't exist, skip this lot
             $results['skippedCount']++;
             $results['skippedRecords'][] = [
                 'row' => $i,
@@ -392,50 +423,23 @@ function processLotUpload($conn, $rows, $headers) {
                 'lotNumber' => $data['lotNumber'],
                 'reason' => 'Catalog does not exist'
             ];
+            $catalogStmt->close();
             
             // Add to all records with status
-            $recordData['status'] = 'Skipped';
+            $recordData['status'] = 'Skipped - No Catalog';
             $results['allRecords'][] = $recordData;
-            
-            $catalogStmt->close();
             continue;
         }
         
         $catalog = $catalogResult->fetch_assoc();
         $catalogStmt->close();
         
-        // STEP 4: Check template match (STOP if mismatch)
+        // STEP 4: Verify template code matches
         if ($catalog['templateCode'] !== $templateCode) {
-            throw new Exception("Row $i: Template code mismatch. Catalog has template '{$catalog['templateCode']}' but lot specifies '{$templateCode}'");
+            throw new Exception("Row $i: Template code mismatch. Catalog '{$data['catalogNumber']}' has template '{$catalog['templateCode']}', but row specifies '{$templateCode}'");
         }
         
-        // STEP 5: Check if lot already exists (SKIP if exists)
-        $checkSql = "SELECT id FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
-        $checkStmt = $conn->prepare($checkSql);
-        $checkStmt->bind_param("ss", $data['catalogNumber'], $data['lotNumber']);
-        $checkStmt->execute();
-        $checkResult = $checkStmt->get_result();
-        
-        if ($checkResult->num_rows > 0) {
-            // Lot exists, skip it
-            $results['skippedCount']++;
-            $results['skippedRecords'][] = [
-                'row' => $i,
-                'catalogNumber' => $data['catalogNumber'],
-                'lotNumber' => $data['lotNumber'],
-                'reason' => 'Lot already exists'
-            ];
-            
-            // Add to all records with status
-            $recordData['status'] = 'Skipped';
-            $results['allRecords'][] = $recordData;
-            
-            $checkStmt->close();
-            continue;
-        }
-        $checkStmt->close();
-        
-        // STEP 6: Validate EXACTLY the required fields for this template
+        // STEP 5: Get required fields for this template
         $requiredFields = $fieldMapping[$templateCode]['lot'] ?? [];
         $requiredDbFields = array_values($requiredFields);
         
@@ -458,245 +462,238 @@ function processLotUpload($conn, $rows, $headers) {
             }
         }
         
-        // STEP 7: Insert lot
-        $insertSql = "INSERT INTO lots (catalogNumber, lotNumber, templateCode";
-        $values = [$data['catalogNumber'], $data['lotNumber'], $templateCode];
-        $types = "sss";
+        // STEP 6: Check if lot already exists
+        $lotSql = "SELECT id FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
+        $lotStmt = $conn->prepare($lotSql);
+        $lotStmt->bind_param("ss", $data['catalogNumber'], $data['lotNumber']);
+        $lotStmt->execute();
+        $lotResult = $lotStmt->get_result();
         
-        // Add template-specific fields
-        foreach ($requiredFields as $fieldName => $dbField) {
-            if (!empty($data[$dbField])) {
-                $insertSql .= ", $dbField";
-                $values[] = $data[$dbField];
-                $types .= "s";
-            }
-        }
-        
-        $insertSql .= ") VALUES (" . str_repeat("?,", count($values) - 1) . "?)";
-        
-        $insertStmt = $conn->prepare($insertSql);
-        $insertStmt->bind_param($types, ...$values);
-        
-        if ($insertStmt->execute()) {
-            $results['successCount']++;
+        if ($lotResult->num_rows > 0) {
+            // Lot exists - UPDATE it
+            $lotStmt->close();
             
-            // Add to all records with status
-            $recordData['status'] = 'Inserted';
-            $results['allRecords'][] = $recordData;
+            // Build UPDATE query
+            $updateSql = "UPDATE lots SET templateCode = ?, updatedAt = NOW()";
+            $values = [$templateCode];
+            $types = "s";
+            
+            // Add all lot fields (both required and optional)
+            foreach ($allLotFields as $field) {
+                if (isset($data[$field])) {
+                    $updateSql .= ", $field = ?";
+                    $values[] = $data[$field];
+                    $types .= "s";
+                }
+            }
+            
+            $updateSql .= " WHERE catalogNumber = ? AND lotNumber = ?";
+            $values[] = $data['catalogNumber'];
+            $values[] = $data['lotNumber'];
+            $types .= "ss";
+            
+            $updateStmt = $conn->prepare($updateSql);
+            $updateStmt->bind_param($types, ...$values);
+            
+            if ($updateStmt->execute()) {
+                $results['updateCount']++;
+                $results['updatedRecords'][] = [
+                    'row' => $i,
+                    'catalogNumber' => $data['catalogNumber'],
+                    'lotNumber' => $data['lotNumber']
+                ];
+                
+                // Add to all records with status
+                $recordData['status'] = 'Updated';
+                $results['allRecords'][] = $recordData;
+            } else {
+                throw new Exception("Row $i: Failed to update lot - " . $conn->error);
+            }
+            $updateStmt->close();
+            
         } else {
-            throw new Exception("Row $i: Failed to insert lot - " . $conn->error);
+            // Lot doesn't exist - INSERT it
+            $lotStmt->close();
+            
+            // Insert lot
+            $insertSql = "INSERT INTO lots (catalogNumber, lotNumber, templateCode";
+            $values = [$data['catalogNumber'], $data['lotNumber'], $templateCode];
+            $types = "sss";
+            
+            // Add template-specific fields
+            foreach ($requiredFields as $fieldName => $dbField) {
+                if (!empty($data[$dbField])) {
+                    $insertSql .= ", $dbField";
+                    $values[] = $data[$dbField];
+                    $types .= "s";
+                }
+            }
+            
+            $insertSql .= ") VALUES (" . str_repeat("?,", count($values) - 1) . "?)";
+            
+            $insertStmt = $conn->prepare($insertSql);
+            $insertStmt->bind_param($types, ...$values);
+            
+            if ($insertStmt->execute()) {
+                $results['successCount']++;
+                
+                // Add to all records with status
+                $recordData['status'] = 'Inserted';
+                $results['allRecords'][] = $recordData;
+            } else {
+                throw new Exception("Row $i: Failed to insert lot - " . $conn->error);
+            }
+            $insertStmt->close();
         }
-        $insertStmt->close();
     }
     
     return $results;
 }
 
 /**
- * Get field mapping for templates
- */
-function getFieldMappingForTemplates() {
-    $mapping = [];
-    
-    foreach (TEMPLATE_FIELDS as $templateCode => $sections) {
-        $mapping[$templateCode] = [
-            'catalog' => [],
-            'lot' => []
-        ];
-        
-        foreach ($sections as $sectionId => $fields) {
-            foreach ($fields as $field) {
-                if ($field['field_source'] === 'catalog') {
-                    $mapping[$templateCode]['catalog'][$field['field_name']] = $field['db_field'];
-                } else {
-                    $mapping[$templateCode]['lot'][$field['field_name']] = $field['db_field'];
-                }
-            }
-        }
-    }
-    
-    return $mapping;
-}
-
-/**
- * Generate skipped records report - Keep only latest file for each type
+ * Generate skipped records report
  */
 function generateSkippedReport($skippedRecords, $uploadType) {
-    // Create reports directory if it doesn't exist
-    $reportsDir = '../reports';
-    if (!file_exists($reportsDir)) {
-        mkdir($reportsDir, 0755, true);
+    if (empty($skippedRecords)) {
+        return null;
     }
     
-    // Delete any existing skipped file for this type
-    $existingFiles = glob($reportsDir . '/skipped_' . $uploadType . '_*.xlsx');
-    foreach ($existingFiles as $file) {
-        if (is_file($file)) {
-            @unlink($file);
-        }
-    }
-    
-    // Generate filename with timestamp
     $timestamp = date('Ymd_His');
-    $filename = "skipped_{$uploadType}_{$timestamp}.xlsx";
-    $filepath = $reportsDir . '/' . $filename;
+    $fileName = "skipped_{$uploadType}_{$timestamp}.csv";
+    $filePath = __DIR__ . '/upload_reports/' . $fileName;
     
-    // Create new spreadsheet
-    $spreadsheet = new Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
+    // Ensure directory exists
+    if (!is_dir(__DIR__ . '/upload_reports')) {
+        mkdir(__DIR__ . '/upload_reports', 0755, true);
+    }
     
-    // Set headers
-    $headers = ['row_number', 'catalog_number', 'lot_number', 'reason'];
-    $sheet->fromArray($headers, null, 'A1');
+    // Create CSV
+    $fp = fopen($filePath, 'w');
     
-    // Style headers (optional)
-    $sheet->getStyle('A1:D1')->getFont()->setBold(true);
+    // Write header
+    fputcsv($fp, ['Row', 'Catalog Number', 'Lot Number', 'Reason']);
     
-    // Add data
-    $rowNum = 2;
+    // Write data
     foreach ($skippedRecords as $record) {
-        $sheet->fromArray([
+        fputcsv($fp, [
             $record['row'],
             $record['catalogNumber'],
             $record['lotNumber'],
             $record['reason']
-        ], null, "A{$rowNum}");
-        $rowNum++;
+        ]);
     }
     
-    // Auto-size columns
-    foreach (range('A', 'D') as $col) {
-        $sheet->getColumnDimension($col)->setAutoSize(true);
-    }
+    fclose($fp);
     
-    // Save Excel file
-    $writer = new Xlsx($spreadsheet);
-    $writer->save($filepath);
-    
-    return $filename;
+    return $fileName;
 }
 
 /**
- * Generate complete upload report with all records and their status
+ * Generate complete upload report with status
  */
 function generateCompleteReport($allRecords, $uploadType) {
-    // Create reports directory if it doesn't exist
-    $reportsDir = '../reports';
-    if (!file_exists($reportsDir)) {
-        mkdir($reportsDir, 0755, true);
+    if (empty($allRecords)) {
+        return null;
     }
     
-    // Delete any existing complete report file for this type
-    $existingFiles = glob($reportsDir . '/upload_report_' . $uploadType . '_*.xlsx');
-    foreach ($existingFiles as $file) {
-        if (is_file($file)) {
-            @unlink($file);
-        }
-    }
-    
-    // Generate filename with timestamp
     $timestamp = date('Ymd_His');
-    $filename = "upload_report_{$uploadType}_{$timestamp}.xlsx";
-    $filepath = $reportsDir . '/' . $filename;
+    $fileName = "complete_{$uploadType}_{$timestamp}.csv";
+    $filePath = __DIR__ . '/upload_reports/' . $fileName;
     
-    // Create new spreadsheet
-    $spreadsheet = new Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
-    
-    // Determine headers based on upload type
-    if ($uploadType === 'catalog') {
-        $headers = CATALOG_HEADERS;
-    } else {
-        $headers = LOT_HEADERS;
+    // Ensure directory exists
+    if (!is_dir(__DIR__ . '/upload_reports')) {
+        mkdir(__DIR__ . '/upload_reports', 0755, true);
     }
     
-    // Add status column to headers
-    $headers[] = 'status';
+    // Create CSV
+    $fp = fopen($filePath, 'w');
     
-    // Set headers
-    $sheet->fromArray($headers, null, 'A1');
+    // Get headers from first record
+    $firstRecord = reset($allRecords);
+    $headers = array_keys($firstRecord);
     
-    // Style headers
-    $lastCol = chr(64 + count($headers)); // Convert number to letter (A, B, C, etc.)
-    $sheet->getStyle("A1:{$lastCol}1")->getFont()->setBold(true);
+    // Write header
+    fputcsv($fp, $headers);
     
-    // Add data
-    $rowNum = 2;
+    // Write data
     foreach ($allRecords as $record) {
-        $rowData = [];
-        // Add all original fields in order
-        foreach (($uploadType === 'catalog' ? CATALOG_HEADERS : LOT_HEADERS) as $header) {
-            $rowData[] = isset($record[$header]) ? $record[$header] : '';
-        }
-        // Add status
-        $rowData[] = $record['status'];
-        
-        $sheet->fromArray($rowData, null, "A{$rowNum}");
-        $rowNum++;
+        fputcsv($fp, array_values($record));
     }
     
-    // Auto-size columns
-    foreach (range('A', $lastCol) as $col) {
-        $sheet->getColumnDimension($col)->setAutoSize(true);
-    }
+    fclose($fp);
     
-    // Save Excel file
-    $writer = new Xlsx($spreadsheet);
-    $writer->save($filepath);
-    
-    return $filename;
+    return $fileName;
 }
 
 /**
  * Log upload to database
  */
-function logUpload($conn, $status, $summary, $errorMessage) {
-    try {
-        // Ensure autocommit is on for logging
-        $conn->autocommit(true);
-        
-        $sql = "INSERT INTO uploadLogs (status, summary, errorMessage, uploadedAt) VALUES (?, ?, ?, NOW())";
-        $stmt = $conn->prepare($sql);
-        
-        if (!$stmt) {
-            throw new Exception("Failed to prepare statement: " . $conn->error);
-        }
-        
-        $summaryJson = json_encode($summary);
-        
-        // For debugging, let's also try with NULL for errorMessage if it's empty
-        if ($errorMessage === null || $errorMessage === '') {
-            $errorMessage = null;
-        }
-        
-        $stmt->bind_param("sss", $status, $summaryJson, $errorMessage);
-        
-        if (!$stmt->execute()) {
-            throw new Exception("Failed to execute: " . $stmt->error);
-        }
-        
-        $insertId = $conn->insert_id;
-        $stmt->close();
-        
-        // Verify the insert worked
-        $verify = $conn->query("SELECT * FROM uploadLogs WHERE id = $insertId");
-        if (!$verify || $verify->num_rows === 0) {
-            throw new Exception("Insert verification failed - record not found");
-        }
-        
-        // Log successful (this will help us debug)
-        error_log("Upload logged successfully with ID: $insertId, Status: $status");
-        
-    } catch (Exception $e) {
-        // Log the error and also add it to the response for debugging
-        $errorMsg = "Log Upload Error: " . $e->getMessage();
-        error_log($errorMsg);
-        
-        // Don't throw the exception - we don't want logging failure to break the upload response
-        // But add a debug flag to the response
-        global $debugMessages;
-        if (!isset($debugMessages)) $debugMessages = [];
-        $debugMessages[] = $errorMsg;
+function logUpload($conn, $status, $summary, $errorMessage = null) {
+    $sql = "INSERT INTO uploadlogs (STATUS, summary, errorMessage) VALUES (?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    
+    $summaryJson = json_encode($summary);
+    
+    $stmt->bind_param("sss", $status, $summaryJson, $errorMessage);
+    $stmt->execute();
+    $stmt->close();
+}
+
+/**
+ * Get database connection
+ */
+function getDBConnection() {
+    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    
+    if ($conn->connect_error) {
+        throw new Exception("Database connection failed: " . $conn->connect_error);
     }
+    
+    $conn->set_charset("utf8mb4");
+    
+    return $conn;
+}
+
+/**
+ * Get field mapping for templates from template_config.php
+ */
+function getFieldMappingForTemplates() {
+    $fieldMapping = [];
+    
+    foreach (TEMPLATES as $code => $template) {
+        $fieldMapping[$code] = [];
+        
+        // Get all fields for this template
+        $allFields = array_merge(
+            $template['required_fields'] ?? [],
+            $template['optional_fields'] ?? []
+        );
+        
+        // Map display names to database field names
+        foreach ($allFields as $field) {
+            // Convert display name to database field name
+            $dbFieldName = lcfirst(str_replace(' ', '', $field));
+            
+            // Special cases
+            if ($field === 'Observed mol mass') {
+                $dbFieldName = 'observedMolMass';
+            } elseif ($field === 'Predicted mol mass') {
+                $dbFieldName = 'predictedMolMass';
+            } elseif ($field === 'Mol formula') {
+                $dbFieldName = 'molFormula';
+            } elseif ($field === 'Predicted N terminal') {
+                $dbFieldName = 'predictedNTerminal';
+            } elseif ($field === 'CAS') {
+                $dbFieldName = 'cas';
+            }
+            
+            // Only map required fields
+            if (in_array($field, $template['required_fields'] ?? [])) {
+                $fieldMapping[$code][$field] = $dbFieldName;
+            }
+        }
+    }
+    
+    return $fieldMapping;
 }
 ?>
