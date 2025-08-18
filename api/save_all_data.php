@@ -73,7 +73,7 @@ try {
                 source = NULL, predictedNTerminal = NULL, predictedMolMass = NULL, 
                 observedMolMass = NULL, activity = NULL, shipping = NULL, 
                 stability = NULL, detail = NULL, formulation = NULL, 
-                reconstitution = NULL, cas = NULL, molFormula = NULL,
+                reconstitution = NULL, cas = NULL, 
                 templateCode = ?,
                 updatedAt = CURRENT_TIMESTAMP
                 WHERE catalogNumber = ?";
