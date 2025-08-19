@@ -7,6 +7,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        body{
+            font-size: 0.8rem;
+        }
         .section-card {
             border-radius: 8px;
         }
@@ -83,7 +86,7 @@
             border: 1px solid #ced4da;
             padding: 0.375rem 0.75rem;
             /* font-size: 1rem; */
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             border-radius: 0.25rem;
             cursor: pointer;
             position: relative;
@@ -196,7 +199,7 @@
         }
         /* form control Styles */
         .form-control{
-            font-size: 0.9rem;
+            font-size: 0.8rem;
         }
 
         /* Bulk Upload Modal Styles */
@@ -316,7 +319,7 @@
     <!-- <div class="container-fluid mt-2" style="display: flex; justify-content: center;">
 
     </div> -->
-    <div class="container mt-2" style="font-size: 0.9rem;">
+    <div class="container mt-2">
         <!-- Selection Form -->
         <div class="row mb-2">
             <div class="col-12">
@@ -791,6 +794,15 @@
                 }
             }
             */
+            // Check for unsaved changes
+            if (hasUnsavedChanges && currentTemplateCode !== newTemplateCode) {
+                if (!confirm('You have unsaved changes. Do you want to switch templates and lose your changes?')) {
+                    const oldRadio = document.getElementById(`template_${currentTemplateCode}`);
+                    if (oldRadio) oldRadio.checked = true;
+                    return;
+                }
+            }
+            
             currentTemplateCode = newTemplateCode;
             
             // Reset catalog and lot selections
@@ -1904,6 +1916,9 @@ function updateButtonStates() {
                         const radioGroup = document.createElement('div');
                         radioGroup.className = 'template-radio-group';
                         
+                        // Sort the 'templates' array by the 'template_name' property
+                        data.templates.sort((a, b) => a.template_name.localeCompare(b.template_name));
+
                         data.templates.forEach((template, index) => {
                             const radioDiv = document.createElement('div');
                             radioDiv.className = 'template-radio';
