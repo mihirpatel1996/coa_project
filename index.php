@@ -729,10 +729,36 @@
             initializeBulkUpload();
         });
 
+        function resetCatalogAndLotSelection() {
+            // Reset global state variables
+            currentCatalogNumber = null;
+            currentLotNumber = null;
+            originalTemplateCode = null;
+            hasUnsavedChanges = false;
+            isChangingTemplate = false;
+
+            // Reset Catalog Dropdown UI
+            const catalogToggle = document.getElementById('catalogDropdownToggle');
+            catalogToggle.textContent = 'Select Catalog...';
+            document.getElementById('catalogName').value = '';
+            document.getElementById('catalogName').readOnly = true;
+            document.getElementById('catalogName').classList.remove('is-invalid', 'border-warning');
+
+            // Reset Lot Dropdown UI
+            const lotToggle = document.getElementById('lotDropdownToggle');
+            lotToggle.textContent = 'Select Lot...';
+            lotToggle.disabled = true;
+            const lotItemsContainer = document.getElementById('lotDropdownItems');
+            lotItemsContainer.innerHTML = '<div class="searchable-dropdown-no-results">Select a catalog first</div>';
+
+            // Update button states, which will disable them
+            updateButtonStates();
+        }
+
         // Template radio button handler
         function handleTemplateRadioChange(event) {
             const newTemplateCode = event.target.value;
-            
+            /*
             // Check if changing from original saved template
             if (currentCatalogNumber && originalTemplateCode && originalTemplateCode !== newTemplateCode) {
                 const newTemplateName = event.target.nextElementSibling.textContent.trim();
@@ -757,9 +783,15 @@
                     return;
                 }
             }
-            
+            */
             currentTemplateCode = newTemplateCode;
+            
+            // Reset catalog and lot selections
+            resetCatalogAndLotSelection();
+            
+            // Load the structure for the new template (fields will be disabled)
             loadTemplateStructure(newTemplateCode);
+
         }
 
         // Load template structure and display fields
@@ -1284,7 +1316,7 @@ function updateButtonStates() {
             const catalogNameField = document.getElementById('catalogName');
             if (catalogNameField) {
                 // Reload the original catalog name from the selected catalog
-                const selectedCatalog = catalogsData.find(cat => cat.id == currentCatalogId);
+                const selectedCatalog = catalogsData.find(cat => cat.catalog_number == currentCatalogNumber);
                 if (selectedCatalog) {
                     catalogNameField.value = selectedCatalog.catalog_name || '';
                 }
