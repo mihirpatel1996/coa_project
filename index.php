@@ -82,7 +82,8 @@
             background-color: white;
             border: 1px solid #ced4da;
             padding: 0.375rem 0.75rem;
-            font-size: 1rem;
+            /* font-size: 1rem; */
+            font-size: 0.9rem;
             border-radius: 0.25rem;
             cursor: pointer;
             position: relative;
@@ -192,6 +193,10 @@
             height: 30px;
             background-color: #dee2e6;
             margin: 0 10px;
+        }
+        /* form control Styles */
+        .form-control{
+            font-size: 0.9rem;
         }
 
         /* Bulk Upload Modal Styles */
@@ -308,7 +313,10 @@
         </div>
     </nav>
 
-    <div class="container mt-2">
+    <!-- <div class="container-fluid mt-2" style="display: flex; justify-content: center;">
+
+    </div> -->
+    <div class="container mt-2" style="font-size: 0.9rem;">
         <!-- Selection Form -->
         <div class="row mb-2">
             <div class="col-12">
@@ -376,13 +384,12 @@
                 </div>
             </div>
         </div>
-
         <!-- Fixed Sections Container -->
         <div id="sectionsContainer">
             <!-- Description Section -->
             <div class="section-card" data-section-id="1">
                 <div class="section-header">
-                    <h5 class="mb-0">Description</h5>
+                    <h6 class="mb-0">Description</h6>
                 </div>
                 <div class="section-content" id="section_1">
                     <div class="key-values-container" id="keyValues_1">
@@ -397,7 +404,7 @@
             <!-- Specifications Section -->
             <div class="section-card" data-section-id="2">
                 <div class="section-header">
-                    <h5 class="mb-0">Specifications</h5>
+                    <h6 class="mb-0">Specifications</h6>
                 </div>
                 <div class="section-content" id="section_2">
                     <div class="key-values-container" id="keyValues_2">
@@ -412,7 +419,7 @@
             <!-- Preparation and Storage Section -->
             <div class="section-card" data-section-id="3">
                 <div class="section-header">
-                    <h5 class="mb-0">Preparation and Storage</h5>
+                    <h6 class="mb-0">Preparation and Storage</h6>
                 </div>
                 <div class="section-content" id="section_3">
                     <div class="key-values-container" id="keyValues_3">
@@ -463,7 +470,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Create New Catalog</h5>
+                    <h6 class="modal-title">Create New Catalog</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -500,7 +507,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Create New Lot</h5>
+                    <h6 class="modal-title">Create New Lot</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
