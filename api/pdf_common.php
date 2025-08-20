@@ -124,7 +124,7 @@ function renderFieldsAsHTML($fields, $catalogData, $lotData) {
         $value = formatFieldValue($field_name, $value);
         
         // Add row
-        $html .= '<tr>';
+        $html .= '<tr style="page-break-inside: auto;">';
         $html .= '<td width="30%" style="vertical-align: top; padding: 2px 0;">' . htmlspecialchars($field_name) . ':</td>';
         $html .= '<td width="70%" style="vertical-align: top; padding: 2px 0;">' . $value . '</td>';
         $html .= '</tr>';
@@ -170,6 +170,15 @@ function generatePDF($catalog_data, $lot_data, $template_code) {
     $mpdf->SetAuthor('Sino Biological');
     $mpdf->SetSubject('Certificate of Analysis');
     $mpdf->SetKeywords('CoA, Certificate, Analysis, ' . $catalog_data['catalogNumber']);
+
+    // 8. PDF Footer (not HTML footer)
+    $footerHtml = '
+        <div style="text-align: center; font-size: 8pt; color: #333; margin-top: 3mm; border-top: 1px solid #333; padding-top: 3mm;">
+            Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)&nbsp;&nbsp;&nbsp;
+            Website: www.sinobiological.com
+        </div>
+    ';
+    $mpdf->SetHTMLFooter($footerHtml);
     
     // Build complete HTML document
     $html = '
@@ -251,15 +260,6 @@ function generatePDF($catalog_data, $lot_data, $template_code) {
 
     // Write main content
     $mpdf->WriteHTML($html);
-
-    // 8. PDF Footer (not HTML footer)
-    $footerHtml = '
-        <div style="text-align: center; font-size: 8pt; color: #333; margin-top: 3mm; border-top: 1px solid #333; padding-top: 3mm;">
-            Tel: +86-400-890-9989 (Global), +1-215-583-7898 (USA), +49(0)6196 9678656 (Europe)&nbsp;&nbsp;&nbsp;
-            Website: www.sinobiological.com
-        </div>
-    ';
-    $mpdf->SetHTMLFooter($footerHtml);
     
     return $mpdf;
 }
@@ -279,9 +279,9 @@ function validateAllFields($catalogData, $lotData, $templateCode) {
             $field_name = $field_config['field_name'];
             $db_field = $field_config['db_field'];
             $source = $field_config['field_source'];
-            $required = $field_config['required'] ?? false;
+            // $required = $field_config['required'] ?? false;
             
-            if (!$required) continue;
+            // if (!$required) continue;
             
             $value = '';
             if ($source === 'catalog' && isset($catalogData[$db_field])) {
