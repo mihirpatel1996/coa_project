@@ -40,10 +40,10 @@ try {
     // Log PDF generation (optional)
     try {
         $conn = getDBConnection();
-        $log_sql = "INSERT INTO pdf_generation_log (catalogNumber, lotNumber, templateCode, generatedAt) 
-                    VALUES (?, ?, ?, NOW())";
+        $log_sql = "INSERT INTO pdf_generation_log (catalogNumber, lotNumber, templateCode, filename, generatedAt) 
+                    VALUES (?, ?, ?, ?, NOW())";
         $log_stmt = $conn->prepare($log_sql);
-        $log_stmt->bind_param("sss", $catalog_number, $lot_number, $data['template_code']);
+        $log_stmt->bind_param("ssss", $catalog_number, $lot_number, $data['template_code'], $filename);
         $log_stmt->execute();
         $log_stmt->close();
         $conn->close();

@@ -1,324 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate of Analysis - PDF Generator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body{
-            font-size: 0.8rem;
-        }
-        .section-card {
-            border-radius: 8px;
-        }
-        .section-header {
-            padding: 10px;
-            border-bottom: 1px solid #dee2e6;
-            cursor: pointer;
-        }
-        .section-content {
-            padding: 8px;
-            padding-top: 5px;
-            padding-bottom: 0px;
-            overflow: auto;
-        }
-        .card-body{
-            padding: 0.9rem;
-        }
-        .key-value-row {
-            background-color: #ffffff;
-            border-radius: 5px;
-            padding: 5px;
-            margin-bottom: 0px;
-            transition: all 0.2s ease;
-        }
-        .bulk-edit-textarea {
-            resize: vertical;
-            min-height: 60px;
-            width: 100%;
-            transition: border-color 0.3s ease;
-        }
-        .bulk-edit-textarea.border-warning {
-            border-color: #ffc107 !important;
-            border-width: 2px;
-        }
-        .bulk-edit-textarea:disabled {
-            background-color: #f8f9fa;
-            cursor: not-allowed;
-        }
-        .template-radio-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .template-radio {
-            display: flex;
-            align-items: center;
-        }
-        .template-radio input[type="radio"] {
-            margin-right: 5px;
-        }
-        .template-radio label {
-            margin-bottom: 0;
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 5px;
-            transition: background-color 0.2s;
-        }
-        .template-radio:hover label {
-            background-color: #f0f0f0;
-        }
-        .template-radio input[type="radio"]:checked + label {
-            background-color: #e7f3ff;
-            font-weight: 500;
-        }
-        /* Searchable dropdown styles */
-        .searchable-dropdown {
-            position: relative;
-            width: 100%;
-        }
-        .searchable-dropdown-toggle {
-            width: 100%;
-            text-align: left;
-            background-color: white;
-            border: 1px solid #ced4da;
-            padding: 0.375rem 0.75rem;
-            /* font-size: 1rem; */
-            font-size: 0.8rem;
-            border-radius: 0.25rem;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            padding-right: 2rem;
-        }
-        .searchable-dropdown-toggle:hover {
-            border-color: #86b7fe;
-        }
-        .searchable-dropdown-toggle:focus {
-            border-color: #86b7fe;
-            outline: 0;
-            box-shadow: 0 0 0 0.25rem rgb(13 110 253 / 25%);
-        }
-        .searchable-dropdown-toggle::after {
-            content: "▼";
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.8em;
-        }
-        .searchable-dropdown-menu {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            z-index: 1050;
-            display: none;
-            background-color: white;
-            border: 1px solid #ced4da;
-            border-radius: 0.25rem;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-            max-height: 300px;
-            overflow: hidden;
-            margin-top: 2px;
-        }
-        .searchable-dropdown-menu.show {
-            display: block;
-        }
-        .searchable-dropdown-search {
-            padding: 8px;
-            border-bottom: 1px solid #dee2e6;
-            position: sticky;
-            top: 0;
-            background-color: white;
-            z-index: 1;
-        }
-        .searchable-dropdown-search input {
-            width: 100%;
-            padding: 0.375rem 0.75rem;
-            border: 1px solid #ced4da;
-            border-radius: 0.25rem;
-            font-size: 0.875rem;
-        }
-        .searchable-dropdown-search input:focus {
-            outline: none;
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.2rem rgb(13 110 253 / 25%);
-        }
-        .searchable-dropdown-items {
-            max-height: 250px;
-            overflow-y: auto;
-        }
-        .searchable-dropdown-item {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            transition: background-color 0.15s;
-        }
-        .searchable-dropdown-item:hover {
-            background-color: #f8f9fa;
-        }
-        .searchable-dropdown-item.selected {
-            background-color: #e9ecef;
-            font-weight: 500;
-        }
-        .searchable-dropdown-item.hidden {
-            display: none;
-        }
-        .searchable-dropdown-no-results {
-            padding: 1rem;
-            text-align: center;
-            color: #6c757d;
-            font-style: italic;
-        }
-        .btn-outline-success {
-            color: #28a745;
-            border-color: #28a745;
-            background-color: transparent;
-        }
-        .btn-outline-success:hover {
-            color: #fff;
-            background-color: #28a745;
-            border-color: #28a745;
-        }
-        /* Button group styling */
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .button-divider {
-            width: 1px;
-            height: 30px;
-            background-color: #dee2e6;
-            margin: 0 10px;
-        }
-        /* form control Styles */
-        .form-control{
-            font-size: 0.8rem;
-        }
+<?php include './includes/header.php'?>
 
-        /* Bulk Upload Modal Styles */
-        #bulkUploadModal .card {
-            border: 1px solid #e0e0e0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        #bulkUploadModal .card-title {
-            color: #333;
-            font-weight: 600;
-        }
-
-        #bulkUploadModal .form-check-label {
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 5px;
-            transition: background-color 0.2s;
-        }
-
-        #bulkUploadModal .form-check-label:hover {
-            background-color: #f0f0f0;
-        }
-
-        #bulkUploadModal .form-check-input:checked + .form-check-label {
-            background-color: #e7f3ff;
-            font-weight: 500;
-        }
-
-        #uploadProgress .spinner-border {
-            width: 3rem;
-            height: 3rem;
-        }
-
-        .btn-info {
-            color: #fff;
-            background-color: #17a2b8;
-            border-color: #17a2b8;
-        }
-
-        .btn-info:hover {
-            color: #fff;
-            background-color: #138496;
-            border-color: #117a8b;
-        }
-
-        /* File input styling */
-        #csvFileInput {
-            cursor: pointer;
-        }
-
-        #csvFileInput:hover {
-            border-color: #86b7fe;
-        }
-
-        /* Alert styling */
-        #uploadResults .alert {
-            border-radius: 8px;
-            border-width: 1px;
-        }
-
-        #successAlert {
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-            color: #155724;
-        }
-
-        #errorAlert {
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-            color: #721c24;
-        }
-
-        /* Smaller alert styles for bulk upload */
-        .alert-sm {
-            padding: 0.5rem 0.75rem;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-        }
-
-        .alert-sm small {
-            font-size: 0.875rem;
-        }
-
-        /* Card header styles */
-        .card-header.bg-primary {
-            background-color: #0d6efd !important;
-        }
-
-        .card-header.bg-success {
-            background-color: #198754 !important;
-        }
-
-        /* Spinner styles */
-        .spinner-border-sm {
-            width: 1.5rem;
-            height: 1.5rem;
-        }
-
-        /* Add custom styles here */
-        /* .alert-sm {
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-        } */
-    </style>
-</head>
 <body>
-    <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
-            <span class="navbar-brand mb-0 h1">
-                <i class="fas fa-file-pdf me-2"></i>
-                Certificate of Analysis Generator
-            </span>
-        </div>
-    </nav>
-
-    <!-- <div class="container-fluid mt-2" style="display: flex; justify-content: center;">
-
-    </div> -->
+    <!-- Include navbar -->
+    <?php include './includes/navbar.php'?>
+    
     <div class="container mt-2">
         <!-- Selection Form -->
         <div class="row mb-2">
@@ -328,10 +13,16 @@
                         <!-- Template Selection with Radio Buttons -->
                         <div class="row mb-3">
                             <div class="col-12">
-                                <label class="form-label">
-                                    <i class="fas fa-file-alt me-1"></i>
-                                    Template
-                                </label>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label mb-0">
+                                        <i class="fas fa-file-alt me-1"></i>
+                                        Template
+                                    </label>
+                                    <a href="view_pdfs.php" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-file-pdf me-1"></i>
+                                        View Generated PDFs
+                                    </a>
+                                </div>
                                 <div id="templateRadioButtons" class="d-flex flex-wrap gap-3">
                                     <div class="text-muted">
                                         <i class="fas fa-spinner fa-spin me-1"></i>
@@ -814,46 +505,46 @@
         }
 
         // Load template structure and display fields
-function loadTemplateStructure(templateCode) {
-    fetch(`api/get_template_keys.php?template_code=${templateCode}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                templateKeys = {};
-                data.sections.forEach(section => {
-                    templateKeys[section.section_id] = {
-                        section_name: section.section_name,
-                        keys: section.keys.sort((a, b) => a.key_order - b.key_order)
-                    };
+        function loadTemplateStructure(templateCode) {
+            fetch(`api/get_template_keys.php?template_code=${templateCode}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        templateKeys = {};
+                        data.sections.forEach(section => {
+                            templateKeys[section.section_id] = {
+                                section_name: section.section_name,
+                                keys: section.keys.sort((a, b) => a.key_order - b.key_order)
+                            };
+                        });
+                        displayTemplateFields();
+                        
+                        // All templates require lot tracking
+                        const lotToggle = document.getElementById('lotDropdownToggle');
+                        lotToggle.style.opacity = '1';
+                        lotToggle.disabled = !currentCatalogNumber;
+                        if (!currentLotNumber) {
+                            lotToggle.textContent = 'Select Lot...';
+                        }
+                        
+                        // Update button states after template structure is loaded
+                        updateButtonStates();
+                        
+                        // If catalog is selected and not changing template, load data
+                        if (currentCatalogNumber && !isChangingTemplate) {
+                            loadCatalogData();
+                        } else if (isChangingTemplate) {
+                            displayEmptyTemplateData();
+                            isChangingTemplate = false;
+                        }
+                    } else {
+                        console.error('Failed to load template structure:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading template structure:', error);
                 });
-                displayTemplateFields();
-                
-                // All templates require lot tracking
-                const lotToggle = document.getElementById('lotDropdownToggle');
-                lotToggle.style.opacity = '1';
-                lotToggle.disabled = !currentCatalogNumber;
-                if (!currentLotNumber) {
-                    lotToggle.textContent = 'Select Lot...';
-                }
-                
-                // Update button states after template structure is loaded
-                updateButtonStates();
-                
-                // If catalog is selected and not changing template, load data
-                if (currentCatalogNumber && !isChangingTemplate) {
-                    loadCatalogData();
-                } else if (isChangingTemplate) {
-                    displayEmptyTemplateData();
-                    isChangingTemplate = false;
-                }
-            } else {
-                console.error('Failed to load template structure:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading template structure:', error);
-        });
-}
+        }
 
         // Display empty template data when switching templates
         function displayEmptyTemplateData() {
@@ -955,91 +646,91 @@ function loadTemplateStructure(templateCode) {
         }
 
         // Load catalog data when catalog is selected
-function loadCatalogData() {
-    if (!currentTemplateCode || !currentCatalogNumber) return;
-    
-    // All templates require lots - no special handling needed
-    
-    disableAllTextareas();
-    
-    const apiUrl = `api/get_section_data.php?catalog_number=${currentCatalogNumber}&template_code=${currentTemplateCode}&lot_number=${currentLotNumber || ''}`;
-    
-    fetch(apiUrl)
-        .then(response => response.json())
-        .then(data => {
-            if (!data.error) {
-                populateFieldsWithData(data.sections_data);
-                enableAllTextareas();
-                updateButtonStates();
-            } else {
-                console.error('Error loading data:', data.message);
-                enableAllTextareas();
-                updateButtonStates();
-            }
-        })
-        .catch(error => {
-            console.error('Error loading catalog data:', error);
-            enableAllTextareas();
-            updateButtonStates();
-        });
-}
+        function loadCatalogData() {
+            if (!currentTemplateCode || !currentCatalogNumber) return;
+            
+            // All templates require lots - no special handling needed
+            
+            disableAllTextareas();
+            
+            const apiUrl = `api/get_section_data.php?catalog_number=${currentCatalogNumber}&template_code=${currentTemplateCode}&lot_number=${currentLotNumber || ''}`;
+            
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.error) {
+                        populateFieldsWithData(data.sections_data);
+                        enableAllTextareas();
+                        updateButtonStates();
+                    } else {
+                        console.error('Error loading data:', data.message);
+                        enableAllTextareas();
+                        updateButtonStates();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading catalog data:', error);
+                    enableAllTextareas();
+                    updateButtonStates();
+                });
+        }
 
 
         // Populate fields with loaded data
-function populateFieldsWithData(sectionsData) {
-    currentData = {};
-    originalData = {};
-    
-    sectionsData.forEach(section => {
-        const sectionId = section.section_id;
-        currentData[sectionId] = {};
-        originalData[sectionId] = {};
-        
-        section.key_values.forEach(kv => {
-            const textarea = document.getElementById(`textarea_${sectionId}_${kv.key.replace(/\s+/g, '_')}`);
-            if (textarea) {
-                textarea.value = kv.value || '';
-                currentData[sectionId][kv.key] = kv.value || '';
-                originalData[sectionId][kv.key] = kv.value || '';
+        function populateFieldsWithData(sectionsData) {
+            currentData = {};
+            originalData = {};
+            
+            sectionsData.forEach(section => {
+                const sectionId = section.section_id;
+                currentData[sectionId] = {};
+                originalData[sectionId] = {};
+                
+                section.key_values.forEach(kv => {
+                    const textarea = document.getElementById(`textarea_${sectionId}_${kv.key.replace(/\s+/g, '_')}`);
+                    if (textarea) {
+                        textarea.value = kv.value || '';
+                        currentData[sectionId][kv.key] = kv.value || '';
+                        originalData[sectionId][kv.key] = kv.value || '';
+                    }
+                });
+            });
+            
+            // Clear any validation errors
+            document.querySelectorAll('.is-invalid').forEach(element => {
+                element.classList.remove('is-invalid');
+            });
+            document.querySelectorAll('.border-warning').forEach(element => {
+                element.classList.remove('border-warning');
+            });
+            
+            // Check if any fields are empty - if so, mark as having changes
+            let hasEmptyFields = false;
+            document.querySelectorAll('.bulk-edit-textarea:not(:disabled)').forEach(textarea => {
+                if (!textarea.value.trim()) {
+                    hasEmptyFields = true;
+                    textarea.classList.add('border-warning'); // Visual indicator
+                }
+            });
+            
+            // If there are empty fields, enable save button
+            if (hasEmptyFields) {
+                hasUnsavedChanges = true;
+                const saveBtn = document.getElementById('saveAllBtn');
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All*';
+                }
+            } else {
+                hasUnsavedChanges = false;
+                const saveBtn = document.getElementById('saveAllBtn');
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All';
+                }
             }
-        });
-    });
-    
-    // Clear any validation errors
-    document.querySelectorAll('.is-invalid').forEach(element => {
-        element.classList.remove('is-invalid');
-    });
-    document.querySelectorAll('.border-warning').forEach(element => {
-        element.classList.remove('border-warning');
-    });
-    
-    // Check if any fields are empty - if so, mark as having changes
-    let hasEmptyFields = false;
-    document.querySelectorAll('.bulk-edit-textarea:not(:disabled)').forEach(textarea => {
-        if (!textarea.value.trim()) {
-            hasEmptyFields = true;
-            textarea.classList.add('border-warning'); // Visual indicator
+            
+            // Update button states after loading data
+            updateButtonStates();
         }
-    });
-    
-    // If there are empty fields, enable save button
-    if (hasEmptyFields) {
-        hasUnsavedChanges = true;
-        const saveBtn = document.getElementById('saveAllBtn');
-        if (saveBtn) {
-            saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All*';
-        }
-    } else {
-        hasUnsavedChanges = false;
-        const saveBtn = document.getElementById('saveAllBtn');
-        if (saveBtn) {
-            saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All';
-        }
-    }
-    
-    // Update button states after loading data
-    updateButtonStates();
-}
 
         // Enable/disable textareas
         function enableAllTextareas() {
@@ -1055,23 +746,23 @@ function populateFieldsWithData(sectionsData) {
         }
 
         // Update button states
-function updateButtonStates() {
-    const hasTemplate = !!currentTemplateCode;
-    const hasCatalog = !!currentCatalogNumber;
-    const hasLot = currentLotNumber !== null && currentLotNumber !== undefined;
-    
-    // All templates require lots
-    const canInteract = hasTemplate && hasCatalog && hasLot;
-    
-    // Save and Cancel buttons need interaction ability AND unsaved changes
-    const canSaveOrCancel = canInteract && hasUnsavedChanges;
-    document.getElementById('saveAllBtn').disabled = !canSaveOrCancel;
-    document.getElementById('cancelBtn').disabled = !canSaveOrCancel;
-    
-    // Preview and Generate buttons only need interaction ability
-    document.getElementById('previewBtn').disabled = !canInteract;
-    document.getElementById('generateBtn').disabled = !canInteract;
-}
+        function updateButtonStates() {
+            const hasTemplate = !!currentTemplateCode;
+            const hasCatalog = !!currentCatalogNumber;
+            const hasLot = currentLotNumber !== null && currentLotNumber !== undefined;
+            
+            // All templates require lots
+            const canInteract = hasTemplate && hasCatalog && hasLot;
+            
+            // Save and Cancel buttons need interaction ability AND unsaved changes
+            const canSaveOrCancel = canInteract && hasUnsavedChanges;
+            document.getElementById('saveAllBtn').disabled = !canSaveOrCancel;
+            document.getElementById('cancelBtn').disabled = !canSaveOrCancel;
+            
+            // Preview and Generate buttons only need interaction ability
+            document.getElementById('previewBtn').disabled = !canInteract;
+            document.getElementById('generateBtn').disabled = !canInteract;
+        }
 
         // New function to check if all fields are filled
         function checkAllFieldsFilled() {
