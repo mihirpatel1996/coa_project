@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
 // Include database connection
+require_once '../vendor/autoload.php';
 require_once '../config/database.php';
 
 
