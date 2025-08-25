@@ -128,6 +128,12 @@ include './includes/header.php';
                     }
                 }
 
+                //if search query is inserted, it shouldn't be longer than 255 characters
+                if(searchQuery && searchQuery.length > 255) {
+                    alert("Search query cannot be longer than 255 characters.");
+                    return;
+                }
+
                 // Prepare data for API call
                 const postData = {
                     searchType: searchQuery ? 'query' : 'date',
