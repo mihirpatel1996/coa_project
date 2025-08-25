@@ -47,18 +47,21 @@ if($queryType == 'query'){
     $searchTerms = array_filter($searchTerms); // Remove empty strings
 
     if (empty($searchTerms)) {
-        echo json_encode(['success' => true, 'pdfs' => []]);
+        echo json_encode(['success' => true, 'pdfs' => [], 'missing' => ['count' => 0, 'terms' => []]]);
         exit();
     }
+
+    // Convert search terms to uppercase for case-insensitive comparison
+    $upperSearchTerms = array_map('strtoupper', $searchTerms);
 
     $sql_parts = [];
     $params = [];
     $types = '';
 
-    foreach ($searchTerms as $term) {
-        $sql_parts[] = "(lotNumber LIKE ? OR catalogNumber LIKE ?)";
-        $params[] = '%' . $term . '%';
-        $params[] = '%' . $term . '%';
+    foreach ($upperSearchTerms as $term) {
+        $sql_parts[] = "(UPPER(lotNumber) = ? OR UPPER(catalogNumber) = ?)";
+        $params[] = $term;
+        $params[] = $term;
         $types .= 'ss';
     }
 
@@ -71,16 +74,35 @@ if($queryType == 'query'){
         $result = $pdf_log_stmt->get_result();
         $all_pdfs = $result->fetch_all(MYSQLI_ASSOC);
         $pdf_log_stmt->close();
+
+        // Find missing terms
+        $foundLotNumbers = array_map('strtoupper', array_column($all_pdfs, 'lotNumber'));
+        $foundCatalogNumbers = array_map('strtoupper', array_column($all_pdfs, 'catalogNumber'));
+        $foundNumbers = array_unique(array_merge($foundLotNumbers, $foundCatalogNumbers));
+        
+        $matchedTerms = array_intersect($upperSearchTerms, $foundNumbers);
+        $missingTerms = array_diff($upperSearchTerms, $matchedTerms);
+        $missingCount = count($missingTerms);
+        
         $conn->close();
         
         http_response_code(200);
-        echo json_encode(['success' => true, 'pdfs' => $all_pdfs]);
+        echo json_encode([
+            'success' => true, 
+            'pdfs' => $all_pdfs,
+            'missing' => [
+                'count' => $missingCount,
+                'terms' => array_values($missingTerms) // re-index array
+            ]
+        ]);
+
     }
     catch(Exception $e){
         http_response_code(500);
         echo json_encode(['success' => false, "message" => 'Database error: '.$e->getMessage()]);
         $conn->close();
         exit();
-    } 
-}    
+    }
+}
+
 ?>

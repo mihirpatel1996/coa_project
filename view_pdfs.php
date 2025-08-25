@@ -3,6 +3,17 @@ $pageTitle = "Generated PDFs";
 include './includes/header.php';
 ?>
 
+<style>
+    /* Input labels for this page */
+    .input-group-text{
+        /* //make input group text look like normal labels */
+        background-color: white;
+        border: none;
+        font-size: inherit;
+        font-weight: normal;
+    }
+</style>
+
 <body>
     <!-- Include navbar -->
     <?php include './includes/navbar.php'?>
@@ -14,25 +25,31 @@ include './includes/header.php';
                     <div class="card-body">
                         <h5 class="card-title mb-3">Search Generated PDFs</h5>
                         <form id="pdfSearchForm">
-                            <!-- <p class="text-muted mb-3"><i class="fas fa fa-info-circle me-2"></i> Search by **Date Range** OR by **Catalog/Lot Number**.</p> -->
-                            <div class="row g-3 align-items-end">
-                                <div class="col-md-3">
-                                    <label for="fromDate" class="form-label">From Date</label>
-                                    <input type="date" class="form-control" id="fromDate">
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="input-group">
+                                                <span class="input-group-text">From Date</span>
+                                                <input type="date" class="form-control" id="fromDate">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="input-group">
+                                                <span class="input-group-text">To</span>
+                                                <input type="date" class="form-control" id="toDate">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="input-group">
+                                                <span class="input-group-text">Catalog/Lot #</span>
+                                                <input type="text" class="form-control" id="searchQuery" placeholder="Enter Catalog or Lot Number">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <label for="toDate" class="form-label">To Date</label>
-                                    <input type="date" class="form-control" id="toDate">
-                                </div>
-                                <div class="col-md-1 text-center">
-                                    <p><strong>OR</strong></p>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="searchQuery" class="form-label">Catalog/Lot Number</label>
-                                    <input type="text" class="form-control" id="searchQuery" placeholder="Enter Catalog or Lot Number">
-                                </div>
-                                <div class="col-md-2">
-                                    <button type="submit" class="btn btn-primary w-100">
+                                <div class="col-md-2 d-flex align-items-center">
+                                    <button type="submit" class="btn btn-primary w-90">
                                         <i class="fas fa-search me-1"></i> Search
                                     </button>
                                 </div>
@@ -53,7 +70,7 @@ include './includes/header.php';
                             <i class="fas fa-info-circle me-2"></i>
                             Search to display PDF files here.
                         </div>
-                        <div class="table-responsive" style="display: none;">
+                        <div class="table-responsive" style="display: none; overflow-x: hidden;">
                             <table class="table table-striped table-hover">
                                 <thead>
                                     <tr>
@@ -153,21 +170,32 @@ include './includes/header.php';
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        displayPdfs(data.pdfs);
+                        displayPdfs(data.pdfs, data.missing);
                     } else {
                         alert('Error fetching PDFs: ' + (data.message || 'Unknown error'));
-                        displayPdfs([]); // Clear results on error
+                        displayPdfs([], []); // Clear results on error
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     alert('An error occurred while fetching PDFs.');
-                    displayPdfs([]); // Clear results on network error
+                    displayPdfs([], []); // Clear results on network error
                 });
             });
 
-            function displayPdfs(pdfs) {
+            function displayPdfs(pdfs, missing) {
                 pdfTableBody.innerHTML = ''; // Clear previous results
+                console.log("missing: "+missing);
+                let missingHtml = '';
+                if (missing && missing.count > 0) {
+                    console.log("missing terms:"+missing.terms);
+                    const missingTermsStr = missing.terms.join(', ');
+                    missingHtml = `
+                        <div class="alert alert-warning" role="alert">
+                            <p class="mb-0"><strong>${missing.count}</strong> items from your search were not found: <strong>${missingTermsStr}</strong></p>
+                        </div>
+                    `;
+                }
 
                 if (pdfs.length > 0) {
                     pdfResultsDiv.style.display = 'none';
@@ -196,7 +224,7 @@ include './includes/header.php';
                     });
                     
                     // Build HTML for grouped display
-                    let html = downloadAllHtml + '<div class="pdf-groups">';
+                    let html = missingHtml + downloadAllHtml + '<div class="pdf-groups">';
                     
                     // Sort dates in descending order (newest first)
                     const sortedDates = Object.keys(groupedPdfs).sort((a, b) => 
@@ -224,7 +252,7 @@ include './includes/header.php';
 
                                     <i class="fas fa-file-pdf text-danger me-1"></i>
                                     <a href="./generated_pdfs/${pdf.fileName}" target="_blank" class="pdf-link me-3">
-                                    <span class="pdf-name">${pdf.fileName}</span>
+                                    <span class="pdf-name" style="font-size: 0.9rem;">${pdf.fileName}</span>
                                     </a>
                                     <!-- <span class="pdf-time text-muted ms-3 me-2">${time}</span> -->
                                
@@ -251,10 +279,11 @@ include './includes/header.php';
                     
                 } else {
                     pdfResultsDiv.style.display = 'block';
-                    pdfResultsDiv.innerHTML = `
+                    let noResultsHtml = `
                         <i class="fas fa-exclamation-circle me-2"></i>
                         No PDF files found matching your criteria.
                     `;
+                    pdfResultsDiv.innerHTML = missingHtml + noResultsHtml;
                     tableResponsiveDiv.style.display = 'none';
                 }
             }
