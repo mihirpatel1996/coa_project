@@ -296,3 +296,35 @@ body{
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
 } */
+
+
+/* View PDF styles */
+.date-header {
+    background-color: #f8f9fa;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    color: #495057;
+    font-weight: 600;
+}
+
+.pdf-list {
+    padding-left: 20px;
+}
+
+.pdf-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.pdf-item:last-child {
+    border-bottom: none;
+}
+
+.pdf-name {
+    font-weight: 500;
+}
+
+.pdf-time {
+    font-size: 0.875rem;
+}

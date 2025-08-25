@@ -152,26 +152,129 @@ include './includes/header.php';
                 pdfTableBody.innerHTML = ''; // Clear previous results
 
                 if (pdfs.length > 0) {
-                    pdfResultsDiv.style.display = 'none'; // Hide "Search to display..." message
-                    tableResponsiveDiv.style.display = 'block'; // Show the table
-
+                    pdfResultsDiv.style.display = 'none';
+                    
+                    // Add Download All button
+                    const downloadAllHtml = `
+                        <div class="mb-3">
+                            <button id="downloadAllBtn" class="btn btn-success">
+                                <i class="fas fa-download me-2"></i>Download All PDFs (${pdfs.length} files)
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Group PDFs by date
+                    const groupedPdfs = {};
                     pdfs.forEach(pdf => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${pdf.fileName}</td>
-                            <td>${pdf.generatedAt}</td>
-                            <td><a href="api/generated_pdfs/${pdf.fileName}" class="btn btn-sm btn-success" download><i class="fas fa-download"></i> Download</a></td>
-                        `;
-                        pdfTableBody.appendChild(row);
+                        const date = new Date(pdf.generatedAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                        if (!groupedPdfs[date]) {
+                            groupedPdfs[date] = [];
+                        }
+                        groupedPdfs[date].push(pdf);
                     });
+                    
+                    // Build HTML for grouped display
+                    let html = downloadAllHtml + '<div class="pdf-groups">';
+                    
+                    // Sort dates in descending order (newest first)
+                    const sortedDates = Object.keys(groupedPdfs).sort((a, b) => 
+                        new Date(b) - new Date(a)
+                    );
+                    
+                    sortedDates.forEach(date => {
+                        html += `
+                            <div class="date-group mb-4">
+                                <h6 class="date-header">
+                                    <i class="fas fa-calendar-alt me-2"></i>${date}
+                                </h6>
+                                <div class="pdf-list">
+                        `;
+                        
+                        groupedPdfs[date].forEach(pdf => {
+                            const time = new Date(pdf.generatedAt).toLocaleTimeString('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            });
+                            
+                            html += `
+                                <div class="pdf-item">
+                                    <i class="fas fa-file-pdf text-danger me-2"></i>
+                                    <span class="pdf-name">${pdf.fileName}</span>
+                                    <span class="pdf-time text-muted ms-3">${time}</span>
+                                </div>
+                            `;
+                        });
+                        
+                        html += `
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    
+                    // Replace table with new grouped display
+                    document.querySelector('.table-responsive').innerHTML = html;
+                    document.querySelector('.table-responsive').style.display = 'block';
+                    
+                    // Add event listener for Download All button
+                    document.getElementById('downloadAllBtn').addEventListener('click', function() {
+                        downloadAllPdfs(pdfs);
+                    });
+                    
                 } else {
-                    pdfResultsDiv.style.display = 'block'; // Show message
+                    pdfResultsDiv.style.display = 'block';
                     pdfResultsDiv.innerHTML = `
                         <i class="fas fa-exclamation-circle me-2"></i>
                         No PDF files found matching your criteria.
                     `;
-                    tableResponsiveDiv.style.display = 'none'; // Hide the table
+                    tableResponsiveDiv.style.display = 'none';
                 }
+            }
+
+            function downloadAllPdfs(pdfs) {
+                const btn = document.getElementById('downloadAllBtn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Preparing download...';
+                btn.disabled = true;
+                
+                // Prepare list of filenames
+                const filenames = pdfs.map(pdf => pdf.fileName);
+                
+                // Call bulk download API
+                fetch('api/download_all_pdfs.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filenames: filenames })
+                })
+                .then(response => response.blob())
+                .then(blob => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `pdfs_${new Date().toISOString().split('T')[0]}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error downloading PDFs:', error);
+                    alert('Error downloading PDFs. Please try again.');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
             }
         });
     </script>
