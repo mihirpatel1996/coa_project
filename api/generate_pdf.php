@@ -40,6 +40,34 @@ try {
     // Log PDF generation (optional)
     try {
         $conn = getDBConnection();
+
+        // Check for and delete existing PDFs for this catalog and lot number
+        $check_sql = "SELECT filename FROM pdf_generation_log WHERE catalogNumber = ? AND lotNumber = ?";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("ss", $catalog_number, $lot_number);
+        $check_stmt->execute();
+        $result = $check_stmt->get_result();
+        $existing_pdfs = $result->fetch_all(MYSQLI_ASSOC);
+        $check_stmt->close();
+
+        if (!empty($existing_pdfs)) {
+            // Delete old PDF files
+            foreach ($existing_pdfs as $pdf) {
+                $old_filepath = __DIR__ . '/../generated_pdfs/' . $pdf['filename'];
+                if (file_exists($old_filepath)) {
+                    unlink($old_filepath);
+                }
+            }
+
+            // Delete old log entries
+            $delete_sql = "DELETE FROM pdf_generation_log WHERE catalogNumber = ? AND lotNumber = ?";
+            $delete_stmt = $conn->prepare($delete_sql);
+            $delete_stmt->bind_param("ss", $catalog_number, $lot_number);
+            $delete_stmt->execute();
+            $delete_stmt->close();
+        }
+
+        // Insert new log entry
         $log_sql = "INSERT INTO pdf_generation_log (catalogNumber, lotNumber, templateCode, filename, generatedAt) 
                     VALUES (?, ?, ?, ?, NOW())";
         $log_stmt = $conn->prepare($log_sql);

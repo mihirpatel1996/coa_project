@@ -43,11 +43,30 @@ if($queryType == 'date'){
     }
 }
 if($queryType == 'query'){
-    $get_pdf_log_sql = "SELECT * FROM pdf_generation_log WHERE lotNumber LIKE ? OR catalogNumber LIKE ?";
-    $searchQuery = '%' . $searchQuery . '%';
+    $searchTerms = array_map('trim', explode(',', $searchQuery));
+    $searchTerms = array_filter($searchTerms); // Remove empty strings
+
+    if (empty($searchTerms)) {
+        echo json_encode(['success' => true, 'pdfs' => []]);
+        exit();
+    }
+
+    $sql_parts = [];
+    $params = [];
+    $types = '';
+
+    foreach ($searchTerms as $term) {
+        $sql_parts[] = "(lotNumber LIKE ? OR catalogNumber LIKE ?)";
+        $params[] = '%' . $term . '%';
+        $params[] = '%' . $term . '%';
+        $types .= 'ss';
+    }
+
+    $get_pdf_log_sql = "SELECT * from pdf_generation_log WHERE " . implode(' OR ', $sql_parts);
+
     try{
         $pdf_log_stmt = $conn->prepare($get_pdf_log_sql);
-        $pdf_log_stmt->bind_param("ss", $searchQuery, $searchQuery);
+        $pdf_log_stmt->bind_param($types, ...$params);
         $pdf_log_stmt->execute();
         $result = $pdf_log_stmt->get_result();
         $all_pdfs = $result->fetch_all(MYSQLI_ASSOC);

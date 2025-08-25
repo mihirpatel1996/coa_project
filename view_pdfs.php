@@ -14,7 +14,7 @@ include './includes/header.php';
                     <div class="card-body">
                         <h5 class="card-title mb-3">Search Generated PDFs</h5>
                         <form id="pdfSearchForm">
-                            <p class="text-muted mb-3"><i class="fas fa fa-info-circle me-2"></i> Search by **Date Range** OR by **Catalog/Lot Number**.</p>
+                            <!-- <p class="text-muted mb-3"><i class="fas fa fa-info-circle me-2"></i> Search by **Date Range** OR by **Catalog/Lot Number**.</p> -->
                             <div class="row g-3 align-items-end">
                                 <div class="col-md-3">
                                     <label for="fromDate" class="form-label">From Date</label>
@@ -115,6 +115,18 @@ include './includes/header.php';
                     alert("Please select a date range or enter a search query.");
                     return;
                 }
+                //if from date is inserted but to date is missing
+                if((fromDate && !toDate) || (!fromDate && toDate)) {
+                    alert("Please provide both From Date and To Date for date range search.");
+                    return;
+                }
+
+                if(fromDate && toDate) {
+                    if (new Date(fromDate) > new Date(toDate)) {
+                        alert("From Date cannot be later than To Date.");
+                        return;
+                    }
+                }
 
                 // Prepare data for API call
                 const postData = {
@@ -192,6 +204,7 @@ include './includes/header.php';
                                     <i class="fas fa-calendar-alt me-2"></i>${date}
                                 </h6>
                                 <div class="pdf-list">
+                                    <div class="pdf-item">
                         `;
                         
                         groupedPdfs[date].forEach(pdf => {
@@ -202,15 +215,18 @@ include './includes/header.php';
                             });
                             
                             html += `
-                                <div class="pdf-item">
-                                    <i class="fas fa-file-pdf text-danger me-2"></i>
+
+                                    <i class="fas fa-file-pdf text-danger me-1"></i>
+                                    <a href="./generated_pdfs/${pdf.fileName}" target="_blank" class="pdf-link me-3">
                                     <span class="pdf-name">${pdf.fileName}</span>
-                                    <span class="pdf-time text-muted ms-3">${time}</span>
-                                </div>
+                                    </a>
+                                    <!-- <span class="pdf-time text-muted ms-3 me-2">${time}</span> -->
+                               
                             `;
                         });
                         
                         html += `
+                                    </div>
                                 </div>
                             </div>
                         `;
