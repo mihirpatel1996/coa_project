@@ -100,9 +100,14 @@ include './includes/header.php';
             const pdfTableBody = document.getElementById('pdfTableBody');
             const tableResponsiveDiv = document.querySelector('.table-responsive');
 
+            // Set to today's date by default, respecting local timezone
+            const today = new Date();
+            // Use en-CA locale to get YYYY-MM-DD format which is compatible with date input
+            const formattedDate = today.toLocaleDateString('en-CA');
+            
             // Set to today's date by default
-            fromDateInput.valueAsDate = new Date();
-            toDateInput.valueAsDate = new Date();
+            fromDateInput.value = formattedDate;
+            toDateInput.value = formattedDate;
             
             // Clear fromDate and toDate inputs when search query is entered
             searchQueryInput.addEventListener('keyup', function(event){
