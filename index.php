@@ -595,10 +595,10 @@
                             const kvHtml = `
                                 <div class="key-value-row" data-key="${keyName}" data-source="${keySource}">
                                     <div class="row align-items-center">
-                                        <div class="col-md-4">
+                                        <div class="col-md-2">
                                             <label class="form-label" style="color: ${sourceColor};">${keyName}</label>
                                         </div>
-                                        <div class="col-md-8">
+                                        <div class="col-md-10">
                                             <textarea class="form-control bulk-edit-textarea" 
                                                     id="textarea_${sectionId}_${keyName.replace(/\s+/g, '_')}" 
                                                     rows="${rows}" 
@@ -615,10 +615,10 @@
                             const kvHtml = `
                                 <div class="key-value-row" data-key="${keyName}" data-source="${keySource}">
                                     <div class="row align-items-center">
-                                        <div class="col-md-4">
+                                        <div class="col-md-2">
                                             <label class="form-label" style="color: ${sourceColor};">${keyName}</label>
                                         </div>
-                                        <div class="col-md-8">
+                                        <div class="col-md-10">
                                             <textarea class="form-control bulk-edit-textarea" 
                                                     id="textarea_${sectionId}_${keyName.replace(/\s+/g, '_')}" 
                                                     rows="2" 

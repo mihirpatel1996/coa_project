@@ -444,6 +444,7 @@ function processLotUpload($conn, $rows, $headers) {
         $catalogResult = $catalogStmt->get_result();
         
         if ($catalogResult->num_rows === 0) {
+            /*
             // Catalog doesn't exist, skip
             $results['skippedCount']++;
             $results['skippedRecords'][] = [
@@ -459,6 +460,8 @@ function processLotUpload($conn, $rows, $headers) {
             
             $catalogStmt->close();
             continue;
+            */
+            throw new Exception("Row $i: Catalog Numebr doesn't exist '{$data['catalogNumber']}'");
         }
         
         $catalog = $catalogResult->fetch_assoc();
