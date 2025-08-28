@@ -80,29 +80,16 @@ try {
         error_log("PDF generation log failed: " . $logException->getMessage());
     }
 
-    /*
-    //windows path
-        //file path to save the PDF
-        if (!is_dir(__DIR__ . '/generated_pdfs')) {
-            mkdir(__DIR__ . '/generated_pdfs', 0755, true);
-        }
-        // $filepath = __DIR__ . '//..//generated_pdfs//' . $filename;
-        $filepath = __DIR__ . '/../generated_pdfs/' . $filename;
-
-    //linux path
-        // Define the path for the generated PDFs directory, one level above the current 'api' directory.
-        $pdf_dir = dirname(__DIR__) . '/generated_pdfs';
-    */
-        
-	if (PHP_OS_FAMILY === 'Windows') {
-		// $filepath = __DIR__ . '//..//generated_pdfs//' . $filename;
-        $filepath = __DIR__ . '/../generated_pdfs/' . $filename;
-	} 
-	if (PHP_OS_FAMILY === 'Linux') {
-		// Define the path for the generated PDFs directory, one level above the current 'api' directory.
-        $pdf_dir = dirname(__DIR__) . '/generated_pdfs';
-        $filepath = $pdf_dir . '/' . $filename;
-	}
+	// if (PHP_OS_FAMILY === 'Windows') {
+	// 	// $filepath = __DIR__ . '//..//generated_pdfs//' . $filename;
+    //     $filepath = __DIR__ . '/../generated_pdfs/' . $filename;
+	// } 
+	// if (PHP_OS_FAMILY === 'Linux') {
+	// 	// Define the path for the generated PDFs directory, one level above the current 'api' directory.
+    //     $pdf_dir = dirname(__DIR__) . '/generated_pdfs';
+    //     $filepath = $pdf_dir . '/' . $filename;
+	// }
+    $filepath = '../generated_pdfs/' . $filename;
 
     // Output PDF
     // 'D' = force download

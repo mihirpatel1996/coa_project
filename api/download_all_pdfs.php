@@ -25,7 +25,7 @@ if (!class_exists('ZipArchive')) {
     }
     
     // Use ZipStream code from above
-    useZipStream();
+    //useZipStream();
     exit;
 }
 
@@ -100,28 +100,28 @@ unlink($zipPath);
 exit;
 
 // ZipStream fallback function
-function useZipStream() {
-    global $filenames;
+// function useZipStream() {
+//     global $filenames;
     
-    // use ZipStream\ZipStream;
-    // use ZipStream\Option\Archive;
+//     // use ZipStream\ZipStream;
+//     // use ZipStream\Option\Archive;
     
-    $zipName = 'CoA_PDFs_' . date('Y-m-d_His') . '.zip';
-    $options = new Archive();
-    $options->setSendHttpHeaders(true);
+//     $zipName = 'CoA_PDFs_' . date('Y-m-d_His') . '.zip';
+//     $options = new Archive();
+//     $options->setSendHttpHeaders(true);
     
-    $zip = new ZipStream($zipName, $options);
-    $pdfDir = dirname(__DIR__) . '/generated_pdfs/';
+//     $zip = new ZipStream($zipName, $options);
+//     $pdfDir = dirname(__DIR__) . '/generated_pdfs/';
     
-    foreach ($filenames as $filename) {
-        $filename = basename($filename);
-        $filePath = $pdfDir . $filename;
+//     foreach ($filenames as $filename) {
+//         $filename = basename($filename);
+//         $filePath = $pdfDir . $filename;
         
-        if (file_exists($filePath) && is_readable($filePath)) {
-            $zip->addFileFromPath($filename, $filePath);
-        }
-    }
+//         if (file_exists($filePath) && is_readable($filePath)) {
+//             $zip->addFileFromPath($filename, $filePath);
+//         }
+//     }
     
-    $zip->finish();
-}
+//     $zip->finish();
+// }
 ?>
