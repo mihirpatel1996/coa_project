@@ -108,11 +108,11 @@ define('TEMPLATE_FIELDS', [
             ['field_name' => 'Observed Molecular Mass', 'field_source' => 'catalog', 'field_order' => 4, 'db_field' => 'observedMolMass']
         ],
         2 => [
-            ['field_name' => 'Concentration', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'concentration'],
+            ['field_name' => 'Purity', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'purity'],
             ['field_name' => 'Formulation', 'field_source' => 'lot', 'field_order' => 2, 'db_field' => 'formulation']
         ],
         3 => [
-            ['field_name' => 'Purity', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'purity'],
+            ['field_name' => 'Concentration', 'field_source' => 'lot', 'field_order' => 1, 'db_field' => 'concentration'],
             ['field_name' => 'Shipping', 'field_source' => 'catalog', 'field_order' => 2, 'db_field' => 'shipping'],
             ['field_name' => 'Stability & Storage', 'field_source' => 'catalog', 'field_order' => 3, 'db_field' => 'stability']
         ]
