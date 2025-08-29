@@ -84,7 +84,14 @@ try {
     }
     
     // Validate headers
-    $expectedHeaders = $uploadType === 'catalog' ? CATALOG_HEADERS : LOT_HEADERS;
+    $expectedHeaders = '';
+    if ($uploadType === 'catalog') {
+        $expectedHeaders = CATALOG_HEADERS;
+    } 
+    if ($uploadType === 'lot') {
+        $expectedHeaders = LOT_HEADERS;             
+    }
+
     if ($headers !== $expectedHeaders) {
         throw new Exception('Invalid Excel headers. Please use the provided template');
     }
