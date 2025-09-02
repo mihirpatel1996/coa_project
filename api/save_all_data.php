@@ -175,7 +175,7 @@ try {
             $catalog_values[] = $catalog_number;
             $catalog_types .= "s";
             
-            $update_catalog_data_sql = "UPDATE catalogs SET " . implode(", ", $catalog_fields) . " WHERE catalogNumber = ?";
+            $update_catalog_data_sql = "UPDATE catalogs SET updatedAt = NOW(), " . implode(", ", $catalog_fields) . " WHERE catalogNumber = ?";
             $update_catalog_data_stmt = $conn->prepare($update_catalog_data_sql);
             $update_catalog_data_stmt->bind_param($catalog_types, ...$catalog_values);
             $update_catalog_data_stmt->execute();
@@ -187,7 +187,7 @@ try {
             $lot_values[] = $lot_id;
             $lot_types .= "i";
             
-            $update_lot_data_sql = "UPDATE lots SET " . implode(", ", $lot_fields) . " WHERE id = ?";
+            $update_lot_data_sql = "UPDATE lots SET generatePDF = 1, updatedAt = NOW(), " . implode(", ", $lot_fields) . " WHERE id = ?";
             $update_lot_data_stmt = $conn->prepare($update_lot_data_sql);
             $update_lot_data_stmt->bind_param($lot_types, ...$lot_values);
             $update_lot_data_stmt->execute();

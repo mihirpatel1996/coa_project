@@ -1,9 +1,9 @@
 <?php
 // api/bulk_upload.php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
+// header('Content-Type: application/json');
+// header('Access-Control-Allow-Origin: *');
+// header('Access-Control-Allow-Methods: POST');
+// header('Access-Control-Allow-Headers: Content-Type');
 
 require_once '../config/database.php';
 require_once '../config/templates_config.php';
@@ -293,7 +293,7 @@ function processCatalogUpload($conn, $rows, $headers) {
             }
             
             // UPDATE catalog - NEW
-            $updateSql = "UPDATE catalogs SET catalogName = ?";
+            $updateSql = "UPDATE catalogs SET catalogName = ?, updatedAt = NOW()";
             $values = [$data['catalogName']];
             $types = "s";
             
@@ -514,9 +514,9 @@ function processLotUpload($conn, $rows, $headers) {
             }
             
             // UPDATE lot - NEW
-            $updateSql = "UPDATE lots SET templateCode = ?";
-            $values = [$templateCode];
-            $types = "s";
+            $updateSql = "UPDATE lots SET templateCode = ?, generatePDF = ?, updatedAt = NOW()";
+            $values = [$templateCode, 1];
+            $types = "si";
             
             // Add template-specific fields
             foreach ($requiredFields as $fieldName => $dbField) {
@@ -534,6 +534,8 @@ function processLotUpload($conn, $rows, $headers) {
             
             $updateStmt = $conn->prepare($updateSql);
             $updateStmt->bind_param($types, ...$values);
+            // var_dump($updateStmt);
+            // die();
             
             if ($updateStmt->execute()) {
                 $results['updateCount']++;
@@ -579,9 +581,9 @@ function processLotUpload($conn, $rows, $headers) {
         }
         
         // STEP 7: Insert lot
-        $insertSql = "INSERT INTO lots (catalogNumber, lotNumber, templateCode";
-        $values = [$data['catalogNumber'], $data['lotNumber'], $templateCode];
-        $types = "sss";
+        $insertSql = "INSERT INTO lots (catalogNumber, lotNumber, templateCode, generatePDF";
+        $values = [$data['catalogNumber'], $data['lotNumber'], $templateCode, 1];
+        $types = "sssi";
         
         // Add template-specific fields
         foreach ($requiredFields as $fieldName => $dbField) {

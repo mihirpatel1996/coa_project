@@ -140,11 +140,11 @@
                         Save All
                     </button>
 
-                    <button class="btn btn-primary" id="previewBtn" disabled>
+                    <button class="btn btn-primary" id="previewBtn" disabled hidden>
                         <i class="fas fa-eye me-1"></i>
                         Preview PDF
                     </button>
-                    <button class="btn btn-success" id="generateBtn" disabled>
+                    <button class="btn btn-success" id="generateBtn" disabled hidden>
                         <i class="fas fa-file-pdf me-1"></i>
                         Generate PDF
                     </button>
@@ -981,6 +981,32 @@
                         saveBtn.classList.remove('btn-outline-success');
                         saveBtn.disabled = false;
                     }, 2000);
+
+                    //generate PDF after save
+                        console.log("call AJAX to generate PDF");
+                        // Call API to bulkGenerate PDF from test_generate_pdf_external.php with no body parameters                     
+                        fetch('api/test_generate_pdf_external.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({}) // No body parameters
+                        })
+                        .then(response => response.json())
+                        .then(pdfData => {
+                            if (pdfData.success) {
+                                console.log('Bulk PDF generation initiated successfully.');
+                                // Optionally, display a message to the user that PDFs are being generated
+                            } else {
+                                console.error('Bulk PDF generation failed:', pdfData.message);
+                                // Optionally, display an error message to the user
+                            }
+                        })
+                        .catch(pdfError => {
+                            console.error('Error initiating bulk PDF generation:', pdfError);
+                            // Optionally, display an error message to the user
+                        });
+                    
                 } else {
                     throw new Error(data.message || 'Failed to save data');
                 }
@@ -2033,6 +2059,38 @@
             .then(response => response.json())
             .then(data => {
                 displayLotUploadResults(data);
+                
+                // Check if total uploaded lot numbers are equal to successCount + updateCount                
+                //check if total count = successCount + updateCount;
+                
+                if (data.success && (data.summary.totalRows === data.summary.successCount + data.summary.updateCount)) {
+                    console.log("call AJAX to generate PDF");
+                    // Call API to bulkGenerate PDF from test_generate_pdf_external.php with no body parameters                     
+                    fetch('api/test_generate_pdf_external.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({}) // No body parameters
+                    })
+                    .then(response => response.json())
+                    .then(pdfData => {
+                        if (pdfData.success) {
+                            console.log('Bulk PDF generation initiated successfully.');
+                            // Optionally, display a message to the user that PDFs are being generated
+                        } else {
+                            console.error('Bulk PDF generation failed:', pdfData.message);
+                            // Optionally, display an error message to the user
+                        }
+                    })
+                    .catch(pdfError => {
+                        console.error('Error initiating bulk PDF generation:', pdfError);
+                        // Optionally, display an error message to the user
+                    });
+                
+                }//if ends
+                
+                
             })
             .catch(error => {
                 console.error('Lot upload error:', error);
@@ -2105,7 +2163,6 @@
                 if (currentCatalogNumber) {
                     loadLots(currentCatalogNumber);
                 }
-                
             } else {
                 // Show error message
                 displayLotUploadError(data.errorMessage || 'Lot upload failed.');

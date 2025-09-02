@@ -1,4 +1,6 @@
 <?php
+/*
+
 // Test script to verify uploadLogs table is working
 require_once '../config/database.php';
 
@@ -111,4 +113,6 @@ try {
         $conn->close();
     }
 }
+
+*/
 ?>
