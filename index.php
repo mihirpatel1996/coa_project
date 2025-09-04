@@ -419,6 +419,7 @@
                                                 </div>
                                                 <!-- PDF Generation Section -->
                                                 <div id="pdfGenerationSection" class="mt-3" style="display: none;">
+                                                    <strong>PDF Creation:</strong>
                                                     <!-- PDF Job alert -->
                                                     <!-- PDF job success alert -->
                                                     <div id="pdfJobSuccessAlert" class="alert alert-success alert-sm" style="display: none;">
@@ -474,7 +475,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div><!-- End of Lot Summary Container -->
                                     </div>
                                 </div>
                             </div>
@@ -2087,6 +2088,12 @@
                 alert('Please select a file to upload');
                 return;
             }
+            // Validate the file name
+            const fileName = fileInput.value.split('\\').pop();
+            if(fileName.toLowerCase() !== 'catalogs_template.xlsx' && fileName.toLowerCase() !== 'catalogs_template.xls') {
+                alert('Please upload the correct file: catalogs_template.xlsx or catalogs_template.xls');
+                return;
+            }
             
             // Show progress, hide results
             document.getElementById('catalogUploadProgress').style.display = 'block';
@@ -2124,6 +2131,12 @@
             
             if (!file) {
                 alert('Please select a file to upload');
+                return;
+            }
+            // Validate the file name
+            const fileName = fileInput.value.split('\\').pop();
+            if(fileName.toLowerCase() !== 'lots_template.xlsx' && fileName.toLowerCase() !== 'lots_template.xls') {
+                alert('Please upload the correct file: lots_template.xlsx or lots_template.xls');
                 return;
             }
             
@@ -2283,7 +2296,7 @@
                     const elapsed = Math.floor((new Date() - startTime) / 1000);
                     const minutes = Math.floor(elapsed / 60);
                     const seconds = elapsed % 60;
-                    detailsText += ` - ${minutes}:${seconds.toString().padStart(2, '0')} elapsed`;
+                    //detailsText += ` - ${minutes}:${seconds.toString().padStart(2, '0')} elapsed`;
                 }
                 
                 progressDetails.textContent = detailsText;
