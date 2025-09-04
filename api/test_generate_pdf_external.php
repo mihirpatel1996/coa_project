@@ -1,4 +1,6 @@
 <?php
+// this file is not needed anymore
+// it was used for testing the generatePDFExternal function
 require_once '../config/database.php';
 include './generate_pdf_external.php';
 
@@ -38,13 +40,16 @@ foreach($lot_numbers as $lot_number){
     $result_set[] = $result;
     echo $result;
     echo "<br><br>";
+    ob_flush();
+    flush();
+    sleep(5);
 }
 
 
-$end_time = microtime(true);
-$time_difference = $end_time - $start_time;
-// echo "Time difference: ".$time_difference;
+// $end_time = microtime(true);
+// $time_difference = $end_time - $start_time;
+//  echo "Time difference: ".$time_difference;
 
-return json_encode($result_set);
+// return json_encode($result_set);
 
 ?>

@@ -387,6 +387,43 @@
                                                         Updated Records Report
                                                     </button>
                                                 </div>
+                                                <!-- PDF Generation Section -->
+                                                <div id="pdfGenerationSection" class="mt-3" style="display: none;">
+                                                    <!-- PDF Job alert -->
+                                                    <!-- PDF job success alert -->
+                                                    <div id="pdfJobSuccessAlert" class="alert alert-success alert-sm" style="display: none;">
+                                                        <small>
+                                                            <i class="fas fa-check-circle me-1"></i>
+                                                            <span id="pdfJobSuccessMessage"></span>
+                                                        </small>
+                                                    </div>
+                                                    <!-- PDF creation progress -->
+                                                    <div id="pdfCreationProgress" class="mt-3" style="display: none;">
+                                                        <div class="text-center">
+                                                            <div class="spinner-border spinner-border-sm text-success mb-2" role="status">
+                                                                <span class="visually-hidden">Generating PDFs...</span>
+                                                            </div>
+                                                            <p class="mb-0 text-muted">Generating PDFs for uploaded lots...</p>
+                                                        </div>
+                                                    </div>
+                                                    <!-- PDF creation results -->
+                                                    <div id="pdfCreationResults" class="mt-3" style="display: none;">
+                                                        <!-- Success Alert -->
+                                                        <div id="pdfSuccessAlert" class="alert alert-success alert-sm" style="display: none;">
+                                                            <small>
+                                                                <i class="fas fa-check-circle me-1"></i>
+                                                                <span id="pdfSuccessMessage"></span>
+                                                            </small>
+                                                        </div>              
+                                                        <!-- Error Alert -->
+                                                        <div id="pdfErrorAlert" class="alert alert-danger alert-sm" style="display: none;">
+                                                            <small>
+                                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                                <span id="pdfErrorMessage"></span>
+                                                            </small>    
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -2065,6 +2102,7 @@
                 
                 if (data.success && (data.summary.totalRows === data.summary.successCount + data.summary.updateCount)) {
                     console.log("call AJAX to generate PDF");
+                    /*
                     // Call API to bulkGenerate PDF from test_generate_pdf_external.php with no body parameters                     
                     fetch('api/test_generate_pdf_external.php', {
                         method: 'POST',
@@ -2087,9 +2125,37 @@
                         console.error('Error initiating bulk PDF generation:', pdfError);
                         // Optionally, display an error message to the user
                     });
-                
+                    */
+
+                    // Call API to start a job to generate PDFs in the background
+                        fetch('api/start_bulk_pdf_job.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({}) // No body parameters
+                        }).then(response => response.json())
+                        .then(jobData => {
+                            if (jobData.success || jobData.status === 'ok') {
+                                console.log('Bulk PDF generation job started successfully. Job ID:', jobData.jobId);
+                                // Optionally, display a message to the user that PDFs are being generated
+                                alert('Bulk PDF generation job started successfully. PDFs will be generated in the background.');
+                                // show success alert in the modal
+                                const pdfGenerationSection = document.getElementById('pdfGenerationSection');
+                                pdfGenerationSection.style.display = 'block';
+                                const pdfJobSuccessAlert = document.getElementById('pdfJobSuccessAlert');
+                                pdfJobSuccessAlert.style.display = 'block';
+                                const pdfJobSuccessMessage = document.getElementById('pdfJobSuccessMessage');
+                                pdfJobSuccessMessage.textContent = `Bulk PDF generation job started successfully. Job ID: ${jobData.jobId}`;
+                                // Listen for progress updates
+                                listenForProgress(jobData.jobId);
+                            } 
+                            if (jobData.status === 'error' || !jobData.success) {
+                                console.error('Failed to start bulk PDF generation job:', jobData.error);
+                                alert('Failed to start bulk PDF generation job: ' + (jobData.error || 'Unknown error'));
+                            }
+                        })
                 }//if ends
-                
                 
             })
             .catch(error => {
@@ -2100,6 +2166,29 @@
                 document.getElementById('lotUploadProgress').style.display = 'none';
                 document.getElementById('uploadLotBtn').disabled = false;
             });
+        }
+
+        // Listen for progress updates via Server-Sent Events (SSE)
+        function listenForProgress(jobId) {
+            if (typeof(EventSource) !== "undefined") {
+                const source = new EventSource(`api/progress.php?jobId=${jobId}`);
+                
+                source.onmessage = function(event) {
+                    console.log("Progress event:", event.data);
+                    // Optionally, update a progress bar or status message in the UI
+                };
+                
+                source.onerror = function(error) {
+                    console.error("Error receiving progress updates:", error);
+                    source.close();
+                };
+                
+                source.onopen = function() {
+                    console.log("Connection to progress updates opened.");
+                };
+            } else {
+                alert("Sorry, your browser does not support server-sent events.");
+            }
         }
 
         // Display catalog upload results
