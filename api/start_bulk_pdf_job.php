@@ -30,11 +30,6 @@ try {
       $cmd = "start /B \"\" {$phpExecutable} {$workerScript} {$jobIdArg}";
       pclose(popen($cmd, 'r'));
 
-      // Use exec() to run the command and capture all output and the result code.
-      // $cmd = "{$phpExecutable} {$workerScript} {$jobIdArg}";
-      // exec('start /B "" '.$cmd);
-      // exec('start "background worker" cmd /B '.$cmd . ' > NUL 2>&1 &');
-
   }
   else {
       // launch worker (Linux/macOS)
