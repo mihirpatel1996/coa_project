@@ -435,44 +435,6 @@
                                                             <span id="pdfJobErrorMessage"></span>
                                                         </small>
                                                     </div>
-                                                    <!-- PDF creation progress -->
-                                                    <!-- Replace the existing pdfCreationProgress div with this -->
-                                                    <div id="pdfCreationProgress" class="mt-3" style="display: none;">
-                                                        <div class="mb-2">
-                                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                                <span class="text-muted">Generating PDFs for uploaded lots...</span>
-                                                                <span id="pdfProgressText" class="text-primary font-weight-bold">0%</span>
-                                                            </div>
-                                                            <div class="progress" style="height: 25px;">
-                                                                <div id="pdfProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
-                                                                    role="progressbar" 
-                                                                    style="width: 0%;" 
-                                                                    aria-valuenow="0" 
-                                                                    aria-valuemin="0" 
-                                                                    aria-valuemax="100">
-                                                                    0%
-                                                                </div>
-                                                            </div>
-                                                            <small id="pdfProgressDetails" class="text-muted d-block mt-1">Starting...</small>
-                                                        </div>
-                                                    </div>
-                                                    <!-- PDF creation results -->
-                                                    <div id="pdfCreationResults" class="mt-3" style="display: none;">
-                                                       
-                                                        <div id="pdfSuccessAlert" class="alert alert-success alert-sm" style="display: none;">
-                                                            <small>
-                                                                <i class="fas fa-check-circle me-1"></i>
-                                                                <span id="pdfSuccessMessage"></span>
-                                                            </small>
-                                                        </div>              
-                                                        
-                                                        <div id="pdfErrorAlert" class="alert alert-danger alert-sm" style="display: none;">
-                                                            <small>
-                                                                <i class="fas fa-exclamation-circle me-1"></i>
-                                                                <span id="pdfErrorMessage"></span>
-                                                            </small>    
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div><!-- End of Lot Summary Container -->
@@ -1071,8 +1033,8 @@
 
                     //generate PDF after save
                         console.log("call AJAX to generate PDF");
-                        // Call API to bulkGenerate PDF from test_generate_pdf_external.php with no body parameters                     
-                        fetch('api/test_generate_pdf_external.php', {
+                        // Call API to bulkGenerate PDF from start_generate_pdf_external.php with no body parameters                     
+                        fetch('api/start_generate_pdf_external.php', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -1907,7 +1869,7 @@
                     generateBtn.disabled = false;
                     updateButtonStates();
                 });
-                */
+            */
         }
 
         // Show success message after PDF generation
@@ -2162,7 +2124,6 @@
                 // Check if total uploaded lot numbers are equal to successCount + updateCount                
                 if (data.success && (data.summary.totalRows === data.summary.successCount + data.summary.updateCount)) {
                     console.log("call AJAX to generate PDF");
-
                     // Call API to start a job to generate PDFs in the background
                         fetch('api/start_bulk_pdf_job.php', {
                             method: 'POST',
@@ -2179,9 +2140,9 @@
                                 const pdfJobSuccessAlert = document.getElementById('pdfJobSuccessAlert');
                                 pdfJobSuccessAlert.style.display = 'block';
                                 const pdfJobSuccessMessage = document.getElementById('pdfJobSuccessMessage');
-                                pdfJobSuccessMessage.textContent = `Bulk PDF generation job started successfully. Job ID: ${jobData.jobId}`;
+                                pdfJobSuccessMessage.textContent = `Bulk PDF generation job started successfully. PDFs will be generated in the background in ${jobData.estimated_time || 'a few minutes'}. You can continue using the application.`;
                                 // Listen for progress updates
-                                listenForProgress(jobData.jobId);
+                                // listenForProgress(jobData.jobId);
                             } 
                             if (jobData.status === 'error' || !jobData.success) {
                                 // show error alert in the modal
@@ -2190,7 +2151,7 @@
                                 const pdfJobErrorAlert = document.getElementById('pdfJobErrorAlert');
                                 pdfJobErrorAlert.style.display = 'block';
                                 const pdfJobErrorMessage = document.getElementById('pdfJobErrorMessage');
-                                pdfJobErrorMessage.textContent = `Failed to start bulk PDF generation job for ${jobData.jobId}: ${jobData.error || 'Unknown error'}`;
+                                pdfJobErrorMessage.textContent = `Failed to start bulk PDF generation job: ${jobData.error || 'Unknown error'}`;
                             }
                         })
                 }//if ends
@@ -2205,164 +2166,6 @@
                 document.getElementById('uploadLotBtn').disabled = false;
             });
         }
-
-        // Listen for progress updates via Server-Sent Events (SSE)
-        // Start of PDF job functions
-        function listenForProgress(jobId) {
-            if (typeof(EventSource) !== "undefined") {
-                // Show progress section
-                document.getElementById('pdfCreationProgress').style.display = 'block';
-                document.getElementById('pdfCreationResults').style.display = 'none';
-                
-                const source = new EventSource(`api/progress.php?jobId=${jobId}`);
-                
-                source.addEventListener('progress', function(event) {
-                    try {
-                        const data = JSON.parse(event.data);
-                        console.log("Progress update:", data);
-                        
-                        // Update progress UI
-                        updateProgressUI(data);
-                        
-                        // Check if job is done
-                        if (data.status === 'done') {
-                            source.close();
-                            handleJobCompletion(data);
-                        }
-                    } catch (error) {
-                        console.error("Error parsing progress data:", error);
-                    }
-                });
-                
-                source.addEventListener('error', function(event) {
-                    console.error("SSE Error:", event);
-                    source.close();
-                    
-                    // Parse error data if available
-                    try {
-                        const errorData = JSON.parse(event.data);
-                        handleJobError(errorData);
-                    } catch (e) {
-                        handleJobError({ message: 'Connection to progress updates lost' });
-                    }
-                });
-                
-                source.onopen = function() {
-                    console.log("SSE Connection opened for job:", jobId);
-                };
-                
-                // Timeout handler - close connection after 10 minutes
-                setTimeout(() => {
-                    if (source.readyState !== EventSource.CLOSED) {
-                        source.close();
-                        handleJobError({ message: 'Job timeout - took too long to complete' });
-                    }
-                }, 600000); // 10 minutes
-                
-            } else {
-                console.error("Your browser does not support server-sent events");
-                alert("Your browser does not support real-time progress updates. PDFs will be generated in the background.");
-            }
-        }
-
-        // Update progress UI based on job state
-        function updateProgressUI(data) {
-            const progressBar = document.getElementById('pdfProgressBar');
-            const progressText = document.getElementById('pdfProgressText');
-            const progressDetails = document.getElementById('pdfProgressDetails');
-            
-            if (data.percent !== undefined) {
-                // Update progress bar
-                progressBar.style.width = data.percent + '%';
-                progressBar.setAttribute('aria-valuenow', data.percent);
-                progressBar.textContent = data.percent + '%';
-                
-                // Update progress text
-                progressText.textContent = data.percent + '%';
-            }
-            
-            // Update details text
-            if (data.current !== undefined && data.total !== undefined) {
-                let detailsText = `Processing ${data.current} of ${data.total} PDFs`;
-                
-                // Add error count if any
-                if (data.errors && data.errors.length > 0) {
-                    detailsText += ` (${data.errors.length} errors)`;
-                }
-                
-                // Add time info if available
-                if (data.started_at) {
-                    const startTime = new Date(data.started_at);
-                    const elapsed = Math.floor((new Date() - startTime) / 1000);
-                    const minutes = Math.floor(elapsed / 60);
-                    const seconds = elapsed % 60;
-                    //detailsText += ` - ${minutes}:${seconds.toString().padStart(2, '0')} elapsed`;
-                }
-                
-                progressDetails.textContent = detailsText;
-            }
-        }
-
-        // Handle job completion
-        function handleJobCompletion(data) {
-            // Hide progress, show results
-            document.getElementById('pdfCreationProgress').style.display = 'none';
-            document.getElementById('pdfCreationResults').style.display = 'block';
-            
-            const successAlert = document.getElementById('pdfSuccessAlert');
-            const errorAlert = document.getElementById('pdfErrorAlert');
-            
-            if (data.errors && data.errors.length > 0) {
-                // Partial success
-                const successCount = data.total - data.errors.length;
-                const successMessage = document.getElementById('pdfSuccessMessage');
-                successMessage.innerHTML = `
-                    <i class="fas fa-check-circle me-1"></i>
-                    PDF generation completed: ${successCount} successful, ${data.errors.length} failed
-                    <button class="btn btn-sm btn-link" onclick="showPDFErrors(${JSON.stringify(data.errors).replace(/"/g, '&quot;')})">
-                        View errors
-                    </button>
-                `;
-                successAlert.style.display = 'block';
-                errorAlert.style.display = 'none';
-            } else {
-                // Complete success
-                const successMessage = document.getElementById('pdfSuccessMessage');
-                successMessage.innerHTML = `
-                    <i class="fas fa-check-circle me-1"></i>
-                    All ${data.total} PDFs generated successfully!
-                    ${data.finished_at ? `<small class="d-block mt-1">Completed at: ${new Date(data.finished_at).toLocaleString()}</small>` : ''}
-                `;
-                successAlert.style.display = 'block';
-                errorAlert.style.display = 'none';
-            }
-            
-            // Optionally refresh the PDF list or do other cleanup
-            console.log('Job completed:', data);
-        }
-
-        // Handle job errors
-        function handleJobError(errorData) {
-            // Hide progress, show error
-            document.getElementById('pdfCreationProgress').style.display = 'none';
-            document.getElementById('pdfCreationResults').style.display = 'block';
-            
-            const errorAlert = document.getElementById('pdfErrorAlert');
-            const errorMessage = document.getElementById('pdfErrorMessage');
-            
-            errorMessage.textContent = errorData.message || 'An error occurred during PDF generation';
-            errorAlert.style.display = 'block';
-            document.getElementById('pdfSuccessAlert').style.display = 'none';
-        }
-
-        // Show detailed errors in a modal or alert
-        function showPDFErrors(errors) {
-            let errorDetails = 'PDF Generation Errors:\n\n';
-            errors.forEach((error, index) => {
-                errorDetails += `${index + 1}. Lot: ${error.lot_number}\n   Error: ${error.msg}\n\n`;
-            });
-            alert(errorDetails);
-        }// End of PDF job functions
 
         // Display catalog upload results
         function displayCatalogUploadResults(data) {

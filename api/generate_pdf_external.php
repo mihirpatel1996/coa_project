@@ -1,7 +1,11 @@
 <?php
 // api/generate_pdf_external.php
-require_once '../config/database.php';
-require_once 'pdf_common.php';
+// require_once '../config/database.php';
+// require_once './pdf_common.php';
+
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/pdf_common.php';
+
 use Dotenv\Dotenv;
 
 $dotenv = Dotenv::createImmutable(dirname(__DIR__));
@@ -87,7 +91,7 @@ function generatePDFExternal($lot_number) {
             error_log("PDF generation log failed: " . $logException->getMessage());
         }
 
-        $filepath = '../generated_pdfs/' . $filename;
+        $filepath = __DIR__. '/../generated_pdfs/' . $filename;
 
         // Save PDF to file
         $mpdf->Output($filepath, 'F');
