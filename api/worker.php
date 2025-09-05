@@ -34,6 +34,8 @@ closeDBConnection($conn);
 
 $state = json_decode(file_get_contents($stateFile), true);
 
+date_default_timezone_set('America/Vancouver');
+
 $state['status'] = 'running';
 $state['total'] = count($lot_numbers); // total count
 $state['started_at'] = date("Y-m-d H:i:s");
@@ -52,6 +54,8 @@ foreach($lot_numbers as $lot_number){
         $state['current']++;
         $state['percent'] = round($state['current'] / $state['total'] * 100, 2);
         writeState($stateFile, $state);
+        //add a small delay to allow progress to be seen
+        //usleep(20000000); // 0.5 seconds
     }
     else{
         $state['errors'][] = ['lot_number' => $lot_number['lotNumber'], 'msg' => $result['message']];

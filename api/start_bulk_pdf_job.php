@@ -22,28 +22,20 @@ try {
       $logFile = $saveDir . "/worker_{$jobId}.log";
       // On Windows, use 'start /B' to run in the background.
       // We use pclose(popen(...)) as a reliable way to start a background process without waiting for it.
-      // $cmd = "start /B php {$phpExecutable} {$workerScript} {$jobIdArg}";
-      // $cmd = "start php {$workerScript} {$jobIdArg}";
-      // $cmd = "start {$phpExecutable} {$workerScript} {$jobIdArg}";
-      //  $cmd = 'start /B {$phpExecutable} {$workerScript} {$jobIdArg}';
-      // pclose(popen($cmd, 'r'));
       $cmd = "start /B \"\" {$phpExecutable} {$workerScript} {$jobIdArg}";
       pclose(popen($cmd, 'r'));
 
   }
   else {
-      // launch worker (Linux/macOS)
-      // $cmd = sprintf(
-      // 'php %s %s > /dev/null 2>&1 &',
-      // escapeshellarg(__DIR__ . '/worker.php'),
-      // escapeshellarg($jobId)
-      // );
+	  $phpExecutable = escapeshellarg('/usr/bin/php8.2');
       $workerScript = escapeshellarg(__DIR__ . '/worker.php');
+	  $jobIdArg = escapeshellarg($jobId);
       $logFile = $saveDir . "/worker_{$jobId}.log";
 
-      // Method 1: Simple background
-      $cmd = "{$phpExecutable} {$workerScript} {$jobId} > {$logFile} 2>&1 &";
-      exec($cmd);
+      // Simple background execution for Unix-like systems
+      // Using 'nohup' to ignore hangup signals and '&' to run in background
+	  $cmd = "nohup {$phpExecutable} {$workerScript} {$jobIdArg} > {$logFile} 2>&1 &";
+	  exec($cmd);
   }
 }
 catch(Exception $e) {
