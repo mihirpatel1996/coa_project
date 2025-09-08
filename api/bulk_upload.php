@@ -26,7 +26,7 @@ define('CATALOG_HEADERS', [
 ]);
 
 define('LOT_HEADERS', [
-    'templateCode', 'lotNumber', 'catalogNumber', 'activity', 
+    'lotNumber', 'catalogNumber', 'activity', 
     'concentration', 'purity', 'formulation'
 ]);
 
@@ -432,18 +432,18 @@ function processLotUpload($conn, $rows, $headers) {
         $recordData['row'] = $i;
         
         // STEP 1: Validate basic required fields
-        if (empty($data['templateCode']) || empty($data['catalogNumber']) || empty($data['lotNumber'])) {
-            throw new Exception("Row $i: Missing required field (templateCode, catalogNumber, or lotNumber)");
+        if (empty($data['catalogNumber']) || empty($data['lotNumber'])) {
+            throw new Exception("Row $i: Missing required field (catalogNumber, or lotNumber)");
         }
+
+        // // STEP 2: Validate template code and catalog number exist
+        // if (!isset(TEMPLATES[$data['templateCode']])) {
+        //     throw new Exception("Row $i: Invalid template code '{$data['templateCode']}'");
+        // }
         
-        // STEP 2: Validate template code exists
-        if (!isset(TEMPLATES[$data['templateCode']])) {
-            throw new Exception("Row $i: Invalid template code '{$data['templateCode']}'");
-        }
+        // $templateCode = $data['templateCode'];
         
-        $templateCode = $data['templateCode'];
-        
-        // STEP 3: Check if catalog exists (SKIP if not exists)
+        // STEP 3: Check if catalog exists (error if doesn't exists)
         $catalogSql = "SELECT id, templateCode FROM catalogs WHERE catalogNumber = ?";
         $catalogStmt = $conn->prepare($catalogSql);
         $catalogStmt->bind_param("s", $data['catalogNumber']);
@@ -474,10 +474,16 @@ function processLotUpload($conn, $rows, $headers) {
         $catalog = $catalogResult->fetch_assoc();
         $catalogStmt->close();
         
+        
         // STEP 4: Check template match (STOP if mismatch)
-        if ($catalog['templateCode'] !== $templateCode) {
-            throw new Exception("Row $i: Template code mismatch. Catalog has template '{$catalog['templateCode']}' but lot specifies '{$templateCode}'");
+
+
+        // if ($catalog['templateCode'] !== $templateCode) {
+        if (!isset(TEMPLATES[$catalog['templateCode']]) || $catalog['templateCode'] !== TEMPLATES[$catalog['templateCode']]['template_code']) {
+            throw new Exception("Row $i: Template code mismatch. Catalog has template '{$catalog['templateCode']}' but Template configuration template code is not matching");
         }
+
+        $templateCode = TEMPLATES[$catalog['templateCode']]['template_code'];
         
         // STEP 5: Check if lot already exists (UPDATE if exists) - CHANGED
         $checkSql = "SELECT id FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
@@ -493,7 +499,7 @@ function processLotUpload($conn, $rows, $headers) {
             // STEP 6: Validate EXACTLY the required fields for this template
             $requiredFields = $fieldMapping[$templateCode]['lot'] ?? [];
             $requiredDbFields = array_values($requiredFields);
-            
+
             // Check for missing required fields
             foreach ($requiredFields as $fieldName => $dbField) {
                 if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
@@ -637,6 +643,9 @@ function getFieldMappingForTemplates() {
         }
     }
     
+    // var_dump($mapping);
+    // die();
+    // exit();
     return $mapping;
 }
 

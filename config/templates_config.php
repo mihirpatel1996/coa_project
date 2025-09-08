@@ -18,7 +18,7 @@ define('TEMPLATES', [
         'template_name' => 'Protein'
     ],
     'ACT' => [
-        'template_code' => 'ACT',
+        'template_code' => 'ACTX',
         'template_name' => 'Active Enzyme'
     ],
     'RGT' => [

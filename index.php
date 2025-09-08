@@ -2050,12 +2050,12 @@
                 alert('Please select a file to upload');
                 return;
             }
-            // Validate the file name
-            const fileName = fileInput.value.split('\\').pop();
-            if(fileName.toLowerCase() !== 'catalogs_template.xlsx' && fileName.toLowerCase() !== 'catalogs_template.xls') {
-                alert('Please upload the correct file: catalogs_template.xlsx or catalogs_template.xls');
-                return;
-            }
+            // // Validate the file name
+            // const fileName = fileInput.value.split('\\').pop();
+            // if(fileName.toLowerCase() !== 'catalogs_template.xlsx' && fileName.toLowerCase() !== 'catalogs_template.xls') {
+            //     alert('Please upload the correct file: catalogs_template.xlsx or catalogs_template.xls');
+            //     return;
+            // }
             
             // Show progress, hide results
             document.getElementById('catalogUploadProgress').style.display = 'block';
@@ -2095,12 +2095,12 @@
                 alert('Please select a file to upload');
                 return;
             }
-            // Validate the file name
-            const fileName = fileInput.value.split('\\').pop();
-            if(fileName.toLowerCase() !== 'lots_template.xlsx' && fileName.toLowerCase() !== 'lots_template.xls') {
-                alert('Please upload the correct file: lots_template.xlsx or lots_template.xls');
-                return;
-            }
+            // // Validate the file name
+            // const fileName = fileInput.value.split('\\').pop();
+            // if(fileName.toLowerCase() !== 'lots_template.xlsx' && fileName.toLowerCase() !== 'lots_template.xls') {
+            //     alert('Please upload the correct file: lots_template.xlsx or lots_template.xls');
+            //     return;
+            // }
             
             // Show progress, hide results
             document.getElementById('lotUploadProgress').style.display = 'block';
