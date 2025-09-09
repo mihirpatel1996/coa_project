@@ -1,10 +1,5 @@
 <?php
 // api/bulk_upload.php
-// header('Content-Type: application/json');
-// header('Access-Control-Allow-Origin: *');
-// header('Access-Control-Allow-Methods: POST');
-// header('Access-Control-Allow-Headers: Content-Type');
-
 require_once '../config/database.php';
 require_once '../config/templates_config.php';
 require_once '../vendor/autoload.php';
@@ -50,12 +45,12 @@ try {
     $uploadedFile = $_FILES['file'];
     $fileName = $uploadedFile['name'];
     
-    // Validate file type - CHANGED TO EXCEL
+    // Validate file type
     if (!preg_match('/\.(xlsx|xls)$/i', $fileName)) {
         throw new Exception('Invalid file type. Only Excel files are allowed');
     }
     
-    // Read Excel file - REPLACED CSV READING
+    // Read Excel file
     try {
         $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
         $worksheet = $spreadsheet->getActiveSheet();
@@ -103,10 +98,12 @@ try {
     $results = [
         'totalRows' => count($rows) - 1,
         'successCount' => 0,
-        'updateCount' => 0,  // ADDED
+        'updateCount' => 0,
         'skippedCount' => 0,
+        'errorCount' => 0,
         'skippedRecords' => [],
-        'updatedRecords' => []  // ADDED
+        'updatedRecords' => [],
+        'allRecords' => []
     ];
     
     try {
@@ -116,11 +113,48 @@ try {
             $results = processLotUpload($conn, $rows, $headers);
         }
         
-        // Commit transaction
+        // Check if there are errors
+        if ($results['errorCount'] > 0) {
+            // Rollback transaction - don't save any data if there are errors
+            $conn->rollback();
+            $conn->autocommit(true);
+            
+            // Generate complete report showing all errors
+            $completeReportPath = null;
+            if (!empty($results['allRecords'])) {
+                $completeReportPath = generateCompleteReport($results['allRecords'], $uploadType);
+            }
+            
+            // Log as error status
+            $summary = [
+                'uploadType' => $uploadType,
+                'fileName' => $fileName,
+                'totalRows' => $results['totalRows'],
+                'successCount' => 0,  // Set to 0 since transaction was rolled back
+                'updateCount' => 0,   // Set to 0 since transaction was rolled back
+                'skippedCount' => 0,  // Set to 0 for consistency
+                'errorCount' => $results['errorCount'],
+                'completeReportPath' => $completeReportPath
+            ];
+            
+            logUpload($conn, 'error', $summary, 'Upload failed due to validation errors');
+            
+            http_response_code(400);
+            // Return error response
+            echo json_encode([
+                'success' => false,
+                'status' => 'error',
+                'summary' => $summary,
+                'errorMessage' => "Upload failed: Validation errors found. Download the Upload Report to see details and fix all errors before re-uploading."
+            ]);
+            exit;
+        }
+        
+        // No errors, commit transaction
         $conn->commit();
         $conn->autocommit(true);
         
-        // Generate updated report if needed - CHANGED
+        // Generate updated report if needed
         $updatedReportPath = null;
         if ($results['updateCount'] > 0) {
             $updatedReportPath = generateUpdatedReport($results['updatedRecords'], $uploadType);
@@ -132,22 +166,23 @@ try {
             $completeReportPath = generateCompleteReport($results['allRecords'], $uploadType);
         }
         
-        // Log upload - ensure autocommit is on
+        // Log upload
         $summary = [
             'uploadType' => $uploadType,
             'fileName' => $fileName,
             'totalRows' => $results['totalRows'],
             'successCount' => $results['successCount'],
-            'updateCount' => $results['updateCount'],  // ADDED
+            'updateCount' => $results['updateCount'],
             'skippedCount' => $results['skippedCount'],
             'errorCount' => 0,
-            'updatedReportPath' => $updatedReportPath,  // CHANGED from skippedReportPath
+            'updatedReportPath' => $updatedReportPath,
             'completeReportPath' => $completeReportPath
         ];
         
         $status = $results['skippedCount'] > 0 ? 'partial' : 'success';
         logUpload($conn, $status, $summary, null);
         
+        http_response_code(200);
         // Return success response
         $response = [
             'success' => true,
@@ -177,7 +212,7 @@ try {
             'fileName' => $fileName,
             'totalRows' => isset($results) ? $results['totalRows'] : 0,
             'successCount' => 0,
-            'updateCount' => 0,  // ADDED
+            'updateCount' => 0,
             'skippedCount' => 0,
             'errorCount' => isset($results) ? $results['totalRows'] : 0
         ];
@@ -203,11 +238,12 @@ function processCatalogUpload($conn, $rows, $headers) {
     $results = [
         'totalRows' => count($rows) - 1,
         'successCount' => 0,
-        'updateCount' => 0,  // ADDED
+        'updateCount' => 0,
         'skippedCount' => 0,
+        'errorCount' => 0,
         'skippedRecords' => [],
-        'updatedRecords' => [],  // ADDED
-        'allRecords' => []  // Store all processed records
+        'updatedRecords' => [],
+        'allRecords' => []
     ];
     
     // Get template fields mapping
@@ -229,7 +265,12 @@ function processCatalogUpload($conn, $rows, $headers) {
         
         // Map row to associative array
         if (count($row) !== count($headers)) {
-            throw new Exception("Row $i: Column count mismatch. Expected " . count($headers) . " columns, got " . count($row));
+            $results['errorCount']++;
+            $recordData = ['row' => $i];
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = "Column count mismatch. Expected " . count($headers) . " columns, got " . count($row);
+            $results['allRecords'][] = $recordData;
+            continue;
         }
 
         $data = array_combine($headers, $row);
@@ -238,38 +279,49 @@ function processCatalogUpload($conn, $rows, $headers) {
             return $value === null ? '' : trim($value);
         }, $data);
         
+        // Prepare record for complete report
+        $recordData = $data;
+        $recordData['row'] = $i;
         
         // STEP 1: Validate basic required fields
         if (empty($data['templateCode']) || empty($data['catalogNumber']) || empty($data['catalogName'])) {
-            throw new Exception("Row $i: Missing required field (templateCode, catalogNumber, or catalogName)");
+            $results['errorCount']++;
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = 'Missing required field (templateCode, catalogNumber, or catalogName)';
+            $results['allRecords'][] = $recordData;
+            continue;
         }
         
         // STEP 2: Validate template code exists
-        if (!isset(TEMPLATES[$data['templateCode']])) {
-            throw new Exception("Row $i: Invalid template code '{$data['templateCode']}'");
+        if (!isset(TEMPLATES[$data['templateCode']]) || $data['templateCode'] !== TEMPLATES[$data['templateCode']]['template_code']) {
+            $results['errorCount']++;
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = "Invalid template code '{$data['templateCode']}'";
+            $results['allRecords'][] = $recordData;
+            continue;
         }
         
         $templateCode = $data['templateCode'];
         
-        // STEP 3: Check if catalog already exists (UPDATE if exists) - CHANGED
+        // STEP 3: Check if catalog already exists
         $checkSql = "SELECT id, templateCode FROM catalogs WHERE catalogNumber = ?";
         $checkStmt = $conn->prepare($checkSql);
         $checkStmt->bind_param("s", $data['catalogNumber']);
         $checkStmt->execute();
         $checkResult = $checkStmt->get_result();
-        
-        // Prepare record for complete report
-        $recordData = $data;
-        $recordData['row'] = $i;
-        
+
         if ($checkResult->num_rows > 0) {
-            // Catalog exists, UPDATE it - CHANGED
+            // Catalog exists, UPDATE it
             $existingCatalog = $checkResult->fetch_assoc();
             $checkStmt->close();
             
             // Verify template code matches
             if ($existingCatalog['templateCode'] !== $templateCode) {
-                throw new Exception("Row $i: Catalog '{$data['catalogNumber']}' already exists with different template code '{$existingCatalog['templateCode']}'");
+                $results['errorCount']++;
+                $recordData['status'] = 'Error';
+                $recordData['error_message'] = "Catalog '{$data['catalogNumber']}' already exists with different template code '{$existingCatalog['templateCode']}'";
+                $results['allRecords'][] = $recordData;
+                continue;
             }
             
             // STEP 4: Validate EXACTLY the required fields for this template
@@ -277,22 +329,38 @@ function processCatalogUpload($conn, $rows, $headers) {
             $requiredDbFields = array_values($requiredFields);
             
             // Check for missing required fields
+            $missingFields = [];
             foreach ($requiredFields as $fieldName => $dbField) {
                 if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
-                    throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
+                    $missingFields[] = $fieldName;
                 }
             }
             
-            // Check for extra fields (fields that are filled but not required for this template)
+            if (!empty($missingFields)) {
+                $results['errorCount']++;
+                $recordData['status'] = 'Error';
+                $recordData['error_message'] = "Missing required fields for template '$templateCode': " . implode(', ', $missingFields);
+                $results['allRecords'][] = $recordData;
+                continue;
+            }
+            
+            // Check for extra fields
+            $extraFields = [];
             foreach ($allCatalogFields as $field) {
                 if (!empty($data[$field]) && !in_array($field, $requiredDbFields)) {
-                    // Find the friendly name for this field
-                    $friendlyName = array_search($field, array_merge(...array_values($fieldMapping[$templateCode]))) ?: $field;
-                    throw new Exception("Row $i: Extra field '$field' not allowed for template '$templateCode'. Only allowed fields are: " . implode(', ', array_keys($requiredFields)));
+                    $extraFields[] = $field;
                 }
             }
             
-            // UPDATE catalog - NEW
+            if (!empty($extraFields)) {
+                $results['errorCount']++;
+                $recordData['status'] = 'Error';
+                $recordData['error_message'] = "Extra fields not allowed for template '$templateCode': " . implode(', ', $extraFields);
+                $results['allRecords'][] = $recordData;
+                continue;
+            }
+            
+            // UPDATE catalog
             $updateSql = "UPDATE catalogs SET catalogName = ?, updatedAt = NOW()";
             $values = [$data['catalogName']];
             $types = "s";
@@ -321,36 +389,53 @@ function processCatalogUpload($conn, $rows, $headers) {
                     'catalogName' => $data['catalogName']
                 ];
                 
-                // Add to all records with status
-                $recordData['status'] = 'Updated';
+                $recordData['status'] = 'Would_Update'; // TEMPORARY STATUS
                 $results['allRecords'][] = $recordData;
             } else {
-                throw new Exception("Row $i: Failed to update catalog - " . $conn->error);
+                $results['errorCount']++;
+                $recordData['status'] = 'Error';
+                $recordData['error_message'] = "Failed to update catalog - Database error";
+                $results['allRecords'][] = $recordData;
             }
             $updateStmt->close();
-            
             continue;
         }
         $checkStmt->close();
         
-        // STEP 4: Validate EXACTLY the required fields for this template
+        // STEP 4: Validate EXACTLY the required fields for this template (for new catalog)
         $requiredFields = $fieldMapping[$templateCode]['catalog'] ?? [];
         $requiredDbFields = array_values($requiredFields);
         
         // Check for missing required fields
+        $missingFields = [];
         foreach ($requiredFields as $fieldName => $dbField) {
             if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
-                throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
+                $missingFields[] = $fieldName;
             }
         }
         
-        // Check for extra fields (fields that are filled but not required for this template)
+        if (!empty($missingFields)) {
+            $results['errorCount']++;
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = "Missing required fields for template '$templateCode': " . implode(', ', $missingFields);
+            $results['allRecords'][] = $recordData;
+            continue;
+        }
+        
+        // Check for extra fields
+        $extraFields = [];
         foreach ($allCatalogFields as $field) {
             if (!empty($data[$field]) && !in_array($field, $requiredDbFields)) {
-                // Find the friendly name for this field
-                $friendlyName = array_search($field, array_merge(...array_values($fieldMapping[$templateCode]))) ?: $field;
-                throw new Exception("Row $i: Extra field '$field' not allowed for template '$templateCode'. Only allowed fields are: " . implode(', ', array_keys($requiredFields)));
+                $extraFields[] = $field;
             }
+        }
+        
+        if (!empty($extraFields)) {
+            $results['errorCount']++;
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = "Extra fields not allowed for template '$templateCode': " . implode(', ', $extraFields);
+            $results['allRecords'][] = $recordData;
+            continue;
         }
         
         // STEP 5: Insert catalog
@@ -374,14 +459,38 @@ function processCatalogUpload($conn, $rows, $headers) {
         
         if ($insertStmt->execute()) {
             $results['successCount']++;
-            
-            // Add to all records with status
-            $recordData['status'] = 'Inserted';
+            $recordData['status'] = 'Would_Insert'; // TEMPORARY STATUS
             $results['allRecords'][] = $recordData;
         } else {
-            throw new Exception("Row $i: Failed to insert catalog - " . $conn->error);
+            $results['errorCount']++;
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = "Failed to insert catalog - Database error";
+            $results['allRecords'][] = $recordData;
         }
         $insertStmt->close();
+    }
+    
+    // FINALIZE STATUSES BASED ON WHETHER THERE ARE ERRORS
+    if ($results['errorCount'] > 0) {
+        // Transaction will be rolled back, so nothing is actually saved
+        // Convert Would_Insert and Would_Update to Valid
+        foreach ($results['allRecords'] as &$record) {
+            if ($record['status'] === 'Would_Insert' || $record['status'] === 'Would_Update') {
+                $record['status'] = 'Valid'; // Passed validation but not saved
+            }
+        }
+        // Reset counts since nothing was actually saved
+        $results['successCount'] = 0;
+        $results['updateCount'] = 0;
+    } else {
+        // Transaction will be committed, convert temporary statuses to final
+        foreach ($results['allRecords'] as &$record) {
+            if ($record['status'] === 'Would_Insert') {
+                $record['status'] = 'Inserted';
+            } elseif ($record['status'] === 'Would_Update') {
+                $record['status'] = 'Updated';
+            }
+        }
     }
     
     return $results;
@@ -394,17 +503,18 @@ function processLotUpload($conn, $rows, $headers) {
     $results = [
         'totalRows' => count($rows) - 1,
         'successCount' => 0,
-        'updateCount' => 0,  // ADDED
+        'updateCount' => 0,
         'skippedCount' => 0,
+        'errorCount' => 0,
         'skippedRecords' => [],
-        'updatedRecords' => [],  // ADDED
-        'allRecords' => []  // Store all processed records
+        'updatedRecords' => [],
+        'allRecords' => []
     ];
     
     // Get template fields mapping
     $fieldMapping = getFieldMappingForTemplates();
     
-    // Define all possible lot fields (excluding the basic 3)
+    // Define all possible lot fields
     $allLotFields = ['activity', 'concentration', 'purity', 'formulation'];
     
     // Process each row
@@ -418,7 +528,12 @@ function processLotUpload($conn, $rows, $headers) {
         
         // Map row to associative array
         if (count($row) !== count($headers)) {
-            throw new Exception("Row $i: Column count mismatch. Expected " . count($headers) . " columns, got " . count($row));
+            $results['errorCount']++;
+            $recordData = ['row' => $i];
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = "Column count mismatch. Expected " . count($headers) . " columns, got " . count($row);
+            $results['allRecords'][] = $recordData;
+            continue;
         }
         
         $data = array_combine($headers, $row);
@@ -433,17 +548,14 @@ function processLotUpload($conn, $rows, $headers) {
         
         // STEP 1: Validate basic required fields
         if (empty($data['catalogNumber']) || empty($data['lotNumber'])) {
-            throw new Exception("Row $i: Missing required field (catalogNumber, or lotNumber)");
+            $results['errorCount']++;
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = 'Missing required field (catalogNumber or lotNumber)';
+            $results['allRecords'][] = $recordData;
+            continue;
         }
-
-        // // STEP 2: Validate template code and catalog number exist
-        // if (!isset(TEMPLATES[$data['templateCode']])) {
-        //     throw new Exception("Row $i: Invalid template code '{$data['templateCode']}'");
-        // }
         
-        // $templateCode = $data['templateCode'];
-        
-        // STEP 3: Check if catalog exists (error if doesn't exists)
+        // STEP 2: Check if catalog exists
         $catalogSql = "SELECT id, templateCode FROM catalogs WHERE catalogNumber = ?";
         $catalogStmt = $conn->prepare($catalogSql);
         $catalogStmt->bind_param("s", $data['catalogNumber']);
@@ -451,41 +563,29 @@ function processLotUpload($conn, $rows, $headers) {
         $catalogResult = $catalogStmt->get_result();
         
         if ($catalogResult->num_rows === 0) {
-            /*
-            // Catalog doesn't exist, skip
-            $results['skippedCount']++;
-            $results['skippedRecords'][] = [
-                'row' => $i,
-                'catalogNumber' => $data['catalogNumber'],
-                'lotNumber' => $data['lotNumber'],
-                'reason' => 'Catalog does not exist'
-            ];
-            
-            // Add to all records with status
-            $recordData['status'] = 'Skipped';
+            $results['errorCount']++;
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = "Catalog doesn't exist '{$data['catalogNumber']}'";
             $results['allRecords'][] = $recordData;
-            
             $catalogStmt->close();
             continue;
-            */
-            throw new Exception("Row $i: Catalog Numebr doesn't exist '{$data['catalogNumber']}'");
         }
         
         $catalog = $catalogResult->fetch_assoc();
         $catalogStmt->close();
         
-        
-        // STEP 4: Check template match (STOP if mismatch)
-
-
-        // if ($catalog['templateCode'] !== $templateCode) {
+        // STEP 3: Validate template
         if (!isset(TEMPLATES[$catalog['templateCode']]) || $catalog['templateCode'] !== TEMPLATES[$catalog['templateCode']]['template_code']) {
-            throw new Exception("Row $i: Template code mismatch. Catalog has template '{$catalog['templateCode']}' but Template configuration template code is not matching");
+            $results['errorCount']++;
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = "Template code mismatch. Catalog has template '{$catalog['templateCode']}' but template configuration is not matching";
+            $results['allRecords'][] = $recordData;
+            continue;
         }
 
         $templateCode = TEMPLATES[$catalog['templateCode']]['template_code'];
         
-        // STEP 5: Check if lot already exists (UPDATE if exists) - CHANGED
+        // STEP 4: Check if lot already exists
         $checkSql = "SELECT id FROM lots WHERE catalogNumber = ? AND lotNumber = ?";
         $checkStmt = $conn->prepare($checkSql);
         $checkStmt->bind_param("ss", $data['catalogNumber'], $data['lotNumber']);
@@ -493,33 +593,50 @@ function processLotUpload($conn, $rows, $headers) {
         $checkResult = $checkStmt->get_result();
         
         if ($checkResult->num_rows > 0) {
-            // Lot exists, UPDATE it - CHANGED
+            // Lot exists, UPDATE it
             $checkStmt->close();
             
-            // STEP 6: Validate EXACTLY the required fields for this template
+            // Validate required fields for this template
             $requiredFields = $fieldMapping[$templateCode]['lot'] ?? [];
             $requiredDbFields = array_values($requiredFields);
 
             // Check for missing required fields
+            $missingFields = [];
             foreach ($requiredFields as $fieldName => $dbField) {
                 if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
-                    throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
+                    $missingFields[] = $fieldName;
                 }
             }
             
-            // Check for extra fields (fields that are filled but not required for this template)
+            if (!empty($missingFields)) {
+                $results['errorCount']++;
+                $recordData['status'] = 'Error';
+                $recordData['error_message'] = "Missing required fields for template '$templateCode': " . implode(', ', $missingFields);
+                $results['allRecords'][] = $recordData;
+                continue;
+            }
+            
+            // Check for extra fields
+            $extraFields = [];
             foreach ($allLotFields as $field) {
                 if (!empty($data[$field]) && !in_array($field, $requiredDbFields)) {
-                    if (empty($requiredFields)) {
-                        // Special message for templates with no lot fields like RGT
-                        throw new Exception("Row $i: Template '$templateCode' does not allow any lot-specific fields. Only templateCode, catalogNumber, and lotNumber should be provided");
-                    } else {
-                        throw new Exception("Row $i: Extra field '$field' not allowed for template '$templateCode'. Only allowed fields are: " . implode(', ', array_keys($requiredFields)));
-                    }
+                    $extraFields[] = $field;
                 }
             }
             
-            // UPDATE lot - NEW
+            if (!empty($extraFields)) {
+                $results['errorCount']++;
+                $recordData['status'] = 'Error';
+                if (empty($requiredFields)) {
+                    $recordData['error_message'] = "Template '$templateCode' does not allow any lot-specific fields. Only catalogNumber and lotNumber should be provided";
+                } else {
+                    $recordData['error_message'] = "Extra fields not allowed for template '$templateCode': " . implode(', ', $extraFields);
+                }
+                $results['allRecords'][] = $recordData;
+                continue;
+            }
+            
+            // UPDATE lot
             $updateSql = "UPDATE lots SET templateCode = ?, generatePDF = ?, updatedAt = NOW()";
             $values = [$templateCode, 1];
             $types = "si";
@@ -540,8 +657,6 @@ function processLotUpload($conn, $rows, $headers) {
             
             $updateStmt = $conn->prepare($updateSql);
             $updateStmt->bind_param($types, ...$values);
-            // var_dump($updateStmt);
-            // die();
             
             if ($updateStmt->execute()) {
                 $results['updateCount']++;
@@ -551,42 +666,60 @@ function processLotUpload($conn, $rows, $headers) {
                     'lotNumber' => $data['lotNumber']
                 ];
                 
-                // Add to all records with status
-                $recordData['status'] = 'Updated';
+                $recordData['status'] = 'Would_Update'; // TEMPORARY STATUS
                 $results['allRecords'][] = $recordData;
             } else {
-                throw new Exception("Row $i: Failed to update lot - " . $conn->error);
+                $results['errorCount']++;
+                $recordData['status'] = 'Error';
+                $recordData['error_message'] = "Failed to update lot - Database error";
+                $results['allRecords'][] = $recordData;
             }
             $updateStmt->close();
-            
             continue;
         }
         $checkStmt->close();
         
-        // STEP 6: Validate EXACTLY the required fields for this template
+        // STEP 5: Validate required fields for this template (for new lot)
         $requiredFields = $fieldMapping[$templateCode]['lot'] ?? [];
         $requiredDbFields = array_values($requiredFields);
         
         // Check for missing required fields
+        $missingFields = [];
         foreach ($requiredFields as $fieldName => $dbField) {
             if (!isset($data[$dbField]) || trim($data[$dbField]) === '') {
-                throw new Exception("Row $i: Missing required field '$fieldName' for template '$templateCode'");
+                $missingFields[] = $fieldName;
             }
         }
         
-        // Check for extra fields (fields that are filled but not required for this template)
+        if (!empty($missingFields)) {
+            $results['errorCount']++;
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = "Missing required fields for template '$templateCode': " . implode(', ', $missingFields);
+            $results['allRecords'][] = $recordData;
+            continue;
+        }
+        
+        // Check for extra fields
+        $extraFields = [];
         foreach ($allLotFields as $field) {
             if (!empty($data[$field]) && !in_array($field, $requiredDbFields)) {
-                if (empty($requiredFields)) {
-                    // Special message for templates with no lot fields like RGT
-                    throw new Exception("Row $i: Template '$templateCode' does not allow any lot-specific fields. Only templateCode, catalogNumber, and lotNumber should be provided");
-                } else {
-                    throw new Exception("Row $i: Extra field '$field' not allowed for template '$templateCode'. Only allowed fields are: " . implode(', ', array_keys($requiredFields)));
-                }
+                $extraFields[] = $field;
             }
         }
         
-        // STEP 7: Insert lot
+        if (!empty($extraFields)) {
+            $results['errorCount']++;
+            $recordData['status'] = 'Error';
+            if (empty($requiredFields)) {
+                $recordData['error_message'] = "Template '$templateCode' does not allow any lot-specific fields. Only catalogNumber and lotNumber should be provided";
+            } else {
+                $recordData['error_message'] = "Extra fields not allowed for template '$templateCode': " . implode(', ', $extraFields);
+            }
+            $results['allRecords'][] = $recordData;
+            continue;
+        }
+        
+        // STEP 6: Insert lot
         $insertSql = "INSERT INTO lots (catalogNumber, lotNumber, templateCode, generatePDF";
         $values = [$data['catalogNumber'], $data['lotNumber'], $templateCode, 1];
         $types = "sssi";
@@ -607,14 +740,38 @@ function processLotUpload($conn, $rows, $headers) {
         
         if ($insertStmt->execute()) {
             $results['successCount']++;
-            
-            // Add to all records with status
-            $recordData['status'] = 'Inserted';
+            $recordData['status'] = 'Would_Insert'; // TEMPORARY STATUS
             $results['allRecords'][] = $recordData;
         } else {
-            throw new Exception("Row $i: Failed to insert lot - " . $conn->error);
+            $results['errorCount']++;
+            $recordData['status'] = 'Error';
+            $recordData['error_message'] = "Failed to insert lot - Database error";
+            $results['allRecords'][] = $recordData;
         }
         $insertStmt->close();
+    }
+    
+    // FINALIZE STATUSES BASED ON WHETHER THERE ARE ERRORS
+    if ($results['errorCount'] > 0) {
+        // Transaction will be rolled back, so nothing is actually saved
+        // Convert Would_Insert and Would_Update to Valid
+        foreach ($results['allRecords'] as &$record) {
+            if ($record['status'] === 'Would_Insert' || $record['status'] === 'Would_Update') {
+                $record['status'] = 'Valid'; // Passed validation but not saved
+            }
+        }
+        // Reset counts since nothing was actually saved
+        $results['successCount'] = 0;
+        $results['updateCount'] = 0;
+    } else {
+        // Transaction will be committed, convert temporary statuses to final
+        foreach ($results['allRecords'] as &$record) {
+            if ($record['status'] === 'Would_Insert') {
+                $record['status'] = 'Inserted';
+            } elseif ($record['status'] === 'Would_Update') {
+                $record['status'] = 'Updated';
+            }
+        }
     }
     
     return $results;
@@ -643,14 +800,11 @@ function getFieldMappingForTemplates() {
         }
     }
     
-    // var_dump($mapping);
-    // die();
-    // exit();
     return $mapping;
 }
 
 /**
- * Generate updated records report - ADDED NEW FUNCTION
+ * Generate updated records report
  */
 function generateUpdatedReport($updatedRecords, $uploadType) {
     // Create reports directory if it doesn't exist
@@ -684,7 +838,7 @@ function generateUpdatedReport($updatedRecords, $uploadType) {
     }
     $sheet->fromArray($headers, null, 'A1');
     
-    // Style headers (optional)
+    // Style headers
     $sheet->getStyle('A1:C1')->getFont()->setBold(true);
     
     // Add data
@@ -718,70 +872,13 @@ function generateUpdatedReport($updatedRecords, $uploadType) {
     return $filename;
 }
 
-// NO CHANGES TO generateSkippedReport - KEEP AS IS
-
-/**
- * Generate skipped records report - Keep only latest file for each type
- */
-function generateSkippedReport($skippedRecords, $uploadType) {
-    // Create reports directory if it doesn't exist
-    $reportsDir = '../reports';
-    if (!file_exists($reportsDir)) {
-        mkdir($reportsDir, 0755, true);
-    }
-    
-    // Delete any existing skipped file for this type
-    $existingFiles = glob($reportsDir . '/skipped_' . $uploadType . '_*.xlsx');
-    foreach ($existingFiles as $file) {
-        if (is_file($file)) {
-            @unlink($file);
-        }
-    }
-    
-    // Generate filename with timestamp
-    $timestamp = date('Ymd_His');
-    $filename = "skipped_{$uploadType}_{$timestamp}.xlsx";
-    $filepath = $reportsDir . '/' . $filename;
-    
-    // Create new spreadsheet
-    $spreadsheet = new Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
-    
-    // Set headers
-    $headers = ['row_number', 'catalog_number', 'lot_number', 'reason'];
-    $sheet->fromArray($headers, null, 'A1');
-    
-    // Style headers (optional)
-    $sheet->getStyle('A1:D1')->getFont()->setBold(true);
-    
-    // Add data
-    $rowNum = 2;
-    foreach ($skippedRecords as $record) {
-        $sheet->fromArray([
-            $record['row'],
-            $record['catalogNumber'],
-            $record['lotNumber'],
-            $record['reason']
-        ], null, "A{$rowNum}");
-        $rowNum++;
-    }
-    
-    // Auto-size columns
-    foreach (range('A', 'D') as $col) {
-        $sheet->getColumnDimension($col)->setAutoSize(true);
-    }
-    
-    // Save Excel file
-    $writer = new Xlsx($spreadsheet);
-    $writer->save($filepath);
-    
-    return $filename;
-}
-
-// NO CHANGES TO OTHER FUNCTIONS - ALL REMAIN THE SAME
-
 /**
  * Generate complete upload report with all records and their status
+ * Status values:
+ * - Error: Row has validation errors
+ * - Valid: Row passed validation but was not saved due to errors in other rows
+ * - Inserted: Row was successfully inserted (only when no errors in entire file)
+ * - Updated: Row was successfully updated (only when no errors in entire file)
  */
 function generateCompleteReport($allRecords, $uploadType) {
     // Create reports directory if it doesn't exist
@@ -814,8 +911,9 @@ function generateCompleteReport($allRecords, $uploadType) {
         $headers = LOT_HEADERS;
     }
     
-    // Add status column to headers
+    // Add status and error_message columns
     $headers[] = 'status';
+    $headers[] = 'error_message';
     
     // Set headers
     $sheet->fromArray($headers, null, 'A1');
@@ -834,8 +932,33 @@ function generateCompleteReport($allRecords, $uploadType) {
         }
         // Add status
         $rowData[] = $record['status'];
+        // Add error message (empty if no error)
+        $rowData[] = isset($record['error_message']) ? $record['error_message'] : '';
         
         $sheet->fromArray($rowData, null, "A{$rowNum}");
+        
+        /*
+        // Color code the row based on status
+        $statusCol = chr(64 + count($headers) - 1);
+        if ($record['status'] === 'Error') {
+            $sheet->getStyle("A{$rowNum}:{$lastCol}{$rowNum}")->getFill()
+                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setRGB('FFCCCC'); // Light red
+        } elseif ($record['status'] === 'Valid') {
+            $sheet->getStyle("A{$rowNum}:{$lastCol}{$rowNum}")->getFill()
+                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setRGB('FFFFCC'); // Light yellow
+        } elseif ($record['status'] === 'Updated') {
+            $sheet->getStyle("A{$rowNum}:{$lastCol}{$rowNum}")->getFill()
+                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setRGB('CCE5FF'); // Light blue
+        } elseif ($record['status'] === 'Inserted') {
+            $sheet->getStyle("A{$rowNum}:{$lastCol}{$rowNum}")->getFill()
+                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setRGB('CCFFCC'); // Light green
+        }
+        */
+        
         $rowNum++;
     }
     
@@ -843,7 +966,31 @@ function generateCompleteReport($allRecords, $uploadType) {
     foreach (range('A', $lastCol) as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
+
+    /*
+    // Add legend/notes at the bottom
+    $legendRow = $rowNum + 2;
+    $sheet->setCellValue("A{$legendRow}", 'Status Legend:');
+    $sheet->getStyle("A{$legendRow}")->getFont()->setBold(true);
     
+    $legendItems = [
+        ['status' => 'Error', 'description' => 'Row has validation errors', 'color' => 'FFCCCC'],
+        ['status' => 'Valid', 'description' => 'Row passed validation but was not saved due to errors in other rows', 'color' => 'FFFFCC'],
+        ['status' => 'Inserted', 'description' => 'Row was successfully inserted into database', 'color' => 'CCFFCC'],
+        ['status' => 'Updated', 'description' => 'Row was successfully updated in database', 'color' => 'CCE5FF']
+    ];
+    
+    $currentLegendRow = $legendRow + 1;
+    foreach ($legendItems as $item) {
+        $sheet->setCellValue("A{$currentLegendRow}", $item['status']);
+        $sheet->setCellValue("B{$currentLegendRow}", $item['description']);
+        $sheet->getStyle("A{$currentLegendRow}")->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()->setRGB($item['color']);
+        $currentLegendRow++;
+    }
+    */
+
     // Save Excel file
     $writer = new Xlsx($spreadsheet);
     $writer->save($filepath);

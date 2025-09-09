@@ -2050,12 +2050,6 @@
                 alert('Please select a file to upload');
                 return;
             }
-            // // Validate the file name
-            // const fileName = fileInput.value.split('\\').pop();
-            // if(fileName.toLowerCase() !== 'catalogs_template.xlsx' && fileName.toLowerCase() !== 'catalogs_template.xls') {
-            //     alert('Please upload the correct file: catalogs_template.xlsx or catalogs_template.xls');
-            //     return;
-            // }
             
             // Show progress, hide results
             document.getElementById('catalogUploadProgress').style.display = 'block';
@@ -2095,12 +2089,6 @@
                 alert('Please select a file to upload');
                 return;
             }
-            // // Validate the file name
-            // const fileName = fileInput.value.split('\\').pop();
-            // if(fileName.toLowerCase() !== 'lots_template.xlsx' && fileName.toLowerCase() !== 'lots_template.xls') {
-            //     alert('Please upload the correct file: lots_template.xlsx or lots_template.xls');
-            //     return;
-            // }
             
             // Show progress, hide results
             document.getElementById('lotUploadProgress').style.display = 'block';
@@ -2123,7 +2111,7 @@
                 
                 // Check if total uploaded lot numbers are equal to successCount + updateCount                
                 if (data.success && (data.summary.totalRows === data.summary.successCount + data.summary.updateCount)) {
-                    console.log("call AJAX to generate PDF");
+                    // console.log("call AJAX to generate PDF");
                     // Call API to start a job to generate PDFs in the background
                         fetch('api/start_bulk_pdf_job.php', {
                             method: 'POST',
@@ -2197,6 +2185,8 @@
             } else {
                 // Show error message
                 displayCatalogUploadError(data.errorMessage || 'Catalog upload failed.');
+                // Show summary
+                displayCatalogSummary(data.summary);
             }
         }
 
@@ -2231,6 +2221,8 @@
             } else {
                 // Show error message
                 displayLotUploadError(data.errorMessage || 'Lot upload failed.');
+                // Show summary
+                displayLotSummary(data.summary);
             }
         }
 
@@ -2268,6 +2260,9 @@
             const summaryText = document.getElementById('catalogSummaryText');
             
             let text = `<div style="color: #0066cc;">Total rows: ${summary.totalRows || 0}</div>`;
+            if(summary.errorCount > 0) {
+                text += `<div style="color: #dc3545;">Errors found: ${summary.errorCount || 0}</div>`;
+            }
             text += `<div style="color: #28a745;">Successfully Added: ${summary.successCount || 0}</div>`;
             text += `<div style="color: #17a2b8;">Updated Records: ${summary.updateCount || 0}</div>`;
             if (summary.skippedCount > 0) {
@@ -2298,6 +2293,9 @@
             const summaryText = document.getElementById('lotSummaryText');
             
             let text = `<div style="color: #0066cc;">Total rows: ${summary.totalRows || 0}</div>`;
+            if(summary.errorCount > 0) {
+                text += `<div style="color: #dc3545;">Errors found: ${summary.errorCount || 0}</div>`;
+            }
             text += `<div style="color: #28a745;">Successfully Added: ${summary.successCount || 0}</div>`;
             text += `<div style="color: #17a2b8;">Updated Records: ${summary.updateCount || 0}</div>`;
             if (summary.skippedCount > 0) {
@@ -2383,7 +2381,7 @@
             document.body.removeChild(link);
         }
 
-        // Reset bulk upload modal
+        // Update resetBulkUploadModal function
         function resetBulkUploadModal() {
             // Clear file inputs
             document.getElementById('catalogExcelInput').value = '';
@@ -2409,6 +2407,17 @@
             document.getElementById('lotUpdatedSection').style.display = 'none';
             document.getElementById('catalogCompleteSection').style.display = 'none';
             document.getElementById('lotCompleteSection').style.display = 'none';
+            
+            // Reset PDF generation section
+            document.getElementById('pdfGenerationSection').style.display = 'none';
+            document.getElementById('pdfJobSuccessAlert').style.display = 'none';
+            document.getElementById('pdfJobErrorAlert').style.display = 'none';
+            
+            // Reset button text to default
+            document.getElementById('downloadCatalogCompleteBtn').innerHTML = 
+                '<i class="fas fa-download me-1"></i> Upload Report';
+            document.getElementById('downloadLotCompleteBtn').innerHTML = 
+                '<i class="fas fa-download me-1"></i> Upload Report';
             
             // Clear results
             catalogUploadResults = null;
