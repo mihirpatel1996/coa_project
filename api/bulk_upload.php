@@ -937,28 +937,6 @@ function generateCompleteReport($allRecords, $uploadType) {
         
         $sheet->fromArray($rowData, null, "A{$rowNum}");
         
-        /*
-        // Color code the row based on status
-        $statusCol = chr(64 + count($headers) - 1);
-        if ($record['status'] === 'Error') {
-            $sheet->getStyle("A{$rowNum}:{$lastCol}{$rowNum}")->getFill()
-                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                ->getStartColor()->setRGB('FFCCCC'); // Light red
-        } elseif ($record['status'] === 'Valid') {
-            $sheet->getStyle("A{$rowNum}:{$lastCol}{$rowNum}")->getFill()
-                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                ->getStartColor()->setRGB('FFFFCC'); // Light yellow
-        } elseif ($record['status'] === 'Updated') {
-            $sheet->getStyle("A{$rowNum}:{$lastCol}{$rowNum}")->getFill()
-                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                ->getStartColor()->setRGB('CCE5FF'); // Light blue
-        } elseif ($record['status'] === 'Inserted') {
-            $sheet->getStyle("A{$rowNum}:{$lastCol}{$rowNum}")->getFill()
-                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                ->getStartColor()->setRGB('CCFFCC'); // Light green
-        }
-        */
-        
         $rowNum++;
     }
     
@@ -966,30 +944,6 @@ function generateCompleteReport($allRecords, $uploadType) {
     foreach (range('A', $lastCol) as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
-
-    /*
-    // Add legend/notes at the bottom
-    $legendRow = $rowNum + 2;
-    $sheet->setCellValue("A{$legendRow}", 'Status Legend:');
-    $sheet->getStyle("A{$legendRow}")->getFont()->setBold(true);
-    
-    $legendItems = [
-        ['status' => 'Error', 'description' => 'Row has validation errors', 'color' => 'FFCCCC'],
-        ['status' => 'Valid', 'description' => 'Row passed validation but was not saved due to errors in other rows', 'color' => 'FFFFCC'],
-        ['status' => 'Inserted', 'description' => 'Row was successfully inserted into database', 'color' => 'CCFFCC'],
-        ['status' => 'Updated', 'description' => 'Row was successfully updated in database', 'color' => 'CCE5FF']
-    ];
-    
-    $currentLegendRow = $legendRow + 1;
-    foreach ($legendItems as $item) {
-        $sheet->setCellValue("A{$currentLegendRow}", $item['status']);
-        $sheet->setCellValue("B{$currentLegendRow}", $item['description']);
-        $sheet->getStyle("A{$currentLegendRow}")->getFill()
-            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-            ->getStartColor()->setRGB($item['color']);
-        $currentLegendRow++;
-    }
-    */
 
     // Save Excel file
     $writer = new Xlsx($spreadsheet);
