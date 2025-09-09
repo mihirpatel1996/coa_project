@@ -2183,10 +2183,19 @@
                 loadCatalogs();
                 
             } else {
-                // Show error message
-                displayCatalogUploadError(data.errorMessage || 'Catalog upload failed.');
-                // Show summary
-                displayCatalogSummary(data.summary);
+                // If upload failed completely
+                if(data.status == 'failed' || data.status == '') {
+                    // Show error message
+                    displayCatalogUploadError(data.errorMessage || 'Catalog upload failed.');
+                    return;
+                }
+                // If data validation errors found
+                if (data.status === 'error') {
+                    // Show error message
+                    displayCatalogUploadError(data.errorMessage || 'Catalog upload failed.');
+                    // Show summary
+                    displayCatalogSummary(data.summary);
+                }
             }
         }
 
@@ -2219,10 +2228,18 @@
                     loadLots(currentCatalogNumber);
                 }
             } else {
-                // Show error message
-                displayLotUploadError(data.errorMessage || 'Lot upload failed.');
-                // Show summary
-                displayLotSummary(data.summary);
+                // If upload failed completely
+                if(data.status == 'failed' || data.status == '') {
+                    displayLotUploadError(data.errorMessage || 'Lot upload failed.');
+                    return;
+                }
+                // If data validation errors found
+                if (data.status === 'error') {
+                    // Show error message
+                    displayLotUploadError(data.errorMessage || 'Lot upload failed.');
+                    // Show summary
+                    displayLotSummary(data.summary);
+                }
             }
         }
 
