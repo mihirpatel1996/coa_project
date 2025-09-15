@@ -1028,11 +1028,12 @@
                         saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save All';
                         saveBtn.classList.add('btn-success');
                         saveBtn.classList.remove('btn-outline-success');
-                        saveBtn.disabled = false;
+                        // saveBtn.disabled = false;
+                        saveBtn.disabled = true;
                     }, 2000);
 
                     //generate PDF after save
-                        console.log("call AJAX to generate PDF");
+                        // console.log("call AJAX to generate PDF");
                         // Call API to bulkGenerate PDF from start_generate_pdf_external.php with no body parameters                     
                         fetch('api/start_generate_pdf_external.php', {
                             method: 'POST',

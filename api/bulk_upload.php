@@ -149,7 +149,6 @@ try {
             ]);
             exit;
         }
-        
         // No errors, commit transaction
         $conn->commit();
         $conn->autocommit(true);
@@ -214,7 +213,7 @@ try {
             'successCount' => 0,
             'updateCount' => 0,
             'skippedCount' => 0,
-            'errorCount' => isset($results) ? $results['totalRows'] : 0
+            'errorCount' => isset($results) ? $results['errorCount'] : 0
         ];
         logUpload($conn, 'failed', $summary, $e->getMessage());
     }
@@ -957,7 +956,7 @@ function generateCompleteReport($allRecords, $uploadType) {
  */
 function logUpload($conn, $status, $summary, $errorMessage) {
     try {
-        // Ensure autocommit is on for logging
+        // Autocommit should be managed by the caller
         $conn->autocommit(true);
         
         $sql = "INSERT INTO uploadLogs (status, summary, errorMessage, uploadedAt) VALUES (?, ?, ?, NOW())";
